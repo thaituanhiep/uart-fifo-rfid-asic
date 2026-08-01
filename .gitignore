@@ -1,0 +1,19 @@
+# Simulation artifacts
+*.vvp
+*.vcd
+
+# Vivado
+*.jou
+*.log
+*.str
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.xpr
+fpga/vivado/build/
+
+# OpenLane generated results (if run in-repo)
+runs/
+openlane/*/runs/
