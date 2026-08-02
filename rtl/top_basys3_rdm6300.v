@@ -16,6 +16,21 @@ module top_basys3_rdm6300 #(
 
     wire rst_n;
 
+    // ------------------------------------------------------------------
+    // 2-FF input synchronizer for RDM6300 RX line (prevents metastability)
+    // Reset to 1 = UART idle-high state
+    // ------------------------------------------------------------------
+    reg rdm6300_rx_sync1, rdm6300_rx_sync;
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            rdm6300_rx_sync1 <= 1'b1;
+            rdm6300_rx_sync  <= 1'b1;
+        end else begin
+            rdm6300_rx_sync1 <= rdm6300_rx_i;
+            rdm6300_rx_sync  <= rdm6300_rx_sync1;
+        end
+    end
+
     wire [7:0] rx_rd_data;
     wire       rx_empty;
     wire       rx_full;
@@ -27,7 +42,15 @@ module top_basys3_rdm6300 #(
     wire      tx_empty;
 
     reg [2:0] bridge_fsm;
-    reg [7:0] bridge_data;
+    reg       frame_active;
+    reg       last_frame_valid;
+    reg [3:0] frame_count;
+    reg [3:0] send_idx;
+    reg [7:0] frame_buf [0:13];
+    reg [7:0] last_frame [0:13];
+
+    integer i;
+    reg frame_same;
 
     localparam BR_IDLE  = 3'd0;
     localparam BR_READ  = 3'd1;
@@ -43,7 +66,7 @@ module top_basys3_rdm6300 #(
     ) u_core (
         .clk(clk),
         .rst_n(rst_n),
-        .uart_rx_i(rdm6300_rx_i),
+        .uart_rx_i(rdm6300_rx_sync),
         .uart_tx_o(uart_tx_o),
         .tx_wr_en(tx_wr_en),
         .tx_wr_data(tx_wr_data),
@@ -57,11 +80,19 @@ module top_basys3_rdm6300 #(
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            bridge_fsm <= BR_IDLE;
-            rx_rd_en <= 1'b0;
-            tx_wr_en <= 1'b0;
-            tx_wr_data <= 8'd0;
-            bridge_data <= 8'd0;
+            bridge_fsm   <= BR_IDLE;
+            rx_rd_en     <= 1'b0;
+            tx_wr_en     <= 1'b0;
+            tx_wr_data   <= 8'd0;
+            frame_active <= 1'b0;
+            last_frame_valid <= 1'b0;
+            frame_count <= 4'd0;
+            send_idx <= 4'd0;
+
+            for (i = 0; i < 14; i = i + 1) begin
+                frame_buf[i] <= 8'd0;
+                last_frame[i] <= 8'd0;
+            end
         end else begin
             rx_rd_en <= 1'b0;
             tx_wr_en <= 1'b0;
@@ -79,15 +110,64 @@ module top_basys3_rdm6300 #(
                 end
 
                 BR_LATCH: begin
-                    bridge_data <= rx_rd_data;
-                    bridge_fsm <= BR_WRITE;
+                    // Capture one whole frame STX..ETX first, then decide whether to forward.
+                    if (!frame_active) begin
+                        if (rx_rd_data == 8'h02) begin
+                            frame_active <= 1'b1;
+                            frame_count <= 4'd1;
+                            frame_buf[0] <= 8'h02;
+                        end
+                        bridge_fsm <= BR_IDLE;
+                    end else begin
+                        if (frame_count < 4'd14)
+                            frame_buf[frame_count] <= rx_rd_data;
+
+                        if ((rx_rd_data == 8'h03) && (frame_count == 4'd13)) begin
+                            // TODO(thait): Move duplicate-frame compare/filter into FIFO-side logic
+                            // so top-level BR_LATCH only does frame capture and handoff.
+                            frame_same = last_frame_valid;
+                            for (i = 0; i < 13; i = i + 1) begin
+                                if (frame_buf[i] != last_frame[i])
+                                    frame_same = 1'b0;
+                            end
+                            if (rx_rd_data != last_frame[13])
+                                frame_same = 1'b0;
+
+                            frame_active <= 1'b0;
+                            frame_count <= 4'd0;
+
+                            if (!frame_same) begin
+                                for (i = 0; i < 13; i = i + 1)
+                                    last_frame[i] <= frame_buf[i];
+                                last_frame[13] <= rx_rd_data;
+                                last_frame_valid <= 1'b1;
+                                send_idx <= 4'd0;
+                                bridge_fsm <= BR_WRITE;
+                            end else begin
+                                bridge_fsm <= BR_IDLE;
+                            end
+                        end else if (frame_count == 4'd13) begin
+                            // Overflow/no ETX at expected position -> drop corrupted frame.
+                            frame_active <= 1'b0;
+                            frame_count <= 4'd0;
+                            bridge_fsm <= BR_IDLE;
+                        end else begin
+                            frame_count <= frame_count + 1'b1;
+                            bridge_fsm <= BR_IDLE;
+                        end
+                    end
                 end
 
                 BR_WRITE: begin
                     if (!tx_full) begin
                         tx_wr_en <= 1'b1;
-                        tx_wr_data <= bridge_data;
-                        bridge_fsm <= BR_IDLE;
+                        tx_wr_data <= frame_buf[send_idx];
+                        if (send_idx == 4'd13) begin
+                            bridge_fsm <= BR_IDLE;
+                        end else begin
+                            send_idx <= send_idx + 1'b1;
+                            bridge_fsm <= BR_WRITE;
+                        end
                     end
                 end
 

@@ -9,7 +9,8 @@ create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk
 set_property -dict { PACKAGE_PIN A18 IOSTANDARD LVCMOS33 } [get_ports uart_tx_o]
 
 ## RDM6300 TX -> FPGA RX on JA1 (J1)
-set_property -dict { PACKAGE_PIN J1 IOSTANDARD LVCMOS33 } [get_ports rdm6300_rx_i]
+## PULLUP required: UART idle = HIGH; without pullup the floating pin is read as permanent start-bit (all-zeros spam)
+set_property -dict { PACKAGE_PIN J1 IOSTANDARD LVCMOS33 PULLUP TRUE } [get_ports rdm6300_rx_i]
 
 ## Reset button (BTNU, active-high button input in top)
 set_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports rst_btn]
