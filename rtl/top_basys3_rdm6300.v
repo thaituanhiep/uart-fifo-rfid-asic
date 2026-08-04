@@ -52,7 +52,6 @@ module top_basys3_rdm6300 #(
     reg [7:0] tx_line_buf [0:21];
 
     integer i;
-    integer out_idx;
     reg frame_same;
     reg checksum_ok;
     reg [4:0] n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11;
@@ -75,11 +74,11 @@ module top_basys3_rdm6300 #(
         input [7:0] ch;
         begin
             if ((ch >= 8'h30) && (ch <= 8'h39))
-                ascii_hex_to_nibble = {1'b0, (ch - 8'h30)};
+                ascii_hex_to_nibble = {1'b0, ch[3:0]};
             else if ((ch >= 8'h41) && (ch <= 8'h46))
-                ascii_hex_to_nibble = {1'b0, (ch - 8'h41 + 8'd10)};
+                ascii_hex_to_nibble = {1'b0, (ch[3:0] + 4'd9)};
             else if ((ch >= 8'h61) && (ch <= 8'h66))
-                ascii_hex_to_nibble = {1'b0, (ch - 8'h61 + 8'd10)};
+                ascii_hex_to_nibble = {1'b0, (ch[3:0] + 4'd9)};
             else
                 ascii_hex_to_nibble = 5'h10;
         end
@@ -117,12 +116,12 @@ module top_basys3_rdm6300 #(
             frame_count <= 4'd0;
             send_idx <= 5'd0;
             send_len <= 5'd0;
-            checksum_ok <= 1'b0;
-            chk_calc <= 8'd0;
-            chk_rx <= 8'd0;
-            id32 <= 32'd0;
-            fc_dec <= 8'd0;
-            cn_dec <= 16'd0;
+            checksum_ok = 1'b0;
+            chk_calc = 8'd0;
+            chk_rx = 8'd0;
+            id32 = 32'd0;
+            fc_dec = 8'd0;
+            cn_dec = 16'd0;
 
             for (i = 0; i < 14; i = i + 1) begin
                 frame_buf[i] <= 8'd0;

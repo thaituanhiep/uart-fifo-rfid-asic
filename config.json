@@ -1,0 +1,22 @@
+{
+  "DESIGN_NAME": "top_basys3_rdm6300",
+
+  "VERILOG_FILES": [
+    "dir::rtl/fifo_sync.v",
+    "dir::rtl/uart_rx.v",
+    "dir::rtl/uart_tx.v",
+    "dir::rtl/uart_fifo_core.v",
+    "dir::rtl/top_basys3_rdm6300.v"
+  ],
+
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 20,
+
+  "FP_SIZING": "relative",
+  "FP_CORE_UTIL": 35,
+  "PL_TARGET_DENSITY": 0.50,
+
+  "RUN_KLAYOUT_XOR": false,
+  "RUN_KLAYOUT_DRC": false
+}
+
