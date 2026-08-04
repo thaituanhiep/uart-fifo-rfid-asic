@@ -10,11 +10,11 @@
   ],
 
   "CLOCK_PORT": "clk",
-  "CLOCK_PERIOD": 20,
+  "CLOCK_PERIOD": 100,
 
   "FP_SIZING": "relative",
-  "FP_CORE_UTIL": 35,
-  "PL_TARGET_DENSITY": 0.50,
+  "FP_CORE_UTIL": 25,
+  "PL_TARGET_DENSITY_PCT": 45,
 
   "RUN_KLAYOUT_XOR": false,
   "RUN_KLAYOUT_DRC": false
