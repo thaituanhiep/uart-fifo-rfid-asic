@@ -1,1 +1,0 @@
-"top_basys3_rdm6300" -s "flat_fpga_top" --log "flat_fpga_top_xelab.log" 

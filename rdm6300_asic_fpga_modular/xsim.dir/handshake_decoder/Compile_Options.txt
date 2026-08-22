@@ -1,1 +1,0 @@
-"tb_rdm6300_frame_decoder" -s "handshake_decoder" --log "handshake_decoder_xelab.log" 

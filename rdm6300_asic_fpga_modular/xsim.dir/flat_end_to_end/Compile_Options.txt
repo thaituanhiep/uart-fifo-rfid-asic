@@ -1,1 +1,0 @@
-"tb_top_basys3_rdm6300_end_to_end" -s "flat_end_to_end" --log "flat_end_to_end_xelab.log" 

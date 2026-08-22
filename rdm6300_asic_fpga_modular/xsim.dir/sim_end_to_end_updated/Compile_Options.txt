@@ -1,1 +1,0 @@
-"tb_rdm6300_access_core_end_to_end" -s "sim_end_to_end_updated" --log "sim_end_to_end_updated_xelab.log" 

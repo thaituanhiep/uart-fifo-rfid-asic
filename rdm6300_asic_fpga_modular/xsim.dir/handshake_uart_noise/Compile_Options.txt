@@ -1,1 +1,0 @@
-"tb_uart_rx_noise" -s "handshake_uart_noise" --log "handshake_uart_noise_xelab.log" 

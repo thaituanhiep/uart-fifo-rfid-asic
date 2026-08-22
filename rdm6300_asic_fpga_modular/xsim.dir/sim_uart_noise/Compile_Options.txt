@@ -1,1 +1,0 @@
-"tb_uart_rx_noise" -s "sim_uart_noise" --log "sim_uart_noise_xelab.log" 

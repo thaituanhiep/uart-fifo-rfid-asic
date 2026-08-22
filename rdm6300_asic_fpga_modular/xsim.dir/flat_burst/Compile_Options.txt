@@ -1,1 +1,0 @@
-"tb_top_basys3_rdm6300_burst" -s "flat_burst" --log "flat_burst_xelab.log" 

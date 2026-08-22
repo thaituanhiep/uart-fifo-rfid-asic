@@ -1,1 +1,0 @@
-"tb_rdm6300_access_core_burst" -s "sim_burst" --log "sim_burst_xelab.log" 

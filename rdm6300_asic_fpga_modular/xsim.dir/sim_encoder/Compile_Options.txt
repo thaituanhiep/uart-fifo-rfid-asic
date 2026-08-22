@@ -1,1 +1,0 @@
-"tb_card_packet_encoder" -s "sim_encoder" --log "sim_encoder_xelab.log" 

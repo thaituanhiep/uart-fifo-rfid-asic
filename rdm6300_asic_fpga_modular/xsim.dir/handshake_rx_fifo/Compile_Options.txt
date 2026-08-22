@@ -1,1 +1,0 @@
-"tb_rx_fifo" -s "handshake_rx_fifo" --log "handshake_rx_fifo_xelab.log" 
