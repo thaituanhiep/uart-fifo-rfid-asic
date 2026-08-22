@@ -1,0 +1,21 @@
+0.7
+2020.2
+Nov 14 2025
+19:37:27
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/fpga/rtl/top_basys3_rdm6300.v,1786524369,systemVerilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_rx_fifo.v,,top_basys3_rdm6300,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/app/card_packet_encoder.v,1786680809,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/parser/rfid_parser.v,,card_packet_encoder,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/common/sync_2ff.v,1786015771,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/fifo/rx_fifo.v,,sync_2ff,,,,,,,,
+,,,,,,,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/fifo/rx_fifo.v,1787231350,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/fifo/tx_fifo.v,,rx_fifo,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/fifo/tx_fifo.v,1787231351,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/uart/uart_rx.v,,tx_fifo,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/parser/rfid_parser.v,1787054441,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/fpga/rtl/top_basys3_rdm6300.v,,rfid_parser,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/rdm6300/rdm6300_frame_decoder.v,1786678174,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/app/card_packet_encoder.v,,rdm6300_frame_decoder,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/uart/uart_rx.v,1786182148,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/uart/uart_tx.v,,uart_rx,,,,,,,,
+E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/uart/uart_tx.v,1786015771,verilog,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/rdm6300/rdm6300_frame_decoder.v,,uart_tx,,,,,,,,
+,,,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_uart_rx_noise.v,,tb_card_packet_encoder,,,,,,,,
+,,,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_card_packet_encoder.v,,tb_rdm6300_frame_decoder,,,,,,,,
+,,,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_tx_fifo.v,,tb_rx_fifo,,,,,,,,
+,,,,,,tb_top_basys3_rdm6300_burst,,,,,,,,
+,,,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_top_basys3_rdm6300_burst.v,,tb_top_basys3_rdm6300_end_to_end,,,,,,,,
+,,,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_rdm6300_frame_decoder.v,,tb_tx_fifo,,,,,,,,
+,,,,E:/aa.project-sem3/all_project_1_uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/tb/tb_top_basys3_rdm6300_end_to_end.v,,tb_uart_rx_noise,,,,,,,,

@@ -1,0 +1,1 @@
+"top_basys3_rdm6300" -s "handshake_fpga_top" --log "handshake_fpga_top_xelab.log" 

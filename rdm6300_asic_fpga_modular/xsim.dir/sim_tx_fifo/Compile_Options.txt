@@ -1,0 +1,1 @@
+"tb_tx_fifo" -s "sim_tx_fifo" --log "sim_tx_fifo_xelab.log" 

@@ -1,0 +1,1 @@
+"tb_rdm6300_frame_decoder" -s "sim_decoder" --log "sim_decoder_xelab.log" 

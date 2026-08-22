@@ -1,0 +1,22 @@
+## Basys3 constraint template for future top module integration.
+## Keep this file as reference until top.v and final port list are ready.
+
+## Clock 100MHz
+set_property -dict { PACKAGE_PIN W5   IOSTANDARD LVCMOS33 } [get_ports clk]
+create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk]
+
+## UART TX to PC via onboard USB-UART bridge (Putty reads this line)
+set_property -dict { PACKAGE_PIN A18 IOSTANDARD LVCMOS33 } [get_ports uart_tx_o]
+
+## RDM6300 TX -> FPGA RX on JA1 (J1)
+## PULLUP required: UART idle = HIGH; without pullup the floating pin is read as permanent start-bit (all-zeros spam)
+set_property -dict { PACKAGE_PIN J1 IOSTANDARD LVCMOS33 PULLUP TRUE } [get_ports rdm6300_rx_i]
+
+## Reset button (BTNU, active-high button input in top)
+set_property -dict { PACKAGE_PIN T18 IOSTANDARD LVCMOS33 } [get_ports rst_btn]
+
+## LEDs
+set_property -dict { PACKAGE_PIN U16 IOSTANDARD LVCMOS33 } [get_ports {led[0]}]
+set_property -dict { PACKAGE_PIN E19 IOSTANDARD LVCMOS33 } [get_ports {led[1]}]
+set_property -dict { PACKAGE_PIN U19 IOSTANDARD LVCMOS33 } [get_ports {led[2]}]
+set_property -dict { PACKAGE_PIN V19 IOSTANDARD LVCMOS33 } [get_ports {led[3]}]

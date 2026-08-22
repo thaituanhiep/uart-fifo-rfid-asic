@@ -1,0 +1,1 @@
+"tb_card_event_fifo" -s "sim_fifo" 

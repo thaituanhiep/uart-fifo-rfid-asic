@@ -1,0 +1,1 @@
+"tb_rdm6300_access_core_end_to_end" -s "handshake_end_to_end" --log "handshake_end_to_end_xelab.log" 

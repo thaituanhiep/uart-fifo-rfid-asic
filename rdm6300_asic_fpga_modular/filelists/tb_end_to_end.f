@@ -1,0 +1,10 @@
+rtl/common/sync_2ff.v
+rtl/fifo/rx_fifo.v
+rtl/fifo/tx_fifo.v
+rtl/uart/uart_rx.v
+rtl/uart/uart_tx.v
+rtl/rdm6300/rdm6300_frame_decoder.v
+rtl/app/card_packet_encoder.v
+rtl/parser/rfid_parser.v
+fpga/rtl/top_basys3_rdm6300.v
+tb/tb_top_basys3_rdm6300_end_to_end.v
