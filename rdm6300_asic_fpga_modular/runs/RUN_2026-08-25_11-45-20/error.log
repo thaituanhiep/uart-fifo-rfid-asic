@@ -1,0 +1,16 @@
+rdm6300_rx_i not found in config but found in design.
+uart_tx_o not found in config but found in design.
+Subprocess had a non-zero exit.
+Last 10 line(s):
+[WARNING] tx_fifo_overflow not found in design but found in config.
+[WARNING] card_event not found in design but found in config.
+[WARNING] frame_error not found in design but found in config.
+[WARNING] checksum_error not found in design but found in config.
+[WARNING] tag_raw\[\d+\] not found in design but found in config.
+[WARNING] uart_break_detect not found in design but found in config.
+[ERROR] rdm6300_rx_i not found in config but found in design.
+[ERROR] uart_tx_o not found in config but found in design.
+Top-level design name: top_basys3_rdm6300
+Critical mismatches found.
+
+Full log file: 'runs/RUN_2026-08-25_11-45-20/25-odb-customioplacement/odb-customioplacement.log'

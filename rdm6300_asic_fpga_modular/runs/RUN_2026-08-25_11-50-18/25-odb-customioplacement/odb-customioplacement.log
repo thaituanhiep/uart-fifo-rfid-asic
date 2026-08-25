@@ -1,0 +1,32 @@
+[WARNING ORD-0039] .openroad ignored with -python
+Top-level design name: top_basys3_rdm6300
+Block boundaries: 0 0 267835 278555
+Horizontal Tracks Origin: 340, Count: 409, Step: 680
+Vertical Tracks Origin: 230, Count: 582, Step: 460
+Placement details for the E side
+Virtual pin count:  0
+Actual pin count:  1
+Total pin count:  1
+Tracks count:  205
+Tracks per pin:  205
+Used tracks count:  1
+Unused track count:  204
+Starting track index:  102
+Placement details for the W side
+Virtual pin count:  0
+Actual pin count:  1
+Total pin count:  1
+Tracks count:  205
+Tracks per pin:  205
+Used tracks count:  1
+Unused track count:  204
+Starting track index:  102
+Placement details for the S side
+Virtual pin count:  0
+Actual pin count:  1
+Total pin count:  1
+Tracks count:  582
+Tracks per pin:  582
+Used tracks count:  1
+Unused track count:  581
+Starting track index:  290

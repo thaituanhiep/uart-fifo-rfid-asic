@@ -1,0 +1,3 @@
+
+23. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\card_packet_encoder.\out_data' from process `\card_packet_encoder.$proc$/home/hiepthai/Desktop/uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/rtl/app/card_packet_encoder.v:49$133'.

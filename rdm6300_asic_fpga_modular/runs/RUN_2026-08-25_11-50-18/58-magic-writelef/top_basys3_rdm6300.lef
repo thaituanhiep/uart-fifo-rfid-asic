@@ -1,0 +1,99 @@
+VERSION 5.7 ;
+  NOWIREEXTENSIONATPIN ON ;
+  DIVIDERCHAR "/" ;
+  BUSBITCHARS "[]" ;
+MACRO top_basys3_rdm6300
+  CLASS BLOCK ;
+  FOREIGN top_basys3_rdm6300 ;
+  ORIGIN 0.000 0.000 ;
+  SIZE 267.835 BY 278.555 ;
+  PIN VGND
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER met4 ;
+        RECT 24.340 10.640 25.940 266.800 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 177.940 10.640 179.540 266.800 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 5.280 30.030 262.440 31.630 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 5.280 183.210 262.440 184.810 ;
+    END
+  END VGND
+  PIN VPWR
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER met4 ;
+        RECT 21.040 10.640 22.640 266.800 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 174.640 10.640 176.240 266.800 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 5.280 26.730 262.440 28.330 ;
+    END
+    PORT
+      LAYER met5 ;
+        RECT 5.280 179.910 262.440 181.510 ;
+    END
+  END VPWR
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.852000 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 138.760 4.000 139.360 ;
+    END
+  END clk
+  PIN rdm6300_rx_i
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 263.835 138.760 267.835 139.360 ;
+    END
+  END rdm6300_rx_i
+  PIN uart_tx_o
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 0.445500 ;
+    PORT
+      LAYER met2 ;
+        RECT 133.490 0.000 133.770 4.000 ;
+    END
+  END uart_tx_o
+  OBS
+      LAYER nwell ;
+        RECT 5.330 10.795 262.390 266.645 ;
+      LAYER li1 ;
+        RECT 5.520 10.795 262.200 266.645 ;
+      LAYER met1 ;
+        RECT 5.520 10.640 262.200 266.800 ;
+      LAYER met2 ;
+        RECT 7.460 4.280 260.730 266.745 ;
+        RECT 7.460 4.000 133.210 4.280 ;
+        RECT 134.050 4.000 260.730 4.280 ;
+      LAYER met3 ;
+        RECT 4.000 139.760 263.835 266.725 ;
+        RECT 4.400 138.360 263.435 139.760 ;
+        RECT 4.000 10.715 263.835 138.360 ;
+      LAYER met4 ;
+        RECT 49.975 23.295 174.240 255.505 ;
+        RECT 176.640 23.295 177.540 255.505 ;
+        RECT 179.940 23.295 206.705 255.505 ;
+  END
+END top_basys3_rdm6300
+END LIBRARY
+

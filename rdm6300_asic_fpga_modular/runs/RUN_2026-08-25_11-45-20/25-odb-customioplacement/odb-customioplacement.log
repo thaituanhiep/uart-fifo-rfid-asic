@@ -1,0 +1,20 @@
+[WARNING ORD-0039] .openroad ignored with -python
+[WARNING] frame_timeout_error not found in design but found in config.
+[WARNING] rst_n not found in design but found in config.
+[WARNING] tx_fifo_full not found in design but found in config.
+[WARNING] rdm_uart_rx not found in design but found in config.
+[WARNING] invalid_hex_error not found in design but found in config.
+[WARNING] uart_framing_error not found in design but found in config.
+[WARNING] host_uart_tx not found in design but found in config.
+[WARNING] rx_fifo_overflow not found in design but found in config.
+[WARNING] rx_fifo_full not found in design but found in config.
+[WARNING] tx_fifo_overflow not found in design but found in config.
+[WARNING] card_event not found in design but found in config.
+[WARNING] frame_error not found in design but found in config.
+[WARNING] checksum_error not found in design but found in config.
+[WARNING] tag_raw\[\d+\] not found in design but found in config.
+[WARNING] uart_break_detect not found in design but found in config.
+[ERROR] rdm6300_rx_i not found in config but found in design.
+[ERROR] uart_tx_o not found in config but found in design.
+Top-level design name: top_basys3_rdm6300
+Critical mismatches found.
