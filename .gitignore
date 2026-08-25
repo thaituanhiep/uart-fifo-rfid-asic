@@ -1,23 +1,4 @@
-# Simulation artifacts
-*.vvp
-*.vcd
-
-# Vivado
-*.jou
-*.log
-*.str
-*.cache/
-*.hw/
-*.ip_user_files/
-*.runs/
-*.sim/
-*.xpr
-fpga/vivado/build/
-
-# OpenLane generated results (if run in-repo)
-runs/
-openlane/*/runs/
-
-# JetBrains IDE
-.idea/
-
+.idea
+runs
+rdm6300_asic_fpga_modular/runs
+core.*
