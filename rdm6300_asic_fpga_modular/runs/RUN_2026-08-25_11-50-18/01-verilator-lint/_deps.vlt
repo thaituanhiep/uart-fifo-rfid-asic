@@ -1,5 +1,0 @@
-`verilator_config
-lint_off -rule DECLFILENAME
-lint_off -rule EOFNEWLINE
-lint_off -rule UNDRIVEN -file "/home/hiepthai/Desktop/uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/runs/RUN_2026-08-25_11-50-18/tmp/429a8c92260d465db266e786066c94fc.bb.v"
-lint_off -rule UNUSEDSIGNAL -file "/home/hiepthai/Desktop/uart-fifo-rfid-asic/rdm6300_asic_fpga_modular/runs/RUN_2026-08-25_11-50-18/tmp/429a8c92260d465db266e786066c94fc.bb.v"

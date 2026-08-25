@@ -1,3 +1,4 @@
 .idea
 runs
 rdm6300_asic_fpga_modular/runs
+core.*
