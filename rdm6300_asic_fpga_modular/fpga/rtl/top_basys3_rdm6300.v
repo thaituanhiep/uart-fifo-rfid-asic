@@ -45,6 +45,8 @@ module top_basys3_rdm6300 #(
     wire       uart_tx_valid;
     wire [7:0] uart_tx_data;
     wire       uart_tx_ready;
+    reg        parser_in_valid_r;
+    reg [7:0]  parser_in_data_r;
 
     // Internal status remains visible to simulation/debug hierarchy without
     // adding board pins to the minimal Basys3 interface.
@@ -106,9 +108,25 @@ module top_basys3_rdm6300 #(
     );
 
     // RX FIFO -> Parser
-    assign parser_rx_valid   = rx_fifo_out_valid;
-    assign parser_rx_data    = rx_fifo_out_data;
-    assign rx_fifo_out_ready = parser_rx_ready;
+    // One-byte elastic stage to break long combinational path from FIFO read
+    // logic into parser decode logic on FPGA.
+    assign rx_fifo_out_ready = !parser_in_valid_r || parser_rx_ready;
+    assign parser_rx_valid   = parser_in_valid_r;
+    assign parser_rx_data    = parser_in_data_r;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            parser_in_valid_r <= 1'b0;
+            parser_in_data_r  <= 8'h00;
+        end else begin
+            if (rx_fifo_out_valid && rx_fifo_out_ready) begin
+                parser_in_valid_r <= 1'b1;
+                parser_in_data_r  <= rx_fifo_out_data;
+            end else if (parser_rx_ready && parser_in_valid_r) begin
+                parser_in_valid_r <= 1'b0;
+            end
+        end
+    end
 
     rfid_parser #(
         .FRAME_TIMEOUT_CYCLES(FRAME_TIMEOUT_CYCLES),
