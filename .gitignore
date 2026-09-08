@@ -3,3 +3,5 @@ runs
 rdm6300_asic_fpga_modular/runs
 core.*
 sim
+.codex_docx_assets
+.codex_docx_review
