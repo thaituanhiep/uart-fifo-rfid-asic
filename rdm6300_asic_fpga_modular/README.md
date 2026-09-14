@@ -19,15 +19,10 @@ chỉ thực hiện một chức năng**, và **top nối pipeline bằng `valid
 ## Cấu trúc
 
 ```text
-rtl/common/      CDC primitives
-rtl/fifo/        RX FIFO và TX FIFO tách thành hai module riêng
-rtl/uart/        UART RX và UART TX
-rtl/rdm6300/     Bắt khung, giải mã ASCII hex, kiểm tra checksum
-rtl/app/         Đóng gói binary packet và CRC-8
+rtl/             Toàn bộ các file RTL verilog (sync_2ff, rx_fifo, tx_fifo, uart_rx, uart_tx, rdm6300_frame_decoder, card_packet_encoder, rfid_parser)
 fpga/rtl/        Top-level hoàn chỉnh cho Basys3
 fpga/constraints XDC riêng cho board
 tb/              Testbench theo module
-filelists/       Danh sách source cho simulation/synthesis
 ```
 
 ## Top-level
