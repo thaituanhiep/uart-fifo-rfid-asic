@@ -5,3 +5,19 @@ core.*
 sim
 .codex_docx_assets
 .codex_docx_review
+
+# Vivado temporary files and run logs
+*.log
+*.jou
+*.pb
+*.backup.*
+clockInfo.txt
+dfx_runtime.txt
+.Xil/
+
+# XSIM simulation temporary output
+xsim.dir/
+
+# Firmware intermediate files
+*.o
+disasm.txt
