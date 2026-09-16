@@ -1,0 +1,20 @@
+{
+  "DESIGN_NAME": "rdm6300_picorv32_soc",
+  "PDK": "sky130A",
+  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+
+  "VERILOG_FILES": [
+    "dir::rtl/sync_2ff.v",
+    "dir::rtl/simpleuart.v",
+    "dir::rtl/spi_flash_controller.v",
+    "dir::rtl/boot_rom.v",
+    "dir::rtl/picorv32.v",
+    "dir::rtl/rdm6300_picorv32_soc.v"
+  ],
+
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 20.0,
+  "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
+  "FP_CORE_UTIL": 45,
+  "SYNTH_STRATEGY": "AREA 0"
+}
