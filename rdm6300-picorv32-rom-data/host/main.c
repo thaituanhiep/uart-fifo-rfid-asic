@@ -531,7 +531,7 @@ int main(int argc, char *argv[]) {
                             printf("\n===============================================================\n");
                             printf("  [ACCESS GRANTED] >>> XAC THUC THANH CONG! <<<\n");
                             printf("===============================================================\n");
-                            printf("  - The quet         : %010u  (UID: %s)\n", (unsigned int)val, hex_tag);
+                            printf("  - The quet         : %010u (%03u,%05u)  [UID: %s]\n", (unsigned int)val, fc, id, hex_tag);
                             printf("  - Ket qua          : THE HOP LE (Khop Slot #%d, Dia chi 0x%06X)\n",
                                    tag_slot, 0x300000 + tag_slot * 16);
                             printf("  - Nhat ky Flash    : Da ghi vao Log Slot #%d (Dia chi 0x%06X)\n",
@@ -546,7 +546,7 @@ int main(int argc, char *argv[]) {
                             printf("\n===============================================================\n");
                             printf("  [ACCESS DENIED] >>> TU CHOI TRUY CAP (THE KHONG HOP LE)! <<<\n");
                             printf("===============================================================\n");
-                            printf("  - The quet         : %010u  (UID: %s)\n", (unsigned int)val, hex_tag);
+                            printf("  - The quet         : %010u (%03u,%05u)  [UID: %s]\n", (unsigned int)val, fc, id, hex_tag);
                             printf("  - Ket qua          : THE CHUA DANG KY trong he thong!\n");
                             printf("  - Nhat ky Flash    : Da ghi vao Log Slot #%d (Dia chi 0x%06X)\n",
                                    log_slot, 0x310000 + log_slot * 16);
@@ -616,7 +616,7 @@ int main(int argc, char *argv[]) {
                             printf("\n===============================================================\n");
                             printf("  [ACCESS GRANTED] >>> XAC THUC THANH CONG! <<<\n");
                             printf("===============================================================\n");
-                            printf("  - The quet         : UID %s  (%010u)\n", clean, (unsigned int)val);
+                            printf("  - The quet         : %010u (%03u,%05u)  [UID: %s]\n", (unsigned int)val, fc, id, clean);
                             printf("  - Ket qua          : THE HOP LE (Khop Slot #%d, Dia chi 0x%06X)\n",
                                    tag_slot, 0x300000 + tag_slot * 16);
                             printf("  - Nhat ky Flash    : Da ghi vao Log Slot #%d (Dia chi 0x%06X)\n",
@@ -631,7 +631,7 @@ int main(int argc, char *argv[]) {
                             printf("\n===============================================================\n");
                             printf("  [ACCESS DENIED] >>> TU CHOI TRUY CAP (THE KHONG HOP LE)! <<<\n");
                             printf("===============================================================\n");
-                            printf("  - The quet         : UID %s  (%010u)\n", clean, (unsigned int)val);
+                            printf("  - The quet         : %010u (%03u,%05u)  [UID: %s]\n", (unsigned int)val, fc, id, clean);
                             printf("  - Ket qua          : THE CHUA DANG KY trong he thong!\n");
                             printf("  - Nhat ky Flash    : Da ghi vao Log Slot #%d (Dia chi 0x%06X)\n",
                                    log_slot, 0x310000 + log_slot * 16);
@@ -659,11 +659,11 @@ int main(int argc, char *argv[]) {
                 int log_count = 0;
                 while (read_line_serial(port, resp, sizeof(resp), 2000) > 0) {
                     if (strstr(resp, "LOGS_START")) {
-                        printf("\n====================================================================================================\n");
-                        printf("                          NHAT KY QUET THE RFID TRONG SPI FLASH (0x310000)                  \n");
-                        printf("====================================================================================================\n");
-                        printf("  STT | KET QUA     | SO IN TREN THE | MA HEX UID | TRANG THAI CHI TIET        | DIA CHI FLASH      \n");
-                        printf("----------------------------------------------------------------------------------------------------\n");
+                        printf("\n==================================================================================================================\n");
+                        printf("                                 NHAT KY QUET THE RFID TRONG SPI FLASH (0x310000)                                 \n");
+                        printf("==================================================================================================================\n");
+                        printf("  STT | KET QUA     | SO IN TREN THE (10 SO + MA)  | MA HEX UID | TRANG THAI CHI TIET        | DIA CHI FLASH      \n");
+                        printf("------------------------------------------------------------------------------------------------------------------\n");
                         continue;
                     }
                     if (strstr(resp, "LOG_ITEM:")) {
@@ -673,12 +673,14 @@ int main(int argc, char *argv[]) {
                         log_count++;
 
                         uint32_t val = (uint32_t)strtoul(tag + 2, NULL, 16);
+                        unsigned int fc = (val >> 16) & 0xFF;
+                        unsigned int id = val & 0xFFFF;
                         bool is_succ = (strcmp(status, "SUCC") == 0);
 
-                        printf("  %3d | %-11s | %-14u | %-10s | %-26s | Slot #%-2d (0x%06X)\n",
+                        printf("  %3d | %-11s | %010u (%03u,%05u)     | %-10s | %-26s | Slot #%-2d (0x%06X)\n",
                                log_count,
                                is_succ ? "[THANH CONG]" : "[ THAT BAI ]",
-                               (unsigned int)val,
+                               (unsigned int)val, fc, id,
                                tag,
                                is_succ ? "Hop le (Access Granted)" : "Khong hop le (Denied)",
                                slot,
@@ -688,7 +690,7 @@ int main(int argc, char *argv[]) {
                     if (strstr(resp, "LOGS_TOTAL:")) {
                         int total = 0, succ = 0, fail = 0;
                         sscanf(resp, "LOGS_TOTAL:%d:%d:%d", &total, &succ, &fail);
-                        printf("----------------------------------------------------------------------------------------------------\n");
+                        printf("------------------------------------------------------------------------------------------------------------------\n");
                         printf("[TONG KET] Tong so luot quet: %d | Thanh cong: %d | That bai: %d\n", total, succ, fail);
                         continue;
                     }
