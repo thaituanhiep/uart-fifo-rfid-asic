@@ -21,3 +21,6 @@ xsim.dir/
 # Firmware intermediate files
 *.o
 disasm.txt
+
+# Editor / IDE workspace
+*.code-workspace

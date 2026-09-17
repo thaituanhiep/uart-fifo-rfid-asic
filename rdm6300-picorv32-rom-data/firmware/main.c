@@ -113,7 +113,7 @@ static void uart_putdec(uint32_t val) {
 
 // Multi-Tag Flash Storage Layout (Sector 48: 0x300000)
 #define FLASH_SLOT_SIZE        16        // 16 bytes per tag record
-#define MAX_TAG_SLOTS          256       // 256 records max (4096 bytes / 4KB)
+#define MAX_TAG_SLOTS          4096      // 4096 records max (64KB Sector 48)
 #define FLASH_RECORD_MAGIC     0x52464944 // "RFID"
 
 // Access Log Flash Storage Layout (Sector 49: 0x310000)
@@ -543,6 +543,52 @@ int main(void) {
                 REG_GPIO_LEDS &= ~0x0008;
                 uart_puts("OK:SECTOR_ERASED\n");
                 break;
+
+            case 'K': // Kill / Delete single RFID tag from Flash: "K000072BF5F\n"
+            case 'k': {
+                char dtag[12];
+                int k = 0;
+                int timeout = 5000000;
+                while (k < 10 && timeout > 0) {
+                    int ch = uart_getc_nonblock();
+                    if (ch >= 0) {
+                        if (ch != '\r' && ch != '\n') {
+                            dtag[k++] = (char)ch;
+                        }
+                    }
+                    timeout--;
+                }
+                dtag[10] = '\0';
+                if (k == 10) {
+                    uint32_t d_hi = (uint32_t)((hex2val(dtag[0]) << 4) | hex2val(dtag[1]));
+                    uint32_t d_lo = 0;
+                    for (int i = 2; i < 10; i++) {
+                        d_lo = (d_lo << 4) | (uint32_t)hex2val(dtag[i]);
+                    }
+
+                    int slot = find_tag_slot(d_hi, d_lo);
+                    if (slot >= 0) {
+                        uint32_t addr = USER_FLASH_ADDR + (uint32_t)(slot * FLASH_SLOT_SIZE);
+                        REG_GPIO_LEDS |= 0x0008;
+                        flash_write_word(addr + 0, 0x00000000);
+                        flash_write_word(addr + 4, 0x00000000);
+                        flash_write_word(addr + 8, 0x00000000);
+                        flash_write_word(addr + 12, 0x00000000);
+                        REG_GPIO_LEDS &= ~0x0008;
+
+                        uart_puts("OK:TAG_DELETED:SLOT:");
+                        uart_putdec((uint32_t)slot);
+                        uart_puts(":");
+                        uart_puts(dtag);
+                        uart_puts("\n");
+                    } else {
+                        uart_puts("ERR:TAG_NOT_FOUND\n");
+                    }
+                } else {
+                    uart_puts("ERR:INVALID_LENGTH\n");
+                }
+                break;
+            }
 
             case 'V': // Virtual Scan: V<10-char-hex>
             case 'v': {

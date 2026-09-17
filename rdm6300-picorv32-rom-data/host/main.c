@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <time.h>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -239,6 +240,539 @@ static bool parse_card_input(const char *input, char *out_hex10) {
 }
 
 // ----------------------------------------------------------------------------
+// CSV Export & Import Management (Folder: rfids/)
+// ----------------------------------------------------------------------------
+static void get_rfids_dir(char *out_dir, size_t out_dir_size) {
+    // If folder "host" exists in cwd, then the rfids dir is "host/rfids"
+    DWORD attr_host = GetFileAttributesA("host");
+    if (attr_host != INVALID_FILE_ATTRIBUTES && (attr_host & FILE_ATTRIBUTE_DIRECTORY)) {
+        snprintf(out_dir, out_dir_size, "host/rfids");
+    } else {
+        snprintf(out_dir, out_dir_size, "rfids");
+    }
+    // Create directory if not already existing
+    CreateDirectoryA(out_dir, NULL);
+}
+
+static void get_logs_dir(char *out_dir, size_t out_dir_size) {
+    // If folder "host" exists in cwd, then the logs dir is "host/logs"
+    DWORD attr_host = GetFileAttributesA("host");
+    if (attr_host != INVALID_FILE_ATTRIBUTES && (attr_host & FILE_ATTRIBUTE_DIRECTORY)) {
+        snprintf(out_dir, out_dir_size, "host/logs");
+    } else {
+        snprintf(out_dir, out_dir_size, "logs");
+    }
+    // Create directory if not already existing
+    CreateDirectoryA(out_dir, NULL);
+}
+
+static bool find_latest_csv_file(char *out_path, size_t out_path_size, char *out_name, size_t out_name_size) {
+    const char *search_dirs[] = {"host/rfids", "rfids", "host", "."};
+    char best_ts[32] = "";
+    char best_filename[MAX_PATH] = "";
+    char best_filepath[MAX_PATH] = "";
+    FILETIME best_ft = {0, 0};
+    bool found = false;
+
+    for (int d = 0; d < 4; d++) {
+        DWORD attr = GetFileAttributesA(search_dirs[d]);
+        if (attr == INVALID_FILE_ATTRIBUTES || !(attr & FILE_ATTRIBUTE_DIRECTORY)) continue;
+
+        char pattern[MAX_PATH];
+        snprintf(pattern, sizeof(pattern), "%s\\*.csv", search_dirs[d]);
+
+        WIN32_FIND_DATAA find_data;
+        HANDLE hFind = FindFirstFileA(pattern, &find_data);
+        if (hFind != INVALID_HANDLE_VALUE) {
+            do {
+                if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+                    const char *fname = find_data.cFileName;
+                    size_t flen = strlen(fname);
+                    char full_path[MAX_PATH];
+                    snprintf(full_path, sizeof(full_path), "%s\\%s", search_dirs[d], fname);
+
+                    // Check 14-digit timestamp pattern: YYYYMMDDHHMMSS.csv
+                    if (flen == 18 && strcasecmp(fname + 14, ".csv") == 0) {
+                        bool is_digits = true;
+                        for (int i = 0; i < 14; i++) {
+                            if (!isdigit((unsigned char)fname[i])) { is_digits = false; break; }
+                        }
+                        if (is_digits) {
+                            char ts[15];
+                            strncpy(ts, fname, 14);
+                            ts[14] = '\0';
+                            if (strcmp(ts, best_ts) > 0) {
+                                strncpy(best_ts, ts, sizeof(best_ts));
+                                strncpy(best_filename, fname, sizeof(best_filename));
+                                strncpy(best_filepath, full_path, sizeof(best_filepath));
+                                best_ft = find_data.ftLastWriteTime;
+                                found = true;
+                            }
+                            continue;
+                        }
+                    }
+
+                    // Fallback for general .csv files without 14-digit timestamp
+                    if (best_ts[0] == '\0') {
+                        if (!found || CompareFileTime(&find_data.ftLastWriteTime, &best_ft) > 0) {
+                            strncpy(best_filename, fname, sizeof(best_filename));
+                            strncpy(best_filepath, full_path, sizeof(best_filepath));
+                            best_ft = find_data.ftLastWriteTime;
+                            found = true;
+                        }
+                    }
+                }
+            } while (FindNextFileA(hFind, &find_data));
+            FindClose(hFind);
+        }
+        if (found && best_ts[0] != '\0') break; // Prioritize rfids folder
+    }
+
+    if (found) {
+        snprintf(out_path, out_path_size, "%s", best_filepath);
+        snprintf(out_name, out_name_size, "%s", best_filename);
+        return true;
+    }
+    return false;
+}
+
+void export_tags_to_csv(serial_port_t port) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char time_str[32];
+    strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", t);
+    char time_readable[64];
+    strftime(time_readable, sizeof(time_readable), "%d/%m/%Y %H:%M:%S", t);
+
+    char filename[64];
+    snprintf(filename, sizeof(filename), "%s.csv", time_str);
+
+    char rfids_dir[128];
+    get_rfids_dir(rfids_dir, sizeof(rfids_dir));
+
+    char filepath[256];
+    snprintf(filepath, sizeof(filepath), "%s/%s", rfids_dir, filename);
+
+    FILE *f = fopen(filepath, "w");
+    if (!f) {
+        printf("[LOI] Khong the tao file CSV tai: %s\n", filepath);
+        return;
+    }
+
+    fprintf(f, "10 so in tren the\n");
+
+    printf("\n-> Gui lenh 'F' (Doc danh sach the tu SPI Flash de xuat CSV vao folder rfids)...\n");
+    flush_serial(port);
+    write_serial(port, "F\n", 2);
+
+    char resp[256];
+    int tag_count = 0;
+    bool empty = false;
+
+    while (read_line_serial(port, resp, sizeof(resp), 2000) > 0) {
+        if (strstr(resp, "EMPTY")) {
+            empty = true;
+            break;
+        }
+        if (strstr(resp, "TAG_ITEM:")) {
+            int slot = 0;
+            char tag[32] = "";
+            if (sscanf(resp, "TAG_ITEM:%d:%31s", &slot, tag) == 2) {
+                uint32_t val = (uint32_t)strtoul(tag + 2, NULL, 16);
+                fprintf(f, "%010u\n", (unsigned int)val);
+                tag_count++;
+            }
+        }
+        if (strstr(resp, "TAGS_END")) {
+            break;
+        }
+    }
+
+    fclose(f);
+
+    if (empty || tag_count == 0) {
+        printf("[THONG BAO] Flash hien dang TRONG (Chua co the nao duoc luu)!\n");
+    }
+
+    printf("\n===================================================================================\n");
+    printf("                     XUAT DANH SACH THE RA FILE CSV THANH CONG                     \n");
+    printf("===================================================================================\n");
+    printf("  - Thoi gian hien tai (Export Time) : %s  (%s)\n", time_readable, time_str);
+    printf("  - Ten file CSV da tao              : %s\n", filename);
+    printf("  - Thu muc luu tru                  : %s\n", rfids_dir);
+    printf("  - Duong dan day du                 : %s\n", filepath);
+    printf("  - Dinh dang CSV                    : 1 cot (10 so in tren the)\n");
+    printf("  - Tong so the RFID da export       : %d the\n", tag_count);
+    printf("===================================================================================\n");
+}
+
+int export_logs_to_csv(serial_port_t port, char *out_filepath, size_t out_filepath_size, bool is_backup) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char time_str[32];
+    strftime(time_str, sizeof(time_str), "%Y%m%d%H%M%S", t);
+    char time_readable[64];
+    strftime(time_readable, sizeof(time_readable), "%d/%m/%Y %H:%M:%S", t);
+
+    char filename[64];
+    snprintf(filename, sizeof(filename), "%s_LOGS.csv", time_str);
+
+    char logs_dir[128];
+    get_logs_dir(logs_dir, sizeof(logs_dir));
+
+    char filepath[256];
+    snprintf(filepath, sizeof(filepath), "%s/%s", logs_dir, filename);
+    if (out_filepath && out_filepath_size > 0) {
+        snprintf(out_filepath, out_filepath_size, "%s", filepath);
+    }
+
+    if (is_backup) {
+        printf("\n-> [SAO LUU] Dang doc toan bo nhat ky tu SPI Flash (0x310000) de luu tru vao CSV...\n");
+    } else {
+        printf("\n-> Gui lenh 'L' (Doc nhat ky quet the tu SPI Flash 0x310000 de xuat CSV vao folder logs)...\n");
+    }
+
+    flush_serial(port);
+    write_serial(port, "L\n", 2);
+
+    FILE *f = NULL;
+    char resp[256];
+    int log_count = 0;
+    int succ_count = 0;
+    int fail_count = 0;
+    bool empty = false;
+
+    while (read_line_serial(port, resp, sizeof(resp), 2000) > 0) {
+        if (strstr(resp, "EMPTY_LOGS")) {
+            empty = true;
+            break;
+        }
+        if (strstr(resp, "LOG_ITEM:")) {
+            if (!f) {
+                f = fopen(filepath, "w");
+                if (!f) {
+                    printf("[LOI] Khong the tao file CSV tai: %s\n", filepath);
+                    return -1;
+                }
+                fprintf(f, "STT,Ket qua,10 so in tren the,Ma the (FC-ID),Ma Hex UID,Slot Flash,So thu tu (Seq)\n");
+            }
+            int slot = 0, seq = 0;
+            char status[16] = "", tag[32] = "";
+            if (sscanf(resp, "LOG_ITEM:%d:%15[^:]:%31[^:]:%d", &slot, status, tag, &seq) == 4) {
+                log_count++;
+                bool is_succ = (strcmp(status, "SUCC") == 0);
+                if (is_succ) succ_count++;
+                else fail_count++;
+
+                uint32_t val = (uint32_t)strtoul(tag + 2, NULL, 16);
+                unsigned int fc = (val >> 16) & 0xFF;
+                unsigned int id = val & 0xFFFF;
+                const char *status_str = is_succ ? "THANH CONG" : "THAT BAI";
+
+                fprintf(f, "%d,%s,%010u,%03u-%05u,%s,%d,%d\n",
+                        log_count, status_str, (unsigned int)val, fc, id, tag, slot, seq);
+            }
+        }
+        if (strstr(resp, "LOGS_TOTAL:")) {
+            int total = 0, s = 0, fa = 0;
+            sscanf(resp, "LOGS_TOTAL:%d:%d:%d", &total, &s, &fa);
+        }
+        if (strstr(resp, "LOGS_END")) {
+            break;
+        }
+    }
+
+    if (f) {
+        fclose(f);
+    }
+
+    if (empty || log_count == 0) {
+        if (is_backup) {
+            printf("[THONG BAO] Nhat ky Flash hien dang TRONG (Chua co ban ghi nao can sao luu)!\n");
+        } else {
+            printf("[THONG BAO] Nhat ky Flash hien dang TRONG (Chua co luot quet nao duoc ghi nhan)!\n");
+        }
+        if (f) {
+            remove(filepath);
+        }
+        return 0;
+    }
+
+    printf("\n===================================================================================\n");
+    if (is_backup) {
+        printf("       SAO LUU NHAT KY QUET THE RA FILE CSV THANH CONG (PRE-ERASE)        \n");
+    } else {
+        printf("                  XUAT NHAT KY QUET THE RA FILE CSV THANH CONG                     \n");
+    }
+    printf("===================================================================================\n");
+    printf("  - Thoi gian xuat (Export Time)     : %s  (%s)\n", time_readable, time_str);
+    printf("  - Ten file CSV da tao              : %s\n", filename);
+    printf("  - Thu muc luu tru                  : %s\n", logs_dir);
+    printf("  - Duong dan tap tin                : %s\n", filepath);
+    printf("  - Tong so nhat ky da xuat          : %d luot\n", log_count);
+    printf("  - So luot quet hop le (THANH CONG) : %d\n", succ_count);
+    printf("  - So luot khong hop le (THAT BAI)  : %d\n", fail_count);
+    printf("===================================================================================\n");
+
+    return log_count;
+}
+
+void import_tags_from_latest_csv(serial_port_t port) {
+    char filepath[MAX_PATH];
+    char filename[MAX_PATH];
+
+    if (!find_latest_csv_file(filepath, sizeof(filepath), filename, sizeof(filename))) {
+        printf("\n[LOI] Khong tim thay file .csv nao trong thu muc 'rfids', 'host' hoac thu muc lam viec!\n");
+        return;
+    }
+
+    // Parse readable timestamp if filename is YYYYMMDDHHMMSS.csv
+    char time_display[64] = "Khong xac dinh";
+    if (strlen(filename) >= 18 && isdigit((unsigned char)filename[0])) {
+        int y, m, d, h, min, s;
+        if (sscanf(filename, "%4d%2d%2d%2d%2d%2d", &y, &m, &d, &h, &min, &s) == 6) {
+            snprintf(time_display, sizeof(time_display), "%02d/%02d/%04d %02d:%02d:%02d", d, m, y, h, min, s);
+        }
+    }
+
+    FILE *f = fopen(filepath, "r");
+    if (!f) {
+        printf("\n[LOI] Khong the mo file CSV: %s\n", filepath);
+        return;
+    }
+
+    printf("\n===================================================================================\n");
+    printf("             IMPORT DANH SACH THE TU FILE CSV CO THOI GIAN GAN NHAT                \n");
+    printf("===================================================================================\n");
+    printf("  - File CSV duoc chon   : %s\n", filename);
+    printf("  - Thoi gian ghi nhan   : %s\n", time_display);
+    printf("  - Duong dan tap tin    : %s\n", filepath);
+    printf("  - Dinh dang            : 1 cot (10 so in tren the)\n");
+    printf("-----------------------------------------------------------------------------------\n");
+    printf("-> [BUOC 1] Dang xoa toan bo danh muc the cu tren SPI Flash Basys 3 (0x300000)...\n");
+    flush_serial(port);
+    write_serial(port, "E\n", 2);
+    char resp_erase[256];
+    if (read_line_serial(port, resp_erase, sizeof(resp_erase), 4000) > 0) {
+        printf("[THANH CONG] %s\n", resp_erase);
+    } else {
+        printf("[CANH BAO] Timeout khi xoa Flash Sector 48! Van tiep tuc nap the...\n");
+    }
+    printf("-----------------------------------------------------------------------------------\n");
+    printf("-> [BUOC 2] Dang doc tung dong va nap the tu file CSV vao SPI Flash PicoRV32...\n\n");
+
+    char line[256];
+    int total_lines = 0;
+    int succ_count = 0;
+    int exists_count = 0;
+    int err_count = 0;
+    bool flash_full = false;
+
+    while (fgets(line, sizeof(line), f)) {
+        // Trim newline and carriage return
+        char *nl = strchr(line, '\r');
+        if (nl) *nl = '\0';
+        nl = strchr(line, '\n');
+        if (nl) *nl = '\0';
+
+        // Trim leading and trailing whitespace
+        char *p = line;
+        while (*p && isspace((unsigned char)*p)) p++;
+        char *end = p + strlen(p) - 1;
+        while (end >= p && isspace((unsigned char)*end)) {
+            *end = '\0';
+            end--;
+        }
+
+        // Skip empty line
+        if (strlen(p) == 0) continue;
+
+        // Skip CSV header line
+        if (strstr(p, "hex") || strstr(p, "HEX") || strstr(p, "so") || strstr(p, "the") || strstr(p, "tag") || strstr(p, "card")) {
+            continue;
+        }
+
+        // Strip surrounding quotes if present
+        if (*p == '"' || *p == '\'') {
+            p++;
+            char *q = strchr(p, '"');
+            if (!q) q = strchr(p, '\'');
+            if (q) *q = '\0';
+        }
+
+        // If line contains comma (e.g. legacy multi-column), take first column
+        char token[64] = "";
+        char *comma = strchr(p, ',');
+        if (comma) {
+            size_t tlen = comma - p;
+            if (tlen >= sizeof(token)) tlen = sizeof(token) - 1;
+            strncpy(token, p, tlen);
+            token[tlen] = '\0';
+        } else {
+            strncpy(token, p, sizeof(token) - 1);
+        }
+
+        // Parse 10 digits printed on card into hex tag
+        char hex_tag[11] = "";
+        bool ok = parse_card_input(token, hex_tag);
+        if (!ok && comma) {
+            ok = parse_card_input(comma + 1, hex_tag);
+        }
+
+        if (!ok) {
+            printf("  [BO QUA] Dong khong hop le: %s\n", line);
+            continue;
+        }
+
+        total_lines++;
+        uint32_t val = (uint32_t)strtoul(hex_tag + 2, NULL, 16);
+        unsigned int fc = (val >> 16) & 0xFF;
+        unsigned int id = val & 0xFFFF;
+
+        char send_buf[32];
+        snprintf(send_buf, sizeof(send_buf), "N%s\n", hex_tag);
+        flush_serial(port);
+        write_serial(port, send_buf, strlen(send_buf));
+
+        char resp[256];
+        bool done = false;
+        while (read_line_serial(port, resp, sizeof(resp), 2500) > 0) {
+            if (strstr(resp, "OK:MANUAL_TAG_SAVED:SLOT:")) {
+                int slot = 0;
+                char rtag[32] = "";
+                sscanf(resp, "OK:MANUAL_TAG_SAVED:SLOT:%d:%31s", &slot, rtag);
+                succ_count++;
+                if (total_lines <= 5 || total_lines % 50 == 0 || total_lines == 1000) {
+                    printf("  [%4d] The %010u (%03u,%05u) [UID: %s] -> [LUU MOI THANH CONG] Slot #%d (0x%06X)\n",
+                           total_lines, (unsigned int)val, fc, id, hex_tag, slot, 0x300000 + slot * 16);
+                }
+                done = true;
+                break;
+            } else if (strstr(resp, "INFO:EXISTS:SLOT:")) {
+                int slot = 0;
+                char rtag[32] = "";
+                sscanf(resp, "INFO:EXISTS:SLOT:%d:%31s", &slot, rtag);
+                exists_count++;
+                if (total_lines <= 5 || total_lines % 50 == 0 || total_lines == 1000) {
+                    printf("  [%4d] The %010u (%03u,%05u) [UID: %s] -> [DA TON TAI] trong Flash tai Slot #%d\n",
+                           total_lines, (unsigned int)val, fc, id, hex_tag, slot);
+                }
+                done = true;
+                break;
+            } else if (strstr(resp, "FLASH_FULL")) {
+                printf("  [%4d] The %010u [UID: %s] -> [LOI: FLASH DAY] Toi da 4096 the!\n",
+                       total_lines, (unsigned int)val, hex_tag);
+                err_count++;
+                flash_full = true;
+                done = true;
+                break;
+            } else if (strstr(resp, "FAIL") || strstr(resp, "ERR:")) {
+                printf("  [%4d] The %010u [UID: %s] -> [THAT BAI]: %s\n",
+                       total_lines, (unsigned int)val, hex_tag, resp);
+                err_count++;
+                done = true;
+                break;
+            }
+        }
+
+        if (!done) {
+            printf("  [%4d] The %010u [UID: %s] -> [TIMEOUT] PicoRV32 khong phan hoi!\n",
+                   total_lines, (unsigned int)val, hex_tag);
+            err_count++;
+        }
+
+        if (flash_full) break;
+    }
+
+    fclose(f);
+
+    printf("-----------------------------------------------------------------------------------\n");
+    printf("[TONG KET IMPORT]\n");
+    printf("  + File CSV da doc        : %s\n", filename);
+    printf("  + Tong so the trong file : %d the\n", total_lines);
+    printf("  + Luu moi thanh cong     : %d the\n", succ_count);
+    printf("  + The da co san trong DB : %d the\n", exists_count);
+    if (err_count > 0) {
+        printf("  + Loi hoac that bai      : %d the\n", err_count);
+    }
+    printf("===================================================================================\n");
+}
+
+// ----------------------------------------------------------------------------
+// Delete RFID Tag from Flash & Re-Export CSV
+// ----------------------------------------------------------------------------
+void delete_tag_from_flash(serial_port_t port) {
+    char custom_tag[128];
+    printf("\nNhap 10 chu so in tren the RFID can xoa (vi du: 0007508976): ");
+    if (!fgets(custom_tag, sizeof(custom_tag), stdin)) {
+        return;
+    }
+    char *nl = strchr(custom_tag, '\n');
+    if (nl) *nl = '\0';
+    nl = strchr(custom_tag, '\r');
+    if (nl) *nl = '\0';
+
+    char target_hex[11];
+    if (!parse_card_input(custom_tag, target_hex)) {
+        printf("[LOI] Vui long nhap 10 chu so in tren the RFID (vi du: 0007508976)!\n");
+        return;
+    }
+
+    uint32_t val = (uint32_t)strtoul(target_hex + 2, NULL, 16);
+    unsigned int fc = (val >> 16) & 0xFF;
+    unsigned int id = val & 0xFFFF;
+    printf("\n-> Thong tin the can xoa:\n");
+    printf("   + So in tren the        : %010u  (%03u,%05u)\n", (unsigned int)val, fc, id);
+    printf("   + Ma Hex (UID 10 ky tu) : %s\n", target_hex);
+
+    char send_buf[32];
+    snprintf(send_buf, sizeof(send_buf), "K%s\n", target_hex);
+    printf("-> Gui lenh xoa duy nhat the %s toi SPI Flash Basys 3...\n", target_hex);
+    flush_serial(port);
+    write_serial(port, send_buf, strlen(send_buf));
+
+    char resp[256];
+    bool done = false;
+    while (read_line_serial(port, resp, sizeof(resp), 3000) > 0) {
+        if (strstr(resp, "OK:TAG_DELETED:SLOT:")) {
+            int slot = 0;
+            char rtag[32] = "";
+            sscanf(resp, "OK:TAG_DELETED:SLOT:%d:%31s", &slot, rtag);
+
+            printf("\n===================================================================================\n");
+            printf("                    XOA THE KHOI SPI FLASH THANH CONG                              \n");
+            printf("===================================================================================\n");
+            printf("  - The da xoa                  : %010u  (%03u,%05u) [UID: %s]\n", (unsigned int)val, fc, id, rtag);
+            printf("  - Vi tri da xoa trong Flash   : Slot #%d (Dia chi: 0x%06X)\n", slot, 0x300000 + slot * 16);
+            printf("  - Phuong thuc xoa             : Ghi de truc tiep Word Magic ve 0x00000000\n");
+            printf("                                  (CHI XOA DUY NHAT THE NAY, KHONG XOA TOAN BO FLASH)\n");
+            printf("===================================================================================\n");
+
+            printf("\n-> Tu dong xuat danh sach the con lai ra file CSV moi trong host/rfids/...\n");
+            export_tags_to_csv(port);
+            done = true;
+            break;
+        } else if (strstr(resp, "ERR:TAG_NOT_FOUND")) {
+            printf("\n===================================================================================\n");
+            printf("[THONG BAO] The %010u (UID: %s) KHONG TON TAI trong Flash!\n", (unsigned int)val, target_hex);
+            printf("            Khong co thay doi nao duoc thuc hien tren Flash va CSV.\n");
+            printf("===================================================================================\n");
+            done = true;
+            break;
+        } else if (strstr(resp, "FAIL") || strstr(resp, "ERR:")) {
+            printf("[LOI] %s\n", resp);
+            done = true;
+            break;
+        }
+    }
+
+    if (!done) {
+        printf("[CANH BAO] Timeout khi gui lenh xoa the toi PicoRV32!\n");
+    }
+}
+
+
+// ----------------------------------------------------------------------------
 // User Menu & Application Logic
 // ----------------------------------------------------------------------------
 void print_menu(void) {
@@ -246,18 +780,21 @@ void print_menu(void) {
     printf("     RDM6300 RFID - PICORV32 - BASYS 3 SPI FLASH MANAGER      \n");
     printf("===============================================================\n");
     printf("  [1]  Ping Hardware (Kiem tra ket noi PicoRV32)\n");
-    printf("  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu Flash)\n");
+    printf("  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu Flash & Export)\n");
     printf("  [3]  Check RFID Tag in Flash (Kiem tra the da co trong Flash chua)\n");
-    printf("  [4]  Read All RFID Tags from Flash (Doc toan bo the tu SPI Flash)\n");
+    printf("  [4]  Delete RFID Tag from Flash (Nhap 10 so in tren the de xoa khoi Flash & Export CSV)\n");
     printf("  [5]  Virtual Scan: By Decimal (Quet the ao: Nhap 10 so in tren the)\n");
     printf("  [6]  Virtual Scan: By Hex (Quet the ao: Nhap ma Hex 10 ky tu)\n");
-    printf("  [7]  View Access Logs from Flash (Xem nhat ky quet the tu Flash)\n");
-    printf("  [8]  Erase Access Logs (Xoa nhat ky quet the trong Flash 0x310000)\n");
-    printf("  [9]  Erase Authorized Tags Sector (Xoa the da cap phep 0x300000)\n");
-    printf("  [10] Get SoC Status (Xem trang thai LED, Flash, PicoRV32)\n");
+    printf("  [7]  View Access Logs from Flash (Xem nhat ky quet the tu Flash 0x310000)\n");
+    printf("  [8]  Export Access Logs to CSV (Xuat nhat ky quet the ra file CSV vao host/logs)\n");
+    printf("  [9]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)\n");
+    printf("  [10] Erase Authorized Tags Sector (Xoa the da cap phep 0x300000)\n");
+    printf("  [11] Get SoC Status (Xem trang thai LED, Flash, PicoRV32)\n");
+    printf("  [12] Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)\n");
+    printf("  [13] Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)\n");
     printf("  [0]  Exit (Thoat)\n");
     printf("---------------------------------------------------------------\n");
-    printf("Lua chon cua ban [0-10]: ");
+    printf("Lua chon cua ban [0-13]: ");
 }
 
 int main(int argc, char *argv[]) {
@@ -352,17 +889,20 @@ int main(int argc, char *argv[]) {
                             sscanf(resp, "OK:MANUAL_TAG_SAVED:SLOT:%d:%31s", &slot, tag);
                             printf("[THANH CONG] The moi %s (%010u) da duoc luu vao Flash Basys 3 tai Slot #%d (Dia chi: 0x%06X)!\n",
                                    tag, (unsigned int)val, slot, 0x300000 + slot * 16);
+                            printf("-> Tu dong xuat danh sach the moi cap nhat ra file CSV...\n");
+                            export_tags_to_csv(port);
                             done = true;
                             break;
                         } else if (strstr(resp, "INFO:EXISTS:SLOT:")) {
                             int slot = 0;
                             char tag[32] = "";
                             sscanf(resp, "INFO:EXISTS:SLOT:%d:%31s", &slot, tag);
-                            printf("[THONG BAO] The %s DA TON TAI truoc do trong Flash tai Slot #%d!\n", tag, slot);
+                            printf("[THONG BAO] The %s (%010u) DA TON TAI truoc do trong Flash tai Slot #%d -> Khong can them nua!\n",
+                                   tag, (unsigned int)val, slot);
                             done = true;
                             break;
                         } else if (strstr(resp, "FLASH_FULL")) {
-                            printf("[LOI] Bo nho Flash da day (toi da 256 the)! Vui long chon [5] de xoa neu can.\n");
+                            printf("[LOI] Bo nho Flash da day (toi da 4096 the)!\n");
                             done = true;
                             break;
                         } else if (strstr(resp, "FAIL") || strstr(resp, "ERR:")) {
@@ -449,49 +989,8 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 4: { // Read all stored tags from Flash
-                printf("\n-> Gui lenh 'F' (Doc toan bo the da luu tu SPI Flash Basys 3)...\n");
-                flush_serial(port);
-                write_serial(port, "F\n", 2);
-                int tag_count = 0;
-                while (read_line_serial(port, resp, sizeof(resp), 2000) > 0) {
-                    if (strstr(resp, "TAGS_START")) {
-                        printf("\n===================================================================================\n");
-                        printf("                      DANH SACH THE RFID TRONG SPI FLASH BASYS 3                   \n");
-                        printf("===================================================================================\n");
-                        continue;
-                    }
-                    if (strstr(resp, "TAG_ITEM:")) {
-                        int slot = 0;
-                        char tag[32] = "";
-                        sscanf(resp, "TAG_ITEM:%d:%31s", &slot, tag);
-                        tag_count++;
-                        uint32_t val = (uint32_t)strtoul(tag + 2, NULL, 16);
-                        unsigned int fc = (val >> 16) & 0xFF;
-                        unsigned int id = val & 0xFFFF;
-                        printf("  [%2d] UID: %s | In tren the: %010u (%03u,%05u) | Slot #%d (0x%06X)\n",
-                               tag_count, tag, (unsigned int)val, fc, id, slot, 0x300000 + slot * 16);
-                        continue;
-                    }
-                    if (strstr(resp, "TAGS_TOTAL:")) {
-                        int total = 0;
-                        sscanf(resp, "TAGS_TOTAL:%d", &total);
-                        printf("-----------------------------------------------------------------------------------\n");
-                        printf("[THANH CONG] Tong so the RFID da luu trong Flash: %d the\n", total);
-                        continue;
-                    }
-                    if (strstr(resp, "TAGS_END")) {
-                        break;
-                    }
-                    if (strstr(resp, "EMPTY")) {
-                        printf("[FLASH TRONG] Chua co the RFID nao duoc luu trong Flash (hoac da bi xoa)!\n");
-                        break;
-                    }
-                    if (strncmp(resp, "FLASH_TAG:", 10) == 0) {
-                        printf("[THANH CONG] The RFID doc tu SPI Flash: %s\n", resp + 10);
-                        break;
-                    }
-                }
+            case 4: { // Delete RFID Tag from Flash & Re-Export CSV
+                delete_tag_from_flash(port);
                 break;
             }
 
@@ -705,8 +1204,25 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 8: { // Erase Access Logs (0x310000)
-                printf("\n-> Gui lenh 'X' (Xoa toan bo nhat ky quet the trong SPI Flash 0x310000)...\n");
+            case 8: { // Export Access Logs to CSV
+                export_logs_to_csv(port, NULL, 0, false);
+                break;
+            }
+
+            case 9: { // Erase Access Logs (Save to CSV first, then erase Flash 0x310000)
+                char backup_file[MAX_PATH] = "";
+                printf("\n===============================================================\n");
+                printf("          XOA NHAT KY QUET THE (AUTO-BACKUP VAO CSV)          \n");
+                printf("===============================================================\n");
+                printf("-> [BUOC 1] Tu dong sao luu toan bo nhat ky ra file CSV trong host/logs/...\n");
+                int backed_up = export_logs_to_csv(port, backup_file, sizeof(backup_file), true);
+                if (backed_up > 0) {
+                    printf("\n-> [DA SAO LUU] Toan bo %d nhat ky da duoc luu an toan vao:\n   %s\n", backed_up, backup_file);
+                } else {
+                    printf("-> Nhat ky Flash hien dang trong, tiep tuc xoa de dam bao sach du lieu.\n");
+                }
+
+                printf("\n-> [BUOC 2] Gui lenh 'X' (Xoa toan bo nhat ky quet the trong SPI Flash 0x310000)...\n");
                 flush_serial(port);
                 write_serial(port, "X\n", 2);
                 if (read_line_serial(port, resp, sizeof(resp), 3000) > 0) {
@@ -722,7 +1238,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 9: { // Erase Authorized Tags Sector (0x300000)
+            case 10: { // Erase Authorized Tags Sector (0x300000)
                 printf("\n-> Gui lenh 'E' (Xoa sector SPI Flash danh muc the 0x300000)...\n");
                 flush_serial(port);
                 write_serial(port, "E\n", 2);
@@ -734,7 +1250,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 10: { // Status
+            case 11: { // Status
                 printf("\n-> Gui lenh 'S' (Xem trang thai)...\n");
                 flush_serial(port);
                 write_serial(port, "S\n", 2);
@@ -746,8 +1262,18 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
+            case 12: { // Export RFID Tags to CSV
+                export_tags_to_csv(port);
+                break;
+            }
+
+            case 13: { // Import RFID Tags from Latest CSV
+                import_tags_from_latest_csv(port);
+                break;
+            }
+
             default:
-                printf("\nLua chon khong hop le! Vui long chon tu 0 den 10.\n");
+                printf("\nLua chon khong hop le! Vui long chon tu 0 den 13.\n");
                 break;
         }
 
