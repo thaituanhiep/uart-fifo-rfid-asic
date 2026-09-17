@@ -12,8 +12,9 @@
 // ----------------------------------------------------------------------------
 // Memory Mapped Peripheral Base Addresses
 // ----------------------------------------------------------------------------
-#define REG_RDM_UART_DIV   (*(volatile uint32_t*)0x10000000)
-#define REG_RDM_UART_DAT   (*(volatile uint32_t*)0x10000004)
+#define REG_RFID_STATUS    (*(volatile uint32_t*)0x10000000) // Bit 0: Hardware card_valid flag (write 1 to clear)
+#define REG_RFID_TAG_HI    (*(volatile uint32_t*)0x10000004) // Top 8 bits of tag UID (Version byte)
+#define REG_RFID_TAG_LO    (*(volatile uint32_t*)0x10000008) // Lower 32 bits of tag UID (Serial number)
 
 #define REG_FLASH_CTRL     (*(volatile uint32_t*)0x20000000)
 #define REG_FLASH_STATUS   (*(volatile uint32_t*)0x20000004)
@@ -124,18 +125,12 @@ static void uart_putdec(uint32_t val) {
 #define LOG_MAGIC_FAIL         0x4641494C // "FAIL"
 
 // ----------------------------------------------------------------------------
-// RDM6300 RFID UART Functions
+// RDM6300 Hardware RFID Interface (Verilog Hardware Decoder)
 // ----------------------------------------------------------------------------
-static inline int rdm_getc_nonblock(void) {
-    uint32_t d = REG_RDM_UART_DAT;
-    if (d == 0xFFFFFFFF) return -1;
-    return (int)(d & 0xFF);
-}
-
 // Global storage for the last valid scanned RFID tag (10 hex characters)
 static char last_tag_hex[11] = "0000000000";
-static uint32_t tag_word_hi = 0; // Top 8 bits of tag UID
-static uint32_t tag_word_lo = 0; // Low 32 bits of tag UID
+static uint32_t tag_word_hi = 0; // Top 8 bits of tag UID (Version byte)
+static uint32_t tag_word_lo = 0; // Low 32 bits of tag UID (Serial number)
 static bool tag_available = false;
 
 // Hex char to nibble
@@ -146,65 +141,73 @@ static int hex2val(char c) {
     return -1;
 }
 
-// Poll RDM6300 receiver for a 14-byte frame:
-// Format: [0x02] [10 ASCII Hex UID] [2 ASCII Hex Checksum] [0x03]
+// Forward declarations for multi-tag and logging functions
+static int find_tag_slot(uint32_t hi, uint32_t lo);
+static int append_access_log(bool success, uint32_t hi, uint32_t lo);
+
+// Execute card scanning: Search Flash Sector 48, log to Sector 49, drive status LEDs, and report over UART
+static void execute_card_scan(const char *tag_hex, uint32_t hi, uint32_t lo) {
+    int tag_slot = find_tag_slot(hi, lo);
+    bool is_granted = (tag_slot >= 0);
+
+    // Append to access log in Flash Sector 49 (0x310000)
+    int log_slot = append_access_log(is_granted, hi, lo);
+
+    if (is_granted) {
+        REG_GPIO_LEDS = (REG_GPIO_LEDS & ~0x0002) | 0x0004; // Green LED (bit 2) on, clear warning (bit 1)
+        uart_puts("ACCESS:GRANTED:SLOT:");
+        uart_putdec((uint32_t)tag_slot);
+        uart_puts(":");
+        uart_puts(tag_hex);
+        uart_puts(":LOG:");
+        uart_putdec((uint32_t)(log_slot >= 0 ? log_slot : 0));
+        uart_puts("\n");
+    } else {
+        REG_GPIO_LEDS = (REG_GPIO_LEDS & ~0x0004) | 0x0002; // Warning Red LED (bit 1) on, clear green (bit 2)
+        uart_puts("ACCESS:DENIED:");
+        uart_puts(tag_hex);
+        uart_puts(":LOG:");
+        uart_putdec((uint32_t)(log_slot >= 0 ? log_slot : 0));
+        uart_puts("\n");
+    }
+}
+
+// Cooldown / debounce tracker for physical RFID reader
+static uint32_t last_scanned_hi = 0xFFFFFFFF;
+static uint32_t last_scanned_lo = 0xFFFFFFFF;
+static uint32_t rdm_cooldown_cnt = 0;
+
+// Read RFID card from Verilog hardware decoder (uart_rx + rdm6300_frame_decoder)
 static void poll_rdm6300(void) {
-    static char frame[14];
-    static int idx = 0;
+    if (rdm_cooldown_cnt > 0) {
+        rdm_cooldown_cnt--;
+    }
 
-    int c = rdm_getc_nonblock();
-    while (c >= 0) {
-        if (c == 0x02) {
-            // Start of frame
-            idx = 0;
-            frame[idx++] = (char)c;
-        } else if (idx > 0 && idx < 14) {
-            frame[idx++] = (char)c;
-            if (idx == 14) {
-                // Verify End-of-Frame
-                if (frame[13] == 0x03) {
-                    // Calculate XOR checksum of 5 bytes (10 hex chars)
-                    uint8_t calc_csum = 0;
-                    bool valid_hex = true;
-                    for (int b = 0; b < 5; b++) {
-                        int h1 = hex2val(frame[1 + b * 2]);
-                        int h2 = hex2val(frame[1 + b * 2 + 1]);
-                        if (h1 < 0 || h2 < 0) {
-                            valid_hex = false;
-                            break;
-                        }
-                        calc_csum ^= (uint8_t)((h1 << 4) | h2);
-                    }
+    // Check if Verilog hardware decoder has detected & verified a valid RFID card
+    if (REG_RFID_STATUS & 0x01) {
+        uint32_t hi = REG_RFID_TAG_HI;
+        uint32_t lo = REG_RFID_TAG_LO;
+        REG_RFID_STATUS = 1; // Clear hardware flag
 
-                    int c1 = hex2val(frame[11]);
-                    int c2 = hex2val(frame[12]);
-                    uint8_t frame_csum = (uint8_t)((c1 << 4) | c2);
+        tag_available = true;
+        tag_word_hi   = hi;
+        tag_word_lo   = lo;
 
-                    if (valid_hex && (calc_csum == frame_csum)) {
-                        // Valid card! Copy to last_tag_hex
-                        for (int k = 0; k < 10; k++) {
-                            last_tag_hex[k] = frame[1 + k];
-                        }
-                        last_tag_hex[10] = '\0';
-                        tag_available = true;
-
-                        // Parse into 32-bit words for Flash storage
-                        tag_word_hi = (uint32_t)((hex2val(last_tag_hex[0]) << 4) | hex2val(last_tag_hex[1]));
-                        tag_word_lo = 0;
-                        for (int k = 2; k < 10; k++) {
-                            tag_word_lo = (tag_word_lo << 4) | (uint32_t)hex2val(last_tag_hex[k]);
-                        }
-
-                        // Blink LED on card detect
-                        REG_GPIO_LEDS |= 0x0004;
-                    }
-                }
-                idx = 0;
-            }
-        } else {
-            idx = 0;
+        // Format 40-bit tag UID into 10 hex characters
+        last_tag_hex[0] = hex_chars[(hi >> 4) & 0xF];
+        last_tag_hex[1] = hex_chars[hi & 0xF];
+        for (int i = 7; i >= 0; i--) {
+            last_tag_hex[2 + (7 - i)] = hex_chars[(lo >> (i * 4)) & 0xF];
         }
-        c = rdm_getc_nonblock();
+        last_tag_hex[10] = '\0';
+
+        // Trigger card scan authentication & logging
+        if (rdm_cooldown_cnt == 0 || tag_word_hi != last_scanned_hi || tag_word_lo != last_scanned_lo) {
+            last_scanned_hi = tag_word_hi;
+            last_scanned_lo = tag_word_lo;
+            rdm_cooldown_cnt = 250000;
+            execute_card_scan(last_tag_hex, tag_word_hi, tag_word_lo);
+        }
     }
 }
 
@@ -268,7 +271,8 @@ static int find_tag_slot(uint32_t hi, uint32_t lo) {
         if (magic == FLASH_RECORD_MAGIC) {
             uint32_t s_hi = flash_read_word(addr + 4);
             uint32_t s_lo = flash_read_word(addr + 8);
-            if (s_hi == hi && s_lo == lo) {
+            // Match 32-bit serial number (s_lo == lo) with flexible version byte (s_hi == hi or 0 wildcard)
+            if ((s_hi == hi || s_hi == 0 || hi == 0) && (s_lo == lo)) {
                 return slot; // Match found!
             }
         }
@@ -377,6 +381,9 @@ static int append_access_log(bool success, uint32_t hi, uint32_t lo) {
 // Main Firmware Entry Point & Command Loop
 // ----------------------------------------------------------------------------
 int main(void) {
+    // Configure baudrate divider for PC UART (100,000,000 / 9600 = 10416)
+    REG_PC_UART_DIV  = 10416;
+
     // Set status LED: bit 0 alive
     REG_GPIO_LEDS = 0x0001;
 
@@ -544,6 +551,44 @@ int main(void) {
                 uart_puts("OK:SECTOR_ERASED\n");
                 break;
 
+            case 'C': // Check / Query if single RFID tag exists in Flash: "C000073161D\n"
+            case 'c': {
+                char ctag[12];
+                int k = 0;
+                int timeout = 5000000;
+                while (k < 10 && timeout > 0) {
+                    int ch = uart_getc_nonblock();
+                    if (ch >= 0) {
+                        if (ch != '\r' && ch != '\n') {
+                            ctag[k++] = (char)ch;
+                        }
+                    }
+                    timeout--;
+                }
+                ctag[10] = '\0';
+                if (k == 10) {
+                    uint32_t c_hi = (uint32_t)((hex2val(ctag[0]) << 4) | hex2val(ctag[1]));
+                    uint32_t c_lo = 0;
+                    for (int i = 2; i < 10; i++) {
+                        c_lo = (c_lo << 4) | (uint32_t)hex2val(ctag[i]);
+                    }
+
+                    int slot = find_tag_slot(c_hi, c_lo);
+                    if (slot >= 0) {
+                        uart_puts("OK:TAG_FOUND:SLOT:");
+                        uart_putdec((uint32_t)slot);
+                        uart_puts(":");
+                        uart_puts(ctag);
+                        uart_puts("\n");
+                    } else {
+                        uart_puts("ERR:TAG_NOT_FOUND\n");
+                    }
+                } else {
+                    uart_puts("ERR:INVALID_LENGTH\n");
+                }
+                break;
+            }
+
             case 'K': // Kill / Delete single RFID tag from Flash: "K000072BF5F\n"
             case 'k': {
                 char dtag[12];
@@ -612,29 +657,8 @@ int main(void) {
                         v_lo = (v_lo << 4) | (uint32_t)hex2val(vtag[i]);
                     }
 
-                    int tag_slot = find_tag_slot(v_hi, v_lo);
-                    bool is_granted = (tag_slot >= 0);
-
-                    // Append to access log in Flash Sector 49 (0x310000)
-                    int log_slot = append_access_log(is_granted, v_hi, v_lo);
-
-                    if (is_granted) {
-                        REG_GPIO_LEDS |= 0x0004; // Green LED indication
-                        uart_puts("ACCESS:GRANTED:SLOT:");
-                        uart_putdec((uint32_t)tag_slot);
-                        uart_puts(":");
-                        uart_puts(vtag);
-                        uart_puts(":LOG:");
-                        uart_putdec((uint32_t)(log_slot >= 0 ? log_slot : 0));
-                        uart_puts("\n");
-                    } else {
-                        REG_GPIO_LEDS |= 0x0002; // Warning LED indication
-                        uart_puts("ACCESS:DENIED:");
-                        uart_puts(vtag);
-                        uart_puts(":LOG:");
-                        uart_putdec((uint32_t)(log_slot >= 0 ? log_slot : 0));
-                        uart_puts("\n");
-                    }
+                    // Execute card scan verification & logging
+                    execute_card_scan(vtag, v_hi, v_lo);
                 } else {
                     uart_puts("ERR:INVALID_LENGTH\n");
                 }

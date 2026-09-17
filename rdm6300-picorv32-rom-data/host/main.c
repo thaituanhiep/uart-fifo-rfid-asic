@@ -942,49 +942,42 @@ int main(int argc, char *argv[]) {
                     printf("   + Ma Hex (UID 10 ky tu) : %s\n", hex_tag);
                     printf("-> Dang tra cuu trong SPI Flash Basys 3...\n");
 
+                    char send_cmd[32];
+                    snprintf(send_cmd, sizeof(send_cmd), "C%s\n", hex_tag);
                     flush_serial(port);
-                    write_serial(port, "F\n", 2);
+                    write_serial(port, send_cmd, strlen(send_cmd));
 
-                    bool found = false;
-                    int found_slot = -1;
-                    int total_tags = 0;
-                    bool empty = false;
-
+                    bool done = false;
                     while (read_line_serial(port, resp, sizeof(resp), 2000) > 0) {
-                        if (strstr(resp, "EMPTY")) {
-                            empty = true;
-                            break;
-                        }
-                        if (strstr(resp, "TAG_ITEM:")) {
+                        if (strstr(resp, "OK:TAG_FOUND:SLOT:")) {
                             int slot = 0;
-                            char tag[32] = "";
-                            sscanf(resp, "TAG_ITEM:%d:%31s", &slot, tag);
-                            total_tags++;
-                            if (strcasecmp(tag, hex_tag) == 0) {
-                                found = true;
-                                found_slot = slot;
-                            }
-                        }
-                        if (strstr(resp, "TAGS_END")) {
+                            char r_tag[32] = "";
+                            sscanf(resp, "OK:TAG_FOUND:SLOT:%d:%31s", &slot, r_tag);
+                            printf("---------------------------------------------------------------\n");
+                            printf("[KET QUA] [DA TON TAI] The %010u (UID: %s) DA CO trong Flash!\n",
+                                   (unsigned int)val, hex_tag);
+                            printf("         - Vi tri luu tru : Slot #%d\n", slot);
+                            printf("         - Dia chi Flash  : 0x%06X\n", 0x300000 + slot * 16);
+                            printf("---------------------------------------------------------------\n");
+                            done = true;
+                            break;
+                        } else if (strstr(resp, "ERR:TAG_NOT_FOUND")) {
+                            printf("---------------------------------------------------------------\n");
+                            printf("[KET QUA] [CHUA CO] The %010u (UID: %s) CHUA CO trong Flash.\n",
+                                   (unsigned int)val, hex_tag);
+                            printf("         (Ban co the chon chuc nang [2] de luu the nay vao Flash).\n");
+                            printf("---------------------------------------------------------------\n");
+                            done = true;
+                            break;
+                        } else if (strstr(resp, "ERR:")) {
+                            printf("[LOI] %s\n", resp);
+                            done = true;
                             break;
                         }
                     }
-
-                    printf("---------------------------------------------------------------\n");
-                    if (empty || total_tags == 0) {
-                        printf("[KET QUA] Flash hien dang TRONG (Chua co the nao duoc luu)!\n");
-                        printf("         -> The %010u (UID: %s) CHUA CO trong Flash.\n", (unsigned int)val, hex_tag);
-                    } else if (found) {
-                        printf("[KET QUA] [DA TON TAI] The %010u (UID: %s) DA CO trong Flash!\n",
-                               (unsigned int)val, hex_tag);
-                        printf("         - Vi tri luu tru : Slot #%d\n", found_slot);
-                        printf("         - Dia chi Flash  : 0x%06X\n", 0x300000 + found_slot * 16);
-                    } else {
-                        printf("[KET QUA] [CHUA CO] The %010u (UID: %s) CHUA CO trong Flash.\n",
-                               (unsigned int)val, hex_tag);
-                        printf("         (Hien tai Flash dang luu %d the khac. Ban co the chon [2] de luu the nay).\n", total_tags);
+                    if (!done) {
+                        printf("[CANH BAO] Timeout khi tra cuu the tren Basys 3!\n");
                     }
-                    printf("---------------------------------------------------------------\n");
                 }
                 break;
             }

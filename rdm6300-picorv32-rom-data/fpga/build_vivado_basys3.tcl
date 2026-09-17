@@ -17,6 +17,8 @@ create_project -in_memory -part xc7a35tcpg236-1
 # 2. Add Verilog RTL Source Files
 read_verilog [list \
     "$root_dir/rtl/sync_2ff.v" \
+    "$root_dir/rtl/uart_rx.v" \
+    "$root_dir/rtl/rdm6300_frame_decoder.v" \
     "$root_dir/rtl/simpleuart.v" \
     "$root_dir/rtl/spi_flash_controller.v" \
     "$root_dir/rtl/boot_rom.v" \

@@ -169,40 +169,71 @@ module rdm6300_picorv32_soc #(
     );
 
     // ------------------------------------------------------------------------
-    // 2. RDM6300 RFID UART Interface (0x1000_0000)
+    // 2. Hardware RDM6300 RFID Receiver & Frame Decoder (0x1000_0000)
     // ------------------------------------------------------------------------
-    // Mapped as SimpleUART channel for reading RFID tag stream:
-    // 0x1000_0000: Divisor register
-    // 0x1000_0004: Data register (reading pops incoming byte, -1 if no byte)
-    wire [31:0] rdm_uart_div_do;
-    wire [31:0] rdm_uart_dat_do;
+    wire        hw_rx_dv;
+    wire [7:0]  hw_rx_byte;
+    wire        hw_card_valid;
+    wire [39:0] hw_tag_raw;
 
-    wire rdm_reg_div_sel = sel_rfid && (mem_addr[2] == 1'b0);
-    wire rdm_reg_dat_sel = sel_rfid && (mem_addr[2] == 1'b1);
-    wire rdm_dat_re   = rdm_reg_dat_sel && (!(|mem_wstrb));
-    assign rfid_ready = sel_rfid;
-
-    assign rfid_rdata = rdm_reg_div_sel ? rdm_uart_div_do : rdm_uart_dat_do;
-
-    simpleuart #(
-        .DEFAULT_DIV(DEFAULT_DIV)
-    ) u_rdm6300_uart (
+    uart_rx #(
+        .CLKS_PER_BIT(CLK_FREQ_HZ / UART_BAUD)
+    ) u_rdm_rx (
         .clk(clk),
-        .resetn(rst_n),
-        .ser_tx(),
-        .ser_rx(rdm_rx_sync),
-        .reg_div_we(rdm_reg_div_sel ? mem_wstrb : 4'b0000),
-        .reg_div_di(mem_wdata),
-        .reg_div_do(rdm_uart_div_do),
-        .reg_dat_we(1'b0),
-        .reg_dat_re(rdm_dat_re),
-        .reg_dat_di(32'd0),
-        .reg_dat_do(rdm_uart_dat_do),
-        .reg_dat_wait()
+        .rst_n(rst_n),
+        .rx(rdm_rx_sync),
+        .rx_dv(hw_rx_dv),
+        .rx_byte(hw_rx_byte),
+        .framing_error(),
+        .break_detect()
     );
 
-    // Indicator if valid RFID byte was just read
-    assign card_event_o = rdm_dat_re && (rdm_uart_dat_do != 32'hffff_ffff);
+    rdm6300_frame_decoder #(
+        .FRAME_TIMEOUT_CYCLES(500_000)
+    ) u_rdm_decoder (
+        .clk(clk),
+        .rst_n(rst_n),
+        .byte_valid(hw_rx_dv),
+        .byte_data(hw_rx_byte),
+        .byte_ready(),
+        .card_valid(hw_card_valid),
+        .tag_raw(hw_tag_raw),
+        .checksum_error(),
+        .frame_error(),
+        .invalid_hex_error(),
+        .frame_timeout_error()
+    );
+
+    reg        rfid_tag_ready;
+    reg [7:0]  rfid_tag_hi;
+    reg [31:0] rfid_tag_lo;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            rfid_tag_ready <= 1'b0;
+            rfid_tag_hi    <= 8'd0;
+            rfid_tag_lo    <= 32'd0;
+        end else begin
+            if (hw_card_valid) begin
+                rfid_tag_ready <= 1'b1;
+                rfid_tag_hi    <= hw_tag_raw[39:32];
+                rfid_tag_lo    <= hw_tag_raw[31:0];
+            end else if (sel_rfid && (|mem_wstrb) && (mem_addr[3:2] == 2'b00)) begin
+                rfid_tag_ready <= 1'b0;
+            end
+        end
+    end
+
+    // Memory-mapped interface at 0x1000_0000:
+    // 0x1000_0000: Status register (bit 0: rfid_tag_ready, write to clear)
+    // 0x1000_0004: Tag Word Hi (8-bit version/manufacturer byte: tag_raw[39:32])
+    // 0x1000_0008: Tag Word Lo (32-bit serial number: tag_raw[31:0])
+    assign rfid_ready = sel_rfid;
+    assign rfid_rdata = (mem_addr[3:2] == 2'b00) ? {31'd0, rfid_tag_ready} :
+                        (mem_addr[3:2] == 2'b01) ? {24'd0, rfid_tag_hi}     :
+                        (mem_addr[3:2] == 2'b10) ? rfid_tag_lo              : 32'd0;
+
+    assign card_event_o = hw_card_valid;
 
     // ------------------------------------------------------------------------
     // 3. SPI Flash Memory Controller (0x2000_0000)
@@ -225,8 +256,8 @@ module rdm6300_picorv32_soc #(
         .bus_rdata(flash_rdata),
         .bus_ready(flash_ready),
         .auto_save_enable(1'b0), // Software-controlled through PicoRV32 MMIO
-        .card_valid(1'b0),
-        .tag_raw(40'd0),
+        .card_valid(hw_card_valid),
+        .tag_raw(hw_tag_raw),
         .tag_checksum(8'd0),
         .flash_csn(flash_csn),
         .flash_sck(flash_sck),

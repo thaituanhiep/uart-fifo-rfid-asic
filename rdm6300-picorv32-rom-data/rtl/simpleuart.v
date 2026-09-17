@@ -39,8 +39,14 @@ module simpleuart #(parameter integer DEFAULT_DIV = 1) (
 	reg [3:0] recv_state;
 	reg [31:0] recv_divcnt;
 	reg [7:0] recv_pattern;
-	reg [7:0] recv_buf_data;
-	reg recv_buf_valid;
+
+	reg [7:0] fifo_mem [0:31];
+	reg [4:0] fifo_wr_ptr;
+	reg [4:0] fifo_rd_ptr;
+	reg [5:0] fifo_count;
+
+	wire fifo_full  = (fifo_count == 6'd32);
+	wire fifo_empty = (fifo_count == 6'd0);
 
 	reg [9:0] send_pattern;
 	reg [3:0] send_bitcnt;
@@ -50,7 +56,10 @@ module simpleuart #(parameter integer DEFAULT_DIV = 1) (
 	assign reg_div_do = cfg_divider;
 
 	assign reg_dat_wait = reg_dat_we && (send_bitcnt || send_dummy);
-	assign reg_dat_do = recv_buf_valid ? recv_buf_data : ~0;
+	assign reg_dat_do   = fifo_empty ? ~0 : {24'd0, fifo_mem[fifo_rd_ptr]};
+
+	wire fifo_push = (recv_state == 4'd10) && (recv_divcnt > cfg_divider) && !fifo_full;
+	wire fifo_pop  = reg_dat_re && !fifo_empty;
 
 	always @(posedge clk) begin
 		if (!resetn) begin
@@ -65,15 +74,30 @@ module simpleuart #(parameter integer DEFAULT_DIV = 1) (
 
 	always @(posedge clk) begin
 		if (!resetn) begin
-			recv_state <= 0;
-			recv_divcnt <= 0;
+			recv_state   <= 0;
+			recv_divcnt  <= 0;
 			recv_pattern <= 0;
-			recv_buf_data <= 0;
-			recv_buf_valid <= 0;
+			fifo_wr_ptr  <= 0;
+			fifo_rd_ptr  <= 0;
+			fifo_count   <= 0;
 		end else begin
 			recv_divcnt <= recv_divcnt + 1;
-			if (reg_dat_re)
-				recv_buf_valid <= 0;
+
+			if (fifo_push) begin
+				fifo_mem[fifo_wr_ptr] <= recv_pattern;
+				fifo_wr_ptr <= fifo_wr_ptr + 1'b1;
+			end
+
+			if (fifo_pop) begin
+				fifo_rd_ptr <= fifo_rd_ptr + 1'b1;
+			end
+
+			case ({fifo_push, fifo_pop})
+				2'b10: fifo_count <= fifo_count + 1'b1;
+				2'b01: fifo_count <= fifo_count - 1'b1;
+				default: fifo_count <= fifo_count;
+			endcase
+
 			case (recv_state)
 				0: begin
 					if (!ser_rx)
@@ -88,8 +112,6 @@ module simpleuart #(parameter integer DEFAULT_DIV = 1) (
 				end
 				10: begin
 					if (recv_divcnt > cfg_divider) begin
-						recv_buf_data <= recv_pattern;
-						recv_buf_valid <= 1;
 						recv_state <= 0;
 					end
 				end
