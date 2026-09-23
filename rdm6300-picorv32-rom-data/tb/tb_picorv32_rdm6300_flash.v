@@ -38,7 +38,8 @@ module tb_picorv32_rdm6300_flash;
     rdm6300_picorv32_soc #(
         .CLK_FREQ_HZ(100_000_000),
         .UART_BAUD(6_250_000), // Scaled for fast testbench simulation
-        .FLASH_BASE(24'h30_0000)
+        .FLASH_BASE(24'h30_0000),
+        .BOOT_HEX("firmware.hex")
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
@@ -95,6 +96,9 @@ module tb_picorv32_rdm6300_flash;
                         $display("[FLASH MODEL] Command: WREN (Write Enable)");
                     end else if ({rx_shifter[7:1], flash_mosi} == 8'h05) begin // RDSR
                         state_spi <= 3; // Shift status register
+                    end else if ({rx_shifter[7:1], flash_mosi} == 8'h9F) begin // RDID
+                        state_spi <= 4; // Shift JEDEC ID
+                        $display("[FLASH MODEL] Command: RDID (Read JEDEC ID)");
                     end else begin
                         state_spi <= 1; // Expect address
                         byte_count <= 0;
@@ -130,12 +134,38 @@ module tb_picorv32_rdm6300_flash;
     end
 
     // MISO shifting
+    reg [23:0] flash_id_val = 24'h010216; // Spansion S25FL032P ID
     always @(negedge flash_sck) begin
         if (state_spi == 3) begin // RDSR response
             flash_miso_reg <= flash_sr[bit_idx];
+        end else if (state_spi == 4) begin // RDID response
+            flash_miso_reg <= flash_id_val[bit_idx];
         end else begin
             flash_miso_reg <= 1'b0;
         end
+    end
+
+    reg card_event_latched = 1'b0;
+    reg flash_busy_latched = 1'b0;
+    reg flash_done_latched = 1'b0;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            card_event_latched <= 1'b0;
+            flash_busy_latched <= 1'b0;
+            flash_done_latched <= 1'b0;
+        end else begin
+            if (card_event_o) card_event_latched <= 1'b1;
+            if (flash_busy_o) flash_busy_latched <= 1'b1;
+            if (flash_done_o) flash_done_latched <= 1'b1;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (dut.u_rdm_rx.rx_dv) $display("[TB MON] u_rdm_rx received byte: 0x%02X ('%c')", dut.u_rdm_rx.rx_byte, dut.u_rdm_rx.rx_byte);
+        if (dut.u_rdm_rx.framing_error) $display("[TB MON ERROR] u_rdm_rx framing_error!");
+        if (dut.u_rdm_decoder.frame_error) $display("[TB MON ERROR] u_rdm_decoder frame_error!");
+        if (dut.u_rdm_decoder.checksum_error) $display("[TB MON ERROR] u_rdm_decoder checksum_error!");
     end
 
     // ------------------------------------------------------------------------
@@ -173,8 +203,8 @@ module tb_picorv32_rdm6300_flash;
             send_uart_byte("A");
             send_uart_byte("6");   // Tag Data B4
             send_uart_byte("5");
-            send_uart_byte("E");   // Checksum (0x01 ^ 0x00 ^ 0x54 ^ 0xDA ^ 0x65 = 0xEE)
-            send_uart_byte("E");
+            send_uart_byte("E");   // Checksum (0x01 ^ 0x00 ^ 0x54 ^ 0xDA ^ 0x65 = 0xEA)
+            send_uart_byte("A");
             send_uart_byte(8'h03); // ETX
             $display("[TB] Frame transmission complete.");
         end
@@ -214,14 +244,14 @@ module tb_picorv32_rdm6300_flash;
         send_rdm6300_frame();
 
         // Wait for card_event
-        wait(card_event_o == 1'b1);
+        wait(card_event_latched == 1'b1);
         $display("[TB SUCCESS] Card event detected! Tag UID = 0x010054DA65");
 
         // Wait for SPI Flash controller to execute write
-        wait(flash_busy_o == 1'b1);
+        wait(flash_busy_latched == 1'b1);
         $display("[TB] SPI Flash controller is busy writing card record to Flash...");
 
-        wait(flash_done_o == 1'b1);
+        wait(flash_done_latched == 1'b1);
         $display("[TB SUCCESS] SPI Flash controller completed writing to Flash!");
 
         #1000;

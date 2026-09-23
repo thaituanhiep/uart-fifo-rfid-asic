@@ -2,21 +2,33 @@
   "DESIGN_NAME": "rdm6300_picorv32_soc",
   "PDK": "sky130A",
   "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
-
   "VERILOG_FILES": [
     "dir::rtl/sync_2ff.v",
     "dir::rtl/uart_rx.v",
     "dir::rtl/rdm6300_frame_decoder.v",
     "dir::rtl/simpleuart.v",
     "dir::rtl/spi_flash_controller.v",
-    "dir::rtl/boot_rom.v",
+    "dir::rtl/mask_rom.v",
+    "dir::rtl/data_sram.v",
     "dir::rtl/picorv32.v",
     "dir::rtl/rdm6300_picorv32_soc.v"
   ],
-
   "CLOCK_PORT": "clk",
-  "CLOCK_PERIOD": 10.0,
+  "CLOCK_PERIOD": 20.0,
   "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
-  "FP_CORE_UTIL": 50,
+  "FP_CORE_UTIL": 30,
+  "PL_MAX_DISPLACEMENT_X": 100,
+  "PL_MAX_DISPLACEMENT_Y": 2,
+  "PL_OPTIMIZE_MIRRORING": false,
+  "RUN_HEURISTIC_DIODE_INSERTION": true,
+  "HEURISTIC_ANTENNA_THRESHOLD": 65,
+  "DIODE_PADDING": 0,
+  "GRT_OVERFLOW_ITERS": 60,
+  "GRT_ANTENNA_ITERS": 25,
+  "GRT_ANTENNA_MARGIN": 30,
+  "GRT_ALLOW_CONGESTION": true,
+  "GRT_LAYER_ADJUSTMENTS": [0.99, 0.65, 0.30, 0, 0, 0],
+  "RUN_ANTENNA_REPAIR": true,
+  "DIODE_ON_PORTS": "in",
   "SYNTH_STRATEGY": "AREA 0"
 }

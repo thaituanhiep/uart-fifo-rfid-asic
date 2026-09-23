@@ -73,12 +73,14 @@ module rdm6300_picorv32_soc #(
     wire [31:0] mem_rdata;
 
     // Memory Address Decoding:
-    // 0x0000_0000 - 0x0000_1FFF: 8KB SRAM / Boot ROM
+    // 0x0000_0000 - 0x0000_1FFF: 8KB Mask ROM (Read-Only)
+    // 0x0001_0000 - 0x0001_07FF: 2KB Data SRAM (Read/Write)
     // 0x1000_0000 - 0x1000_0007: RDM6300 UART RX (simpleuart)
     // 0x2000_0000 - 0x2000_001F: SPI Flash Controller MMIO
     // 0x3000_0000 - 0x3000_0007: Host PC UART (simpleuart TX/RX)
     // 0x4000_0000 - 0x4000_0003: GPIO / LEDs
-    wire sel_rom   = mem_valid && (mem_addr[31:28] == 4'h0);
+    wire sel_rom   = mem_valid && (mem_addr[31:16] == 16'h0000);
+    wire sel_sram  = mem_valid && (mem_addr[31:16] == 16'h0001);
     wire sel_rfid  = mem_valid && (mem_addr[31:28] == 4'h1);
     wire sel_flash = mem_valid && (mem_addr[31:28] == 4'h2);
     wire sel_uart  = mem_valid && (mem_addr[31:28] == 4'h3);
@@ -86,6 +88,9 @@ module rdm6300_picorv32_soc #(
 
     wire        rom_ready;
     wire [31:0] rom_rdata;
+
+    wire        sram_ready;
+    wire [31:0] sram_rdata;
 
     wire        flash_ready;
     wire [31:0] flash_rdata;
@@ -99,8 +104,9 @@ module rdm6300_picorv32_soc #(
     reg         gpio_ready;
     reg  [31:0] gpio_rdata;
 
-    assign mem_ready = rom_ready || flash_ready || rfid_ready || uart_ready || gpio_ready;
+    assign mem_ready = rom_ready || sram_ready || flash_ready || rfid_ready || uart_ready || gpio_ready;
     assign mem_rdata = sel_rom   ? rom_rdata   :
+                       sel_sram  ? sram_rdata  :
                        sel_flash ? flash_rdata :
                        sel_rfid  ? rfid_rdata  :
                        sel_uart  ? uart_rdata  :
@@ -113,7 +119,7 @@ module rdm6300_picorv32_soc #(
 
     picorv32 #(
         .ENABLE_COUNTERS(1),
-        .ENABLE_COUNTERS64(1),
+        .ENABLE_COUNTERS64(0),
         .ENABLE_REGS_16_31(1),
         .ENABLE_REGS_DUALPORT(1),
         .LATCHED_MEM_RDATA(0),
@@ -135,7 +141,7 @@ module rdm6300_picorv32_soc #(
         .LATCHED_IRQ(32'hffff_ffff),
         .PROGADDR_RESET(32'h0000_0000),
         .PROGADDR_IRQ(32'h0000_0010),
-        .STACKADDR(32'h0000_2000)
+        .STACKADDR(32'h0001_0400)
     ) u_cpu (
         .clk(clk),
         .resetn(rst_n),
@@ -152,20 +158,34 @@ module rdm6300_picorv32_soc #(
     );
 
     // ------------------------------------------------------------------------
-    // 1. Boot ROM / 8KB SRAM (0x0000_0000)
+    // 1. Mask ROM 8KB (0x0000_0000) - Read Only
     // ------------------------------------------------------------------------
-    boot_rom #(
+    mask_rom #(
         .WORDS(2048),
         .INIT_FILE(BOOT_HEX)
-    ) u_boot_rom (
+    ) u_mask_rom (
         .clk(clk),
         .rst_n(rst_n),
         .valid(sel_rom),
         .addr(mem_addr[12:0]),
-        .wdata(mem_wdata),
-        .wstrb(mem_wstrb),
         .rdata(rom_rdata),
         .ready(rom_ready)
+    );
+
+    // ------------------------------------------------------------------------
+    // 2. Data SRAM 1KB (0x0001_0000) - Read / Write
+    // ------------------------------------------------------------------------
+    data_sram #(
+        .WORDS(256)
+    ) u_data_sram (
+        .clk(clk),
+        .rst_n(rst_n),
+        .valid(sel_sram),
+        .addr(mem_addr[9:0]),
+        .wdata(mem_wdata),
+        .wstrb(mem_wstrb),
+        .rdata(sram_rdata),
+        .ready(sram_ready)
     );
 
     // ------------------------------------------------------------------------
@@ -189,7 +209,7 @@ module rdm6300_picorv32_soc #(
     );
 
     rdm6300_frame_decoder #(
-        .FRAME_TIMEOUT_CYCLES(500_000)
+        .FRAME_TIMEOUT_CYCLES(CLK_FREQ_HZ / 200)
     ) u_rdm_decoder (
         .clk(clk),
         .rst_n(rst_n),

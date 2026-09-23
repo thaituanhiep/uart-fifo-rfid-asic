@@ -78,14 +78,15 @@ module spi_flash_controller #(
 
     assign saved_records_count = record_counter;
 
-    // Timestamp generator (ticks every microsecond at 100MHz)
+    // Timestamp generator (ticks every microsecond based on CLK_FREQ_HZ)
+    localparam US_CYCLES = (CLK_FREQ_HZ / 1_000_000) > 0 ? (CLK_FREQ_HZ / 1_000_000) - 1 : 0;
     reg [6:0] us_timer;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             us_timer          <= 7'd0;
             timestamp_counter <= 32'd0;
         end else begin
-            if (us_timer == 7'd99) begin
+            if (us_timer >= US_CYCLES[6:0]) begin
                 us_timer          <= 7'd0;
                 timestamp_counter <= timestamp_counter + 1'b1;
             end else begin

@@ -27,16 +27,35 @@ module top_basys3_picorv32_rdm6300 (
     inout  wire [3:0]  qspi_dq,        // D0: D18 (MOSI), D1: D19 (MISO), D2: G18 (WP), D3: F18 (HOLD)
 
     // 16 Status LEDs on Basys 3
-    output wire [15:0] led
+    output wire [15:0] led,
+
+    // 4-Digit 7-Segment Display on Basys 3
+    output wire [6:0]  seg,            // Segments a..g (Active Low)
+    output wire        dp,             // Decimal point (Active Low)
+    output wire [3:0]  an              // 4 Digits Anode Select (Active Low)
 );
 
     // ------------------------------------------------------------------------
-    // Power-On Reset & User Button Reset Synchronization
+    // 50 MHz System Clock Generation (Divide 100 MHz oscillator by 2)
+    // ------------------------------------------------------------------------
+    reg clk_50_reg = 1'b0;
+    always @(posedge clk) begin
+        clk_50_reg <= ~clk_50_reg;
+    end
+
+    wire clk_50;
+    BUFG u_bufg_clk50 (
+        .I(clk_50_reg),
+        .O(clk_50)
+    );
+
+    // ------------------------------------------------------------------------
+    // Power-On Reset & User Button Reset Synchronization (on clk_50)
     // ------------------------------------------------------------------------
     reg [5:0] por_cnt = 6'd0;
     wire      por_done = (por_cnt == 6'd60);
 
-    always @(posedge clk) begin
+    always @(posedge clk_50) begin
         if (!por_done) por_cnt <= por_cnt + 1'b1;
     end
 
@@ -79,7 +98,7 @@ module top_basys3_picorv32_rdm6300 (
     );
 
     // ------------------------------------------------------------------------
-    // SoC Core Instantiation
+    // SoC Core Instantiation (Running at 50 MHz)
     // ------------------------------------------------------------------------
     wire cpu_trap_status;
     wire card_event_pulse;
@@ -87,12 +106,12 @@ module top_basys3_picorv32_rdm6300 (
     wire flash_done_pulse;
 
     rdm6300_picorv32_soc #(
-        .CLK_FREQ_HZ(100_000_000),
+        .CLK_FREQ_HZ(50_000_000),
         .UART_BAUD(9600),
         .FLASH_BASE(24'h30_0000),
         .BOOT_HEX("firmware.hex")
     ) u_soc_core (
-        .clk(clk),
+        .clk(clk_50),
         .rst_n(rst_n),
         .rdm6300_rx_i(rdm6300_rx_i),
         .uart_tx_o(uart_tx_o),
@@ -107,5 +126,140 @@ module top_basys3_picorv32_rdm6300 (
         .flash_busy_o(flash_busy_status),
         .flash_done_o(flash_done_pulse)
     );
+
+    // ------------------------------------------------------------------------
+    // Snoop on CPU Host UART TX to detect card authentication results:
+    // CPU outputs "ACCESS:GRANTED:..." when card is found in Flash whitelist
+    // CPU outputs "ACCESS:DENIED:..." when card is unauthorized / unknown
+    // ------------------------------------------------------------------------
+    wire       snoop_uart_dv;
+    wire [7:0] snoop_uart_byte;
+
+    uart_rx #(
+        .CLKS_PER_BIT(50_000_000 / 9600)
+    ) u_snoop_tx (
+        .clk(clk_50),
+        .rst_n(rst_n),
+        .rx(uart_tx_o),
+        .rx_dv(snoop_uart_dv),
+        .rx_byte(snoop_uart_byte),
+        .framing_error(),
+        .break_detect()
+    );
+
+    reg [2:0] access_match_idx = 3'd0;
+    reg       trigger_pass     = 1'b0;
+    reg       trigger_fail     = 1'b0;
+
+    always @(posedge clk_50 or negedge rst_n) begin
+        if (!rst_n) begin
+            access_match_idx <= 3'd0;
+            trigger_pass     <= 1'b0;
+            trigger_fail     <= 1'b0;
+        end else begin
+            trigger_pass <= 1'b0;
+            trigger_fail <= 1'b0;
+
+            if (snoop_uart_dv) begin
+                case (access_match_idx)
+                    3'd0: if (snoop_uart_byte == "A") access_match_idx <= 3'd1;
+                    3'd1: if (snoop_uart_byte == "C") access_match_idx <= 3'd2; else access_match_idx <= (snoop_uart_byte == "A") ? 3'd1 : 3'd0;
+                    3'd2: if (snoop_uart_byte == "C") access_match_idx <= 3'd3; else access_match_idx <= (snoop_uart_byte == "A") ? 3'd1 : 3'd0;
+                    3'd3: if (snoop_uart_byte == "E") access_match_idx <= 3'd4; else access_match_idx <= (snoop_uart_byte == "A") ? 3'd1 : 3'd0;
+                    3'd4: if (snoop_uart_byte == "S") access_match_idx <= 3'd5; else access_match_idx <= (snoop_uart_byte == "A") ? 3'd1 : 3'd0;
+                    3'd5: if (snoop_uart_byte == "S") access_match_idx <= 3'd6; else access_match_idx <= (snoop_uart_byte == "A") ? 3'd1 : 3'd0;
+                    3'd6: if (snoop_uart_byte == ":") access_match_idx <= 3'd7; else access_match_idx <= (snoop_uart_byte == "A") ? 3'd1 : 3'd0;
+                    3'd7: begin
+                        access_match_idx <= 3'd0;
+                        if (snoop_uart_byte == "G") begin
+                            trigger_pass <= 1'b1;
+                        end else if (snoop_uart_byte == "D") begin
+                            trigger_fail <= 1'b1;
+                        end
+                    end
+                    default: access_match_idx <= 3'd0;
+                endcase
+            end
+        end
+    end
+
+    // ------------------------------------------------------------------------
+    // 7-Segment Display Controller:
+    // - Idle (no scan / after 2.0s): Display OFF (all 4 digits blank)
+    // - Card Authorized: Shows "PASS" for 2.0s then turns OFF
+    // - Card Unauthorized / Denied: Shows "FAIL" for 2.0s then turns OFF
+    // ------------------------------------------------------------------------
+    reg [26:0] display_timer   = 27'd0;
+    reg        display_is_pass = 1'b0;
+    wire       display_active  = (display_timer > 0);
+
+    always @(posedge clk_50 or negedge rst_n) begin
+        if (!rst_n) begin
+            display_timer   <= 27'd0;
+            display_is_pass <= 1'b0;
+        end else begin
+            if (trigger_pass) begin
+                display_timer   <= 27'd100_000_000; // 2.0 seconds at 50 MHz
+                display_is_pass <= 1'b1;
+            end else if (trigger_fail) begin
+                display_timer   <= 27'd100_000_000; // 2.0 seconds at 50 MHz
+                display_is_pass <= 1'b0;
+            end else if (display_timer > 0) begin
+                display_timer <= display_timer - 1'b1;
+            end
+        end
+    end
+
+    // Display Refresh Counter (~191 Hz frame rate / ~763 Hz per digit)
+    reg [17:0] refresh_cnt = 18'd0;
+    always @(posedge clk_50 or negedge rst_n) begin
+        if (!rst_n) begin
+            refresh_cnt <= 18'd0;
+        end else begin
+            refresh_cnt <= refresh_cnt + 1'b1;
+        end
+    end
+
+    wire [1:0] digit_sel = refresh_cnt[17:16];
+    reg [3:0]  an_reg;
+    reg [6:0]  seg_reg;
+
+    assign dp  = 1'b1;     // Decimal point disabled (active-low)
+    assign an  = an_reg;
+    assign seg = seg_reg;
+
+    // Active-Low 7-Segment Encoding (0 = ON, 1 = OFF):
+    // Segments: {g, f, e, d, c, b, a}
+    // 'P' = 7'b0001100 (0x0C)
+    // 'A' = 7'b0001000 (0x08)
+    // 'S' = 7'b0010010 (0x12)
+    // 'F' = 7'b0001110 (0x0E)
+    // 'I' = 7'b1111001 (0x79)
+    // 'L' = 7'b1000111 (0x47)
+    always @(*) begin
+        if (!display_active) begin
+            an_reg  = 4'b1111;      // All 4 digits OFF
+            seg_reg = 7'b1111111;   // All segments OFF
+        end else begin
+            case (digit_sel)
+                2'b11: begin // Digit 3 (Leftmost)
+                    an_reg  = 4'b0111;
+                    seg_reg = display_is_pass ? 7'b0001100 : 7'b0001110; // 'P' or 'F'
+                end
+                2'b10: begin // Digit 2
+                    an_reg  = 4'b1011;
+                    seg_reg = 7'b0001000;                                // 'A'
+                end
+                2'b01: begin // Digit 1
+                    an_reg  = 4'b1101;
+                    seg_reg = display_is_pass ? 7'b0010010 : 7'b1111001; // 'S' or 'I'
+                end
+                2'b00: begin // Digit 0 (Rightmost)
+                    an_reg  = 4'b1110;
+                    seg_reg = display_is_pass ? 7'b0010010 : 7'b1000111; // 'S' or 'L'
+                end
+            endcase
+        end
+    end
 
 endmodule

@@ -21,7 +21,8 @@ read_verilog [list \
     "$root_dir/rtl/rdm6300_frame_decoder.v" \
     "$root_dir/rtl/simpleuart.v" \
     "$root_dir/rtl/spi_flash_controller.v" \
-    "$root_dir/rtl/boot_rom.v" \
+    "$root_dir/rtl/mask_rom.v" \
+    "$root_dir/rtl/data_sram.v" \
     "$root_dir/rtl/picorv32.v" \
     "$root_dir/rtl/rdm6300_picorv32_soc.v" \
     "$root_dir/fpga/rtl/top_basys3_picorv32_rdm6300.v" \
@@ -45,6 +46,7 @@ place_design
 # 7. Routing
 puts "\n=== STEP 3/4: Running Routing ==="
 route_design
+report_timing_summary -file "$proj_dir/timing_summary.rpt"
 
 # 8. Bitstream Generation
 puts "\n=== STEP 4/4: Generating Bitstream ==="

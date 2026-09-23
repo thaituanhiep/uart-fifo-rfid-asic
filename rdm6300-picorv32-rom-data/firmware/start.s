@@ -1,13 +1,26 @@
-/* Startup assembly for PicoRV32 */
+/* Startup assembly for PicoRV32 with Mask ROM & Data SRAM */
 .section .text.start
 .global _start
 
 _start:
-    /* Initialize stack pointer to top of 8KB SRAM */
+    /* 1. Initialize stack pointer to top of 1KB Data SRAM (0x00010400) */
     lui sp, %hi(_stack_top)
     addi sp, sp, %lo(_stack_top)
 
-    /* Zero BSS section */
+    /* 2. Copy .data section from Mask ROM to Data SRAM */
+    la a0, __data_start
+    la a1, __data_end
+    la a2, __data_load
+copy_data_loop:
+    bge a0, a1, copy_data_done
+    lw t0, 0(a2)
+    sw t0, 0(a0)
+    addi a0, a0, 4
+    addi a2, a2, 4
+    j copy_data_loop
+copy_data_done:
+
+    /* 3. Zero BSS section in Data SRAM */
     la a0, __bss_start
     la a1, __bss_end
 zero_bss_loop:
@@ -17,9 +30,9 @@ zero_bss_loop:
     j zero_bss_loop
 bss_done:
 
-    /* Call main() */
+    /* 4. Call C main() */
     call main
 
-    /* Trap/Hang loop if main returns */
+    /* 5. Trap/Hang loop if main returns */
 hang:
     j hang

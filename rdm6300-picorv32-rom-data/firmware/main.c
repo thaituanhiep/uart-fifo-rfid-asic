@@ -381,11 +381,14 @@ static int append_access_log(bool success, uint32_t hi, uint32_t lo) {
 // Main Firmware Entry Point & Command Loop
 // ----------------------------------------------------------------------------
 int main(void) {
-    // Configure baudrate divider for PC UART (100,000,000 / 9600 = 10416)
-    REG_PC_UART_DIV  = 10416;
+    // Configure baudrate divider for PC UART (50,000,000 / 9600 = 5208)
+    REG_PC_UART_DIV  = 5208;
 
     // Set status LED: bit 0 alive
     REG_GPIO_LEDS = 0x0001;
+
+    // Warm-up SPI Flash & STARTUPE2 CCLK line on boot
+    flash_read_id();
 
     uart_puts("\n==================================================\n");
     uart_puts("  PicoRV32 RISC-V SoC: RDM6300 & SPI Flash Ready\n");
