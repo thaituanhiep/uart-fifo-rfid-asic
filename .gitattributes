@@ -1,0 +1,7 @@
+rdm6300-picorv32-rom-data/**/*.gds filter=lfs diff=lfs merge=lfs -text
+rdm6300-picorv32-rom-data/**/*.odb filter=lfs diff=lfs merge=lfs -text
+rdm6300-picorv32-rom-data/**/*.mag filter=lfs diff=lfs merge=lfs -text
+rdm6300-picorv32-rom-data/**/*.spef filter=lfs diff=lfs merge=lfs -text
+rdm6300-picorv32-rom-data/**/*.def filter=lfs diff=lfs merge=lfs -text
+rdm6300-picorv32-rom-data/**/*.ext filter=lfs diff=lfs merge=lfs -text
+rdm6300-picorv32-rom-data/final filter=lfs diff=lfs merge=lfs -text
