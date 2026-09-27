@@ -19,17 +19,15 @@ read_verilog [list \
     "$root_dir/rtl/sync_2ff.v" \
     "$root_dir/rtl/uart_rx.v" \
     "$root_dir/rtl/rdm6300_frame_decoder.v" \
+    "$root_dir/rtl/sync_fifo.v" \
     "$root_dir/rtl/simpleuart.v" \
-    "$root_dir/rtl/spi_flash_controller.v" \
-    "$root_dir/rtl/mask_rom.v" \
+    "$root_dir/rtl/simpleuart_fifo.v" \
+    "$root_dir/rtl/spimemio.v" \
     "$root_dir/rtl/data_sram.v" \
     "$root_dir/rtl/picorv32.v" \
     "$root_dir/rtl/rdm6300_picorv32_soc.v" \
     "$root_dir/fpga/rtl/top_basys3_picorv32_rdm6300.v" \
 ]
-
-# 3. Add Memory Initialization (.hex)
-read_mem [list "$root_dir/rtl/firmware.hex"]
 
 # 4. Add Constraints File (XDC)
 read_xdc "$root_dir/fpga/constraints/basys3_picorv32_rdm6300.xdc"

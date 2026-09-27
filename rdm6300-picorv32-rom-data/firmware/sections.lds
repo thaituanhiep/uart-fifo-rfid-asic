@@ -1,36 +1,42 @@
-/* Linker script for PicoRV32: 8KB Mask ROM + 2KB Data SRAM */
+/* Linker script for PicoRV32: XIP SPI Flash (0x00250000) + 1KB Data SRAM (0x00000000) */
 MEMORY {
-    ROM (rx)  : ORIGIN = 0x00000000, LENGTH = 0x2000 /* 8 KBytes Mask ROM */
-    RAM (rwx) : ORIGIN = 0x00010000, LENGTH = 0x0400 /* 1 KByte Data SRAM */
+    FLASH (rx) : ORIGIN = 0x00250000, LENGTH = 0x000B0000 /* 704 KB Flash (0x0025_0000 - 0x002F_FFFF) */
+    RAM (rwx)  : ORIGIN = 0x00000000, LENGTH = 0x00000400 /* 1 KByte Data SRAM (0x0000_0000 - 0x0000_03FF) */
 }
 
 SECTIONS {
     .text : {
-        . = 0x00000000;
+        . = ALIGN(4);
         *(.text.start)
         *(.text*)
         *(.rodata*)
+        *(.srodata*)
         . = ALIGN(4);
-    } > ROM
+        _etext = .;
+    } > FLASH
 
-    /* .data is loaded into ROM (LMA), but accessed in RAM (VMA) */
+    /* .data is loaded into FLASH (LMA), but accessed in RAM (VMA) */
     .data : {
+        . = ALIGN(4);
         __data_start = .;
         *(.data*)
+        *(.sdata*)
         . = ALIGN(4);
         __data_end = .;
-    } > RAM AT > ROM
+    } > RAM AT > FLASH
     __data_load = LOADADDR(.data);
 
     .bss : {
+        . = ALIGN(4);
         __bss_start = .;
         *(.bss*)
+        *(.sbss*)
         *(COMMON)
         . = ALIGN(4);
         __bss_end = .;
     } > RAM
 
-    _stack_top = 0x00010400; /* Top of 1KB SRAM (0x00010000 + 0x0400) */
+    _stack_top = 0x00000400; /* Top of 1KB SRAM (0x0000_0000 + 0x0400) */
 
     /DISCARD/ : {
         *(.note*)
@@ -38,3 +44,4 @@ SECTIONS {
         *(.eh_frame)
     }
 }
+

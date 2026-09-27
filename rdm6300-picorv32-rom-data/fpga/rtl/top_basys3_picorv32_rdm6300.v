@@ -63,18 +63,23 @@ module top_basys3_picorv32_rdm6300 (
     wire rst_n = por_done && !btnC;
 
     // ------------------------------------------------------------------------
-    // SPI Flash Pin Handling for Basys 3
+    // SPI Flash Pin Handling for Basys 3 (spimemio QSPI)
     // ------------------------------------------------------------------------
-    wire flash_sck_internal;
-    wire flash_csn_internal;
-    wire flash_mosi_internal;
-    wire flash_miso_internal;
+    wire flash_csb;
+    wire flash_clk;
+    wire flash_io0_oe, flash_io1_oe, flash_io2_oe, flash_io3_oe;
+    wire flash_io0_do, flash_io1_do, flash_io2_do, flash_io3_do;
+    wire flash_io0_di, flash_io1_di, flash_io2_di, flash_io3_di;
 
-    assign qspi_cs       = flash_csn_internal;
-    assign qspi_dq[0]    = flash_mosi_internal;   // MOSI / DQ0
-    assign flash_miso_internal = qspi_dq[1];       // MISO / DQ1
-    assign qspi_dq[2]    = 1'b1;                  // WP# (Write Protect disabled)
-    assign qspi_dq[3]    = 1'b1;                  // HOLD# (Hold disabled)
+    assign qspi_cs       = flash_csb;
+    assign qspi_dq[0]    = flash_io0_oe ? flash_io0_do : 1'bz;
+    assign flash_io0_di  = qspi_dq[0];
+    assign qspi_dq[1]    = flash_io1_oe ? flash_io1_do : 1'bz;
+    assign flash_io1_di  = qspi_dq[1];
+    assign qspi_dq[2]    = flash_io2_oe ? flash_io2_do : 1'bz;
+    assign flash_io2_di  = qspi_dq[2];
+    assign qspi_dq[3]    = flash_io3_oe ? flash_io3_do : 1'bz;
+    assign flash_io3_di  = qspi_dq[3];
 
     // In Xilinx 7-Series FPGA, the CCLK pin connected to Flash is accessed
     // post-configuration via the STARTUPE2 primitive's USRCCLKO port.
@@ -91,8 +96,8 @@ module top_basys3_picorv32_rdm6300 (
         .GTS(1'b0),
         .KEYCLEARB(1'b1),
         .PACK(1'b0),
-        .USRCCLKO(flash_sck_internal), // Drive Flash CCLK
-        .USRCCLKTS(1'b0),             // 0 = Output enabled
+        .USRCCLKO(flash_clk), // Drive Flash CCLK from spimemio
+        .USRCCLKTS(1'b0),     // 0 = Output enabled
         .USRDONEO(1'b1),
         .USRDONETS(1'b1)
     );
@@ -108,18 +113,29 @@ module top_basys3_picorv32_rdm6300 (
     rdm6300_picorv32_soc #(
         .CLK_FREQ_HZ(50_000_000),
         .UART_BAUD(9600),
-        .FLASH_BASE(24'h30_0000),
-        .BOOT_HEX("firmware.hex")
+        .PROGADDR_RESET(32'h0025_0000), // 2.3MB into Flash on Basys 3
+        .PROGADDR_IRQ(32'h0025_0010),
+        .STACKADDR(32'h0000_0400)
     ) u_soc_core (
         .clk(clk_50),
         .rst_n(rst_n),
         .rdm6300_rx_i(rdm6300_rx_i),
         .uart_tx_o(uart_tx_o),
         .uart_rx_i(uart_rx_i),
-        .flash_csn(flash_csn_internal),
-        .flash_sck(flash_sck_internal),
-        .flash_mosi(flash_mosi_internal),
-        .flash_miso(flash_miso_internal),
+        .flash_csb(flash_csb),
+        .flash_clk(flash_clk),
+        .flash_io0_oe(flash_io0_oe),
+        .flash_io1_oe(flash_io1_oe),
+        .flash_io2_oe(flash_io2_oe),
+        .flash_io3_oe(flash_io3_oe),
+        .flash_io0_do(flash_io0_do),
+        .flash_io1_do(flash_io1_do),
+        .flash_io2_do(flash_io2_do),
+        .flash_io3_do(flash_io3_do),
+        .flash_io0_di(flash_io0_di),
+        .flash_io1_di(flash_io1_di),
+        .flash_io2_di(flash_io2_di),
+        .flash_io3_di(flash_io3_di),
         .leds_o(led),
         .cpu_trap(cpu_trap_status),
         .card_event_o(card_event_pulse),
