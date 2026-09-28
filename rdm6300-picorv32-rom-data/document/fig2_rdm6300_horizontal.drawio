@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-09-28T09:35:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="rdm6300_horizontal_pipeline" name="RDM6300 Horizontal Pipeline">
+    <mxGraphModel dx="2200" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="1100" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title Banner -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:24px;&quot;&gt;HỆ THỐNG PHẦN CỨNG THU NHẬN &amp;amp; GIẢI MÃ THẺ RFID RDM6300 TỰ TRỊ&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:15px; color:#475569;&quot;&gt;Sơ đồ khối vi kiến trúc đường ống 5 giai đoạn phần cứng (Hardware 5-Stage Autonomous Decoding Pipeline)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#cbd5e1;strokeWidth=2;fontFamily=Segoe UI;align=center;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="2020" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- STAGE 1: RF FRONT-END -->
+        <mxCell id="stg1" value="&lt;b style=&quot;font-size:16px; color:#1e40af;&quot;&gt;GIAI ĐOẠN 1: KHỐI THU NHẬN RF&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px; font-weight:bold; color:#2563eb;&quot;&gt;Module RDM6300 (125 kHz)&lt;/span&gt;&lt;hr style=&quot;border:0; border-top:1px solid #93c5fd; margin:6px 0;&quot;&gt;&lt;div style=&quot;text-align:left; font-size:12.5px; line-height:1.5;&quot;&gt;&lt;b&gt;• Thẻ Thụ Động (EM4100):&lt;/b&gt;&lt;br&gt;Sóng mang 125 kHz, điều chế ASK/Manchester.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Cuộn Cảm Thu &amp;amp; Tách Sóng:&lt;/b&gt;&lt;br&gt;Tách sóng đường bao + Schmitt Trigger khử nhiễu.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Ngõ Ra TTL Nối Tiếp:&lt;/b&gt;&lt;br&gt;Baud 9600 bps 8-N-1 đưa vào cổng PMOD JA1.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eff6ff;strokeColor=#2563eb;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=center;verticalAlign=top;spacingTop=10;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="130" width="370" height="370" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 1 -> 2 -->
+        <mxCell id="arr1_2" value="rdm_rx_i&lt;br&gt;(9600 bps TTL)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#2563eb;fontSize=12;fontStyle=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="stg1" target="stg2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- STAGE 2: 2-FF CDC -->
+        <mxCell id="stg2" value="&lt;b style=&quot;font-size:16px; color:#065f46;&quot;&gt;GIAI ĐOẠN 2: ĐỒNG BỘ CDC&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px; font-weight:bold; color:#059669;&quot;&gt;sync_2ff.v (2-Stage Flip-Flop)&lt;/span&gt;&lt;hr style=&quot;border:0; border-top:1px solid #6ee7b7; margin:6px 0;&quot;&gt;&lt;div style=&quot;text-align:left; font-size:12.5px; line-height:1.5;&quot;&gt;&lt;b&gt;• Khử Bất Định (Metastability):&lt;/b&gt;&lt;br&gt;Cách ly xung nhịp ngoài và miền xung 50 MHz.&lt;br&gt;&lt;br&gt;&lt;b&gt;• 2 Tầng D-Flip-Flop Đồng Bộ:&lt;/b&gt;&lt;br&gt;Tầng 1 hấp thụ dao động; Tầng 2 chốt mức 0/1 CMOS sạch.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Độ Tin Cậy Cực Cao:&lt;/b&gt;&lt;br&gt;MTBF &amp;gt; 1,000 năm trên công nghệ SkyWater 130nm.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfdf5;strokeColor=#059669;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=center;verticalAlign=top;spacingTop=10;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="455" y="130" width="370" height="370" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 2 -> 3 -->
+        <mxCell id="arr2_3" value="rdm_rx_sync&lt;br&gt;(50 MHz Sync)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#059669;fontSize=12;fontStyle=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="stg2" target="stg3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- STAGE 3: UART RX -->
+        <mxCell id="stg3" value="&lt;b style=&quot;font-size:16px; color:#92400e;&quot;&gt;GIAI ĐOẠN 3: BỘ THU UART RX&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px; font-weight:bold; color:#d97706;&quot;&gt;uart_rx.v (Bộ Bỏ Phiếu 16x)&lt;/span&gt;&lt;hr style=&quot;border:0; border-top:1px solid #fcd34d; margin:6px 0;&quot;&gt;&lt;div style=&quot;text-align:left; font-size:12.5px; line-height:1.5;&quot;&gt;&lt;b&gt;• Bộ Chia Tần Số Baud (5208):&lt;/b&gt;&lt;br&gt;Divisor = 50MHz / 9600 = 5208 chu kỳ/bit.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Bộ Bỏ Phiếu Đa Số 3 Điểm:&lt;/b&gt;&lt;br&gt;Lấy mẫu Ticks 7,8,9; lọc sạch gai xung nhiễu đường truyền.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Thanh Ghi Dịch SIPO 8-bit:&lt;/b&gt;&lt;br&gt;Tái lập byte ASCII và phát xung strobe byte_valid (1T).&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffbeb;strokeColor=#d97706;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=center;verticalAlign=top;spacingTop=10;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="870" y="130" width="370" height="370" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 3 -> 4 -->
+        <mxCell id="arr3_4" value="byte_data[7:0]&lt;br&gt;+ byte_valid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#d97706;fontSize=12;fontStyle=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="stg3" target="stg4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- STAGE 4: FRAME DECODER FSM -->
+        <mxCell id="stg4" value="&lt;b style=&quot;font-size:16px; color:#5b21b6;&quot;&gt;GIAI ĐOẠN 4: FSM GIẢI MÃ &amp;amp; XOR&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px; font-weight:bold; color:#7c3aed;&quot;&gt;rdm6300_frame_decoder.v&lt;/span&gt;&lt;hr style=&quot;border:0; border-top:1px solid #d8b4fe; margin:6px 0;&quot;&gt;&lt;div style=&quot;text-align:left; font-size:12.5px; line-height:1.5;&quot;&gt;&lt;b&gt;• Máy Trạng Thái FSM 5 Bước:&lt;/b&gt;&lt;br&gt;STX -&amp;gt; 10 Byte Data -&amp;gt; 2 Byte CS -&amp;gt; ETX.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Đổi Tổ Hợp ASCII ➔ Hex:&lt;/b&gt;&lt;br&gt;0 chu kỳ trễ, chuyển 10 ký tự ASCII thành 5 byte Hex.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Cây XOR Song Song 1 Chu Kỳ:&lt;/b&gt;&lt;br&gt;Tính D[0]^D[1]^D[2]^D[3]^D[4] trong 20ns + Watchdog 10ms.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#7c3aed;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=center;verticalAlign=top;spacingTop=10;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="1285" y="130" width="370" height="370" as="geometry" />
+        </mxCell>
+
+        <!-- Arrow 4 -> 5 -->
+        <mxCell id="arr4_5" value="tag_id[39:0]&lt;br&gt;+ card_valid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7c3aed;fontSize=12;fontStyle=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="stg4" target="stg5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- STAGE 5: MMIO REGISTERS -->
+        <mxCell id="stg5" value="&lt;b style=&quot;font-size:16px; color:#9f1239;&quot;&gt;GIAI ĐOẠN 5: MMIO &amp;amp; NGẮT CPU&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px; font-weight:bold; color:#e11d48;&quot;&gt;Base: 0x1000_0000 (PicoRV32)&lt;/span&gt;&lt;hr style=&quot;border:0; border-top:1px solid #fda4af; margin:6px 0;&quot;&gt;&lt;div style=&quot;text-align:left; font-size:12.5px; line-height:1.5;&quot;&gt;&lt;b&gt;• REG_RFID_STATUS (0x1000_0000):&lt;/b&gt;&lt;br&gt;Bit 0: card_valid (Write 1 Clear), Bit 1: cs_error.&lt;br&gt;&lt;br&gt;&lt;b&gt;• REG_TAG_HI &amp;amp; REG_TAG_LO:&lt;/b&gt;&lt;br&gt;Chứa 8-bit Version và 32-bit Serial Number thẻ.&lt;br&gt;&lt;br&gt;&lt;b&gt;• Cơ Chế Không Tốn CPU (Zero CPU):&lt;/b&gt;&lt;br&gt;Ngắt card_event_o đánh thức CPU ngay tức thì.&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff1f2;strokeColor=#e11d48;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=center;verticalAlign=top;spacingTop=10;spacingLeft=10;spacingRight=10;" vertex="1" parent="1">
+          <mxGeometry x="1695" y="130" width="365" height="370" as="geometry" />
+        </mxCell>
+
+        <!-- SECTION 6: 14-BYTE FRAME & XOR PROOF -->
+        <mxCell id="stg6" value="&lt;b style=&quot;font-size:16px; color:#0f172a;&quot;&gt;CẤU TRÚC KHUNG TRUYỀN UART 14 BYTE VÀ TOÁN TỬ XOR KIỂM TRA TOÀN VẸN (1 CHU KỲ PHẦN CỨNG 20.0 NS)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px; color:#475569;&quot;&gt;Ví dụ thẻ thật: 0007508976 | Wiegand: Facility Code 114, Card ID 37872 | Mã Hex: 0x007293F0 (Version 0x00, Serial 0x007293F0)&lt;/span&gt;&lt;hr style=&quot;border:0; border-top:1px solid #cbd5e1; margin:8px 0;&quot;&gt;&lt;div style=&quot;font-family:Consolas, monospace; font-size:13.5px; text-align:left;&quot;&gt;&lt;b&gt;Chuỗi Khung UART:&lt;/b&gt; [0x02 STX] + [0x30, 0x30 (Ver 0x00)] + [0x30, 0x30, 0x37, 0x32, 0x39, 0x33, 0x46, 0x30 (Serial 0x007293F0)] + [0x46, 0x30 (CS 0xF0)] + [0x03 ETX]&lt;br&gt;&lt;b style=&quot;color:#059669;&quot;&gt;Toán Tử XOR Song Song:&lt;/b&gt; Calc_CS = D[0] ^ D[1] ^ D[2] ^ D[3] ^ D[4] = (0x00) ^ (0x00) ^ (0x72) ^ (0x93) ^ (0xF0) = &lt;b style=&quot;color:#e11d48;&quot;&gt;0xF0&lt;/b&gt; == Received_CS &lt;b style=&quot;color:#059669;&quot;&gt;(SO KHỚP 100% ➔ KÍCH HOẠT CARD_VALID!)&lt;/b&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#475569;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=center;verticalAlign=top;spacingTop=10;spacingLeft=16;spacingRight=16;" vertex="1" parent="1">
+          <mxGeometry x="40" y="530" width="2020" height="150" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

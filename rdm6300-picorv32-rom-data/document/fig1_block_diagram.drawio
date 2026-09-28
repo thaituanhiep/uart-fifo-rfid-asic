@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-09-28T04:45:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="soc_diagram" name="PicoRV32 Hardware Architecture">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1560" pageHeight="1060" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- 1. POWER INPUT -->
+        <mxCell id="pwr_in" value="&lt;b style=&quot;font-size:18px;&quot;&gt;POWER INPUT&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:14px;&quot;&gt;USB +5V DC @ 500mA&lt;br&gt;External Adapter / VBUS&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="45" width="260" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- 2. REGULATORS -->
+        <mxCell id="reg" value="&lt;b style=&quot;font-size:18px;&quot;&gt;VOLTAGE REGULATORS (LDO)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:14px;&quot;&gt;3.3V LDO: I/O, Flash &amp;amp; RFID (VDD33)&lt;br&gt;1.8V LDO: ASIC Core Power (VDD18)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="45" width="330" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- 3. CLOCK GENERATOR -->
+        <mxCell id="clk_gen" value="&lt;b style=&quot;font-size:18px;&quot;&gt;CLOCK GENERATOR&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:14px;&quot;&gt;50 MHz Quartz Crystal Oscillator&lt;br&gt;Period = 20.0 ns (Master System Clock)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="830" y="45" width="310" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Wire Pwr -> Reg -->
+        <mxCell id="w_pwr_reg" value="+5V DC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2.5;strokeColor=#b85450;fontSize=14;fontStyle=1;endArrow=block;endFill=1;" edge="1" parent="1" source="pwr_in" target="reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 4. CENTRAL SOC -->
+        <mxCell id="soc" value="&lt;b style=&quot;font-size:24px;color:#1e3a8a;&quot;&gt;PicoRV32 RISC-V SoC&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:16px;color:#3b82f6;font-family:Consolas;&quot;&gt;rdm6300_picorv32_soc&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13.5px;color:#475569;&quot;&gt;SkyWater 130nm ASIC / Basys 3 FPGA Demo&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;table style=&quot;width:100%;font-size:12.5px;border-collapse:collapse;color:#334155;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;border:1px solid #cbd5e1;padding:5px;&quot;&gt;&lt;b&gt;CPU Core:&lt;/b&gt; PicoRV32 RV32I&lt;/td&gt;&lt;td style=&quot;border:1px solid #cbd5e1;padding:5px;&quot;&gt;&lt;b&gt;SRAM:&lt;/b&gt; 1KB Data Memory&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;border:1px solid #cbd5e1;padding:5px;&quot;&gt;&lt;b&gt;Flash Ctrl:&lt;/b&gt; SPIMEMIO QSPI&lt;/td&gt;&lt;td style=&quot;border:1px solid #cbd5e1;padding:5px;&quot;&gt;&lt;b&gt;UARTs:&lt;/b&gt; Dual (Host &amp;amp; RFID)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;border:1px solid #cbd5e1;padding:5px;&quot;&gt;&lt;b&gt;HW Decoder:&lt;/b&gt; XOR Verifier&lt;/td&gt;&lt;td style=&quot;border:1px solid #cbd5e1;padding:5px;&quot;&gt;&lt;b&gt;GPIO:&lt;/b&gt; 16 Diagnostic LEDs&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#2563eb;strokeWidth=3.5;fontFamily=Segoe UI;shadow=1;verticalAlign=top;spacingTop=16;" vertex="1" parent="1">
+          <mxGeometry x="420" y="270" width="460" height="470" as="geometry" />
+        </mxCell>
+
+        <!-- Wire Reg -> SoC (VDD) -->
+        <mxCell id="w_reg_soc" value="VDD (1.8V / 3.3V)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2.5;strokeColor=#b85450;fontSize=14;fontStyle=1;endArrow=block;endFill=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="reg" target="soc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Wire Clk -> SoC (clk) -->
+        <mxCell id="w_clk_soc" value="clk (50 MHz)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2.5;strokeColor=#475569;fontSize=14;fontStyle=1;endArrow=block;endFill=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="clk_gen" target="soc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 5. RFID READER -->
+        <mxCell id="rfid" value="&lt;b style=&quot;font-size:19px;&quot;&gt;RFID READER&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:15px;color:#d97706;&quot;&gt;RDM6300 (125 kHz PMOD)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13.5px;&quot;&gt;• External Coil Antenna (125 kHz)&lt;br&gt;• EM4100 Compatible Passive Tag&lt;br&gt;• 14-Byte ASCII Frame Protocol&lt;br&gt;• Autonomous HW Verifier Engine&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="50" y="270" width="260" height="205" as="geometry" />
+        </mxCell>
+
+        <!-- Wire RFID -> SoC (rdm_rx) -->
+        <mxCell id="w_rfid_soc" value="rdm_rx (9600 bps)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#d97706;fontSize=14;fontStyle=1;endArrow=block;endFill=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="rfid" target="soc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 6. FIRMWARE PROGRAM -->
+        <mxCell id="fw" value="&lt;b style=&quot;font-size:19px;&quot;&gt;ASM / C PROGRAM&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:15px;color:#059669;&quot;&gt;RISC-V Firmware (GCC)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13.5px;&quot;&gt;• Toolchain: riscv32-unknown-elf-gcc&lt;br&gt;• Source: start.s &amp;amp; firmware.c&lt;br&gt;• Compiled to firmware.hex (XIP)&lt;br&gt;• Reset Vector: 0x0025_0000&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#059669;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="50" y="525" width="260" height="215" as="geometry" />
+        </mxCell>
+
+        <!-- Wire FW -> SoC (boot_vec) -->
+        <mxCell id="w_fw_soc" value="boot_vec (0x0025_0000)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#059669;fontSize=14;fontStyle=1;endArrow=block;endFill=1;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="fw" target="soc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 7. SPI FLASH MEMORY -->
+        <mxCell id="flash" value="&lt;b style=&quot;font-size:19px;&quot;&gt;SPI NOR FLASH MEMORY&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:15px;color:#16a34a;&quot;&gt;Spansion S25FL032P (4 MB / 32 Mbit)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;table style=&quot;width:100%;font-size:13px;border-collapse:collapse;&quot;&gt;&lt;tr&gt;&lt;td style=&quot;border:1.5px solid #bbf7d0;padding:5px;&quot;&gt;&lt;b&gt;Sec 0-36 (0x000000):&lt;/b&gt; FPGA Bitstream&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;border:1.5px solid #bbf7d0;padding:5px;&quot;&gt;&lt;b&gt;Sec 37 (0x002500):&lt;/b&gt; Firmware (XIP)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;border:1.5px solid #bbf7d0;padding:5px;&quot;&gt;&lt;b&gt;Sec 48 (0x003000):&lt;/b&gt; Authorized Whitelist&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td style=&quot;border:1.5px solid #bbf7d0;padding:5px;&quot;&gt;&lt;b&gt;Sec 49 (0x003100):&lt;/b&gt; Access Logs Database&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#16a34a;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="240" width="460" height="235" as="geometry" />
+        </mxCell>
+
+        <!-- Wire SoC -> Flash (SPI 4-wire) -->
+        <mxCell id="w_soc_flash" value="SPI BUS (4-wire)&lt;br&gt;/CS, SCK, MOSI, MISO" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#16a34a;fontSize=14;fontStyle=1;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="soc" target="flash">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 8. HOST PC CONSOLE -->
+        <mxCell id="host_pc" value="&lt;b style=&quot;font-size:19px;&quot;&gt;HOST PC CONSOLE&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:15px;color:#7c3aed;&quot;&gt;Win32 C Serial App (host/main.c)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13.5px;&quot;&gt;• FTDI FT2232 USB-UART (9600 8-N-1)&lt;br&gt;• 13 Management Functions&lt;br&gt;• Whitelist Add/Delete &amp;amp; CSV Export/Import&lt;br&gt;• Live Event Log Monitoring&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="500" width="460" height="205" as="geometry" />
+        </mxCell>
+
+        <!-- Wire SoC <-> Host PC -->
+        <mxCell id="w_soc_pc" value="UART Bus (TXD / RXD)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7c3aed;fontSize=14;fontStyle=1;endArrow=block;endFill=1;startArrow=block;startFill=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="soc" target="host_pc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 9. STATUS BUTTON -->
+        <mxCell id="btn" value="&lt;b style=&quot;font-size:17px;&quot;&gt;STATUS BUTTON (RESET)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13.5px;&quot;&gt;Manual Push Button (Active-Low)&lt;br&gt;Pin U18 (Basys 3) / ASIC rst_n&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe4e6;strokeColor=#f43f5e;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="740" width="340" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Wire Button -> SoC (rst_n) -->
+        <mxCell id="w_btn_soc" value="rst_n" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2.5;strokeColor=#f43f5e;fontSize=14;fontStyle=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.92;entryDx=0;entryDy=0;" edge="1" parent="1" source="btn" target="soc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 10. 16 DIAGNOSTIC LEDS -->
+        <mxCell id="leds" value="&lt;b style=&quot;font-size:17px;&quot;&gt;16 DIAGNOSTIC LEDS (Basys 3 Prototyping Board)&lt;/b&gt;&lt;br&gt;&lt;table style=&quot;width:100%;font-size:13px;margin-top:6px;&quot;&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;LED[0]:&lt;/b&gt; Heartbeat (1Hz)&lt;/td&gt;&lt;td&gt;&lt;b&gt;LED[1]:&lt;/b&gt; Flash Busy (WIP)&lt;/td&gt;&lt;td&gt;&lt;b&gt;LED[2]:&lt;/b&gt; Tag Valid Strobe&lt;/td&gt;&lt;td&gt;&lt;b&gt;LED[3]:&lt;/b&gt; Match OK&lt;/td&gt;&lt;td&gt;&lt;b&gt;LED[15:4]:&lt;/b&gt; Diagnostics&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#475569;strokeWidth=2.5;fontFamily=Segoe UI;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="780" width="760" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Wire SoC -> LEDs -->
+        <mxCell id="w_soc_leds" value="leds_o[15:0]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2.5;strokeColor=#475569;fontSize=14;fontStyle=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="soc" target="leds">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
