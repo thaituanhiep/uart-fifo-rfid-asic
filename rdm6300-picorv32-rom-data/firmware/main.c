@@ -79,7 +79,7 @@ static void uart_putdec(uint32_t val) {
         uart_putc('0');
         return;
     }
-    uint32_t divisor = 10000;
+    uint32_t divisor = 1000000000;
     bool started = false;
     while (divisor > 0) {
         int d = 0;
@@ -91,7 +91,12 @@ static void uart_putdec(uint32_t val) {
             uart_putc((char)('0' + d));
             started = true;
         }
-        if (divisor == 10000) divisor = 1000;
+        if (divisor == 1000000000) divisor = 100000000;
+        else if (divisor == 100000000) divisor = 10000000;
+        else if (divisor == 10000000) divisor = 1000000;
+        else if (divisor == 1000000) divisor = 100000;
+        else if (divisor == 100000) divisor = 10000;
+        else if (divisor == 10000) divisor = 1000;
         else if (divisor == 1000) divisor = 100;
         else if (divisor == 100) divisor = 10;
         else if (divisor == 10) divisor = 1;

@@ -4,9 +4,16 @@ echo ========================================================
 echo   Compiling PicoRV32 C Firmware to Verilog HEX
 echo ========================================================
 
-set "XILINX_RISCV=D:\Xilinx\2025.1\gnu\riscv\nt\riscv64-unknown-elf\bin"
+set "XILINX_RISCV=C:\AMDDesignTools\2025.2\gnu\riscv\nt\bin"
 if exist "%XILINX_RISCV%\riscv64-unknown-elf-gcc.exe" (
     set "PATH=%XILINX_RISCV%;%PATH%"
+    set "CROSS=riscv64-unknown-elf-"
+    goto :compile
+)
+
+set "XILINX_RISCV_OLD=D:\Xilinx\2025.1\gnu\riscv\nt\riscv64-unknown-elf\bin"
+if exist "%XILINX_RISCV_OLD%\riscv64-unknown-elf-gcc.exe" (
+    set "PATH=%XILINX_RISCV_OLD%;%PATH%"
     set "CROSS=riscv64-unknown-elf-"
     goto :compile
 )
@@ -41,7 +48,7 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-bin2hex.exe firmware.bin firmware.hex
+py bin2hex.py firmware.bin firmware.hex
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] bin2hex conversion failed!
     exit /b 1
@@ -49,6 +56,8 @@ if %ERRORLEVEL% neq 0 (
 
 copy /y firmware.hex ..\rtl\firmware.hex >nul
 copy /y firmware.hex ..\fpga\rtl\firmware.hex >nul
+copy /y firmware.hex ..\tb\firmware.hex >nul
+copy /y firmware.hex ..\tb\step6_top_soc_integration\firmware.hex >nul
 
-echo [SUCCESS] firmware.hex generated and copied to rtl/ and fpga/rtl/ successfully!
+echo [SUCCESS] firmware.hex generated and copied to rtl/, fpga/rtl/, and tb/ successfully!
 exit /b 0
