@@ -20,15 +20,17 @@ Key Specifications:
 - High-Resolution Image Embeds:
   - Fig 1: fig1_block_diagram.png (Overall SoC Architecture)
   - Fig 2: fig2_rdm6300_subsystem.png (RDM6300 Hardware Pipeline)
-  - Fig 3: Openroad_1.png (OpenROAD Physical Layout GUI)
-  - Fig 4: AntennaLvsDrc.png (ReportManufacturability: Antenna, LVS, DRC Passed)
-- Sign-off Verification Data from run RUN_2026-09-27_21-51-11:
-  - LVS Clean: 57,544 devices, 50,028 nets match uniquely (0 errors)
+  - Fig 3: fig2_phase1_instruction_fetch.png (Chặng 1: Nạp mã lệnh từ Flash qua bus soc_interconnect)
+  - Fig 4: fig2_phase2_data_access.png (Chặng 2: Truy xuất đọc dữ liệu từ 1KB Data SRAM)
+  - Fig 5: OpenROAD.png (OpenROAD Physical Layout GUI)
+  - Fig 6: AntennaLvsDrc.png (ReportManufacturability: Antenna, LVS, DRC Passed)
+- Sign-off Verification Data from run RUN_2026-10-02_02-43-19:
+  - LVS Clean: 58,496 devices, 49,979 nets match uniquely (0 errors)
   - Magic DRC: 0 errors
   - KLayout DRC: 0 errors
   - Antenna: 0 net violations, 0 pin violations
   - Timing: MET TIMING across all 9 PVT corners (No setup violations, No hold violations)
-  - IR Drop: Worst-case 0.04%
+  - IR Drop: Worst-case 0.043% (0.771 mV)
 """
 
 import os
@@ -233,6 +235,7 @@ def create_report():
 
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(cur_dir)
+    project_root = os.path.dirname(parent_dir)
 
     # =============================================================
     # TRANG 1: TRANG BÌA (COVER PAGE)
@@ -254,7 +257,7 @@ def create_report():
     for r in p_group.runs:
         set_font(r, size=11, bold=False, color=BLACK)
 
-    p_ref = add_p("Tài liệu tham chiếu dự án: Repository rdm6300-picorv32-rom-data; cấu hình vật lý config.json; báo cáo ký duyệt Sign-off Antenna / DRC / LVS / STA (OpenLane 2 - SkyWater Sky130A, run RUN_2026-09-27_21-51-11) và kết quả đo đạc thực nghiệm trên nền tảng demo FPGA Basys 3",
+    p_ref = add_p("Tài liệu tham chiếu dự án: Repository rdm6300-picorv32-rom-data; cấu hình vật lý config.json; báo cáo ký duyệt Sign-off Antenna / DRC / LVS / STA (OpenLane 2 - SkyWater Sky130A, run RUN_2026-10-02_02-43-19) và kết quả đo đạc thực nghiệm trên nền tảng demo FPGA Basys 3",
                   align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0, line_spacing=1.15)
     set_font(p_ref.runs[0], size=9.5, italic=True, color=DARK_GRAY)
 
@@ -290,7 +293,7 @@ def create_report():
         ("4.3. Các kịch bản thực nghiệm quẹt thẻ thực tế và kết quả xác thực", "13", False, 0.2),
         ("5. Thiết kế vật lý và kết quả ký duyệt ASIC (OpenLane 2 - SkyWater Sky130A)", "14", True, 0),
         ("5.1. Phân tích thiết lập cấu hình vật lý trong config.json", "14", False, 0.2),
-        ("5.2. Trực quan hóa layout vật lý trên công cụ OpenROAD (Openroad_1.png)", "14", False, 0.2),
+        ("5.2. Trực quan hóa layout vật lý trên công cụ OpenROAD (OpenROAD.png)", "14", False, 0.2),
         ("5.3. Báo cáo ký duyệt chế tạo sign-off toàn diện (AntennaLvsDrc.png)", "15", False, 0.2),
         ("5.4. Đánh giá phân tích định thời tĩnh STA đa góc đo (9 corners) và MET TIMING", "16", False, 0.2),
         ("5.5. Phân tích lưới nguồn PDN và kiểm tra sụt áp (IR drop analysis)", "16", False, 0.2),
@@ -409,9 +412,13 @@ def create_report():
     # TRANG 6: THIẾT KẾ PHẦN CỨNG CPU, SRAM & FLASH CONTROLLER
     # =============================================================
     add_h2("3.3. Bước 3: Thiết kế hệ thống xử lý phần cứng: nhân CPU PicoRV32 và 1KB Data SRAM")
-    add_p("Sau khi có bản đặc tả chức năng firmware, khối xử lý trung tâm được hiện thực bằng ngôn ngữ Verilog RTL:")
-    add_bullet("Nhân vi xử lý PicoRV32 (rtl/picorv32.v): ", "Được cấu hình hỗ trợ tập lệnh RV32I. Bus bộ nhớ giao tiếp qua các tín hiệu: mem_valid, mem_ready, mem_addr[31:0], mem_wdata[31:0], mem_wstrb[3:0], mem_rdata[31:0]. CPU khởi động trực tiếp tại địa chỉ 0x0025_0000 (PROGADDR_RESET) nằm trong vùng nhớ SPI Flash thông qua cơ chế thực thi tại chỗ XIP (eXecute In Place) của bộ điều khiển spimemio.")
-    add_bullet("Bộ nhớ On-Chip 1KB Data SRAM (rtl/data_sram.v): ", "Mảng nhớ nội bộ dung lượng chính xác 1 KByte (256 words x 32-bit = 1024 bytes) ánh xạ dải địa chỉ 0x0000_0000 đến 0x0000_03FF. Mảng nhớ này đóng vai trò không gian dữ liệu đọc/ghi: lưu biến toàn cục (.data, .bss), đỉnh ngăn xếp Stack Pointer (sp = 0x0000_0400) và chứa đoạn mã hàm flashio_worker (thực thi từ RAM khi tạm ngắt XIP để bit-bang phát lệnh ghi/xóa chip Flash). Hỗ trợ mặt nạ byte ghi mem_wstrb[3:0] cho phép ghi chính xác từng byte đơn lẻ. Kích thước 1KB tối giản giúp tiết kiệm tối đa diện tích silicon trên chip ASIC và suy luận hoàn hảo thành khối Block RAM đồng bộ trên FPGA.")
+    add_p("Sau khi có bản đặc tả chức năng firmware, toàn bộ mã nguồn phần cứng Verilog RTL được chuẩn hóa và phân chia khoa học thành 3 khu vực chức năng riêng biệt:")
+    add_bullet("Khu vực 1 - Lõi hệ thống (rtl/core/): ", "Bao gồm nhân CPU PicoRV32 (rtl/core/picorv32.v), bộ nhớ 1KB Data SRAM (rtl/core/data_sram.v), khối trọng tài bus nội bộ (rtl/core/soc_interconnect.v), bộ điều khiển SPI Flash (rtl/core/spimemio.v), ngoại vi GPIO LED (rtl/core/soc_gpio_mmio.v) và khối đồng bộ 2 tầng Flip-Flop (rtl/core/sync_2ff.v).")
+    add_bullet("Khu vực 2 - Ngoại vi RFID RDM6300 (rtl/rdm6300/): ", "Bao gồm bộ giải mã khung thẻ tự trị (rtl/rdm6300/rdm6300_frame_decoder.v), bộ thu UART 9600 baud (rtl/rdm6300/uart_rx.v) và mô-đun ánh xạ MMIO (rtl/rdm6300/rdm6300_mmio.v).")
+    add_bullet("Khu vực 3 - Ngoại vi giao tiếp Host PC (rtl/host/): ", "Bao gồm lõi UART nối tiếp (rtl/host/simpleuart.v), hai bộ đệm phần cứng FIFO 32-byte (rtl/host/sync_fifo.v), bộ điều khiển tích hợp FIFO (rtl/host/simpleuart_fifo.v) và mô-đun ánh xạ MMIO (rtl/host/host_uart_mmio.v).")
+    add_bullet("Mô-đun mức đỉnh SoC (rtl/rdm6300_picorv32_soc.v): ", "Được đặt trực tiếp tại thư mục rtl/ đóng vai trò Top-Level tích hợp, nối dây và phân phối xung nhịp/reset giữa 3 khu vực chức năng.")
+    add_bullet("Nhân vi xử lý PicoRV32 (rtl/core/picorv32.v): ", "Được cấu hình hỗ trợ tập lệnh RV32I. Bus bộ nhớ giao tiếp qua các tín hiệu: mem_valid, mem_ready, mem_addr[31:0], mem_wdata[31:0], mem_wstrb[3:0], mem_rdata[31:0]. CPU khởi động trực tiếp tại địa chỉ 0x0025_0000 (PROGADDR_RESET) nằm trong vùng nhớ SPI Flash thông qua cơ chế thực thi tại chỗ XIP (eXecute In Place) của bộ điều khiển spimemio.")
+    add_bullet("Bộ nhớ On-Chip 1KB Data SRAM (rtl/core/data_sram.v): ", "Mảng nhớ nội bộ dung lượng chính xác 1 KByte (256 words x 32-bit = 1024 bytes) ánh xạ dải địa chỉ 0x0000_0000 đến 0x0000_03FF. Mảng nhớ này đóng vai trò không gian dữ liệu đọc/ghi: lưu biến toàn cục (.data, .bss), đỉnh ngăn xếp Stack Pointer (sp = 0x0000_0400) và chứa đoạn mã hàm flashio_worker (thực thi từ RAM khi tạm ngắt XIP để bit-bang phát lệnh ghi/xóa chip Flash). Hỗ trợ mặt nạ byte ghi mem_wstrb[3:0] cho phép ghi chính xác từng byte đơn lẻ. Kích thước 1KB tối giản giúp tiết kiệm tối đa diện tích silicon trên chip ASIC và suy luận hoàn hảo thành khối Block RAM đồng bộ trên FPGA.")
     add_bullet("Mã khởi động Assembly (firmware/start.s) và Linker Script (firmware/sections.lds): ", "Thiết lập con trỏ ngăn xếp Stack Pointer (sp = 0x00000400), sao chép phần dữ liệu .data từ Flash vào Data SRAM, xóa trắng vùng nhớ biến chưa khởi tạo (.bss) về 0 trước khi gọi hàm main().")
 
     # Chèn Hình 1: Block diagram chính
@@ -427,7 +434,7 @@ def create_report():
         add_caption("Hình 1. Sơ đồ khối kiến trúc tổng thể vi hệ thống SoC PicoRV32 tích hợp RDM6300 và SPI Flash")
 
     add_h2("3.4. Bước 4: Thiết kế bộ điều khiển bộ nhớ ngoài SPI Flash Controller")
-    add_p("Khối điều khiển Flash (rtl/spimemio.v) là cầu nối giữa bus MMIO của CPU và chip Flash SPI ngoài:")
+    add_p("Khối điều khiển Flash (rtl/core/spimemio.v) là cầu nối giữa bus MMIO của CPU và chip Flash SPI ngoài:")
     add_bullet("Máy trạng thái FSM điều khiển SPI: ", "Tự động hóa hoàn toàn các giao thức nối tiếp: tạo xung nhịp Flash SCK, kích hoạt chân chọn chip Flash CS_N, đẩy địa chỉ và dữ liệu qua MOSI và lấy mẫu dữ liệu từ MISO.")
     add_bullet("Tập lệnh Flash phần cứng hỗ trợ: ", "Hỗ trợ lệnh Read Data (0x03), Page Program (0x02), Sector Erase 64KB (0xD8/0x20) và Read Status Register (0x05).")
     add_bullet("Cơ chế phần cứng tự động Polling cờ bận WIP: ", "Sau mỗi chu kỳ ghi trang hoặc xóa sector, khối điều khiển tự động gửi lệnh 0x05 kiểm tra bit 0 (WIP) của Flash. Khi chip Flash vẫn đang bận ghi vật lý, bit trạng thái REG_SPI_STATUS_BUSY giữ mức 1; khi hoàn tất, cờ tự hạ về 0, giải phóng hoàn toàn thời gian chờ đợi cho CPU.")
@@ -438,26 +445,42 @@ def create_report():
     # TRANG 7: NGOẠI VI RDM6300, UART FIFO & TÍCH HỢP TOP SOC
     # =============================================================
     add_h2("3.5. Bước 5: Thiết kế ngoại vi giải mã phần cứng RDM6300 và UART Host có FIFO")
-    add_p("Để đảm bảo hệ thống không bao giờ bị rơi rụng dữ liệu thẻ và không làm nghẽn bus xử lý, các ngoại vi giao tiếp được thiết kế độc lập và trang bị bộ đệm phần cứng:")
-    add_bullet("1. Chuỗi giải mã phần cứng RDM6300 (Hình 2): ", "Bao gồm tầng khử bất ổn định 2-FF (sync_2ff.v), bộ thu UART 9600 baud (uart_rx.v) và máy trạng thái FSM giải mã khung (rdm6300_frame_decoder.v). FSM tự động lọc STX (0x02), thu thập 10 ký tự ASCII dữ liệu thẻ, chuyển đổi tổ hợp sang 5 byte Hex nhị phân, tính toán Checksum XOR song song trong phần cứng và đối chiếu với 2 byte Checksum nhận được. Nếu khớp, cờ card_valid bật lên 1 và chốt 40-bit UID vào thanh ghi REG_RFID_TAG_HI/LO.")
-    add_bullet("2. Khối UART giao tiếp máy tính tích hợp FIFO (simpleuart_fifo.v): ", "Tích hợp 2 bộ đệm FIFO phần cứng độc lập (sync_fifo.v) cho cả chiều nhận RX và chiều phát TX. Bộ đệm FIFO giúp máy tính có thể truyền chuỗi lệnh tốc độ cao mà không làm tràn bộ đệm khi PicoRV32 đang bận thực hiện chu kỳ xóa/ghi Flash.")
-    add_bullet("3. Khối GPIO điều khiển LED: ", "Ánh xạ địa chỉ 0x4000_0000 điều khiển 16 LED hiển thị trực quan các trạng thái nhịp tim hệ thống (Heartbeat), trạng thái bận Flash và kết quả xác thực thẻ.")
+    add_p("Để đảm bảo hệ thống không bao giờ bị rơi rụng dữ liệu thẻ và không làm nghẽn bus xử lý, các ngoại vi giao tiếp được thiết kế thành các khối mô-đun độc lập và trang bị bộ đệm phần cứng:")
+    add_bullet("1. Mô-đun giải mã phần cứng RDM6300 (rtl/rdm6300/rdm6300_mmio.v - Slave 2, Hình 2a): ", "Bao gồm tầng khử bất ổn định 2-FF (rtl/core/sync_2ff.v), bộ thu UART 9600 baud (rtl/rdm6300/uart_rx.v) và máy trạng thái FSM giải mã khung (rtl/rdm6300/rdm6300_frame_decoder.v). FSM tự động lọc STX (0x02), thu thập 10 ký tự ASCII dữ liệu thẻ, chuyển đổi tổ hợp sang 5 byte Hex nhị phân, tính toán Checksum XOR song song trong phần cứng và đối chiếu với 2 byte Checksum nhận được. Nếu khớp, cờ card_valid bật lên 1 và chốt 40-bit UID vào thanh ghi REG_RFID_TAG_HI/LO (0x1000_0000 - 0x1000_0008).")
+    add_bullet("2. Mô-đun UART giao tiếp máy tính tích hợp FIFO (rtl/host/host_uart_mmio.v - Slave 3, Hình 2b): ", "Tích hợp lõi UART (rtl/host/simpleuart.v) và 2 bộ đệm FIFO phần cứng độc lập 32 byte (rtl/host/sync_fifo.v) cho cả chiều nhận RX và chiều phát TX. Bộ đệm FIFO giúp máy tính có thể truyền chuỗi lệnh tốc độ cao mà không làm tràn bộ đệm khi PicoRV32 đang bận thực hiện chu kỳ xóa/ghi Flash, ánh xạ qua các thanh ghi baud divisor và data tại 0x3000_0000 - 0x3000_0004.")
+    add_bullet("3. Mô-đun GPIO điều khiển LED (rtl/core/soc_gpio_mmio.v - Slave 4): ", "Ánh xạ địa chỉ 0x4000_0000 điều khiển 16 LED hiển thị trực quan các trạng thái nhịp tim hệ thống (Heartbeat 1Hz), trạng thái bận Flash và kết quả xác thực thẻ.")
 
     doc.add_page_break()
 
     # =============================================================
-    # TRANG 8: HÌNH 2 - SƠ ĐỒ KHỐI ĐƯỜNG ỐNG 5 GIAI ĐOẠN RDM6300 (DỌC)
+    # TRANG 8: HÌNH 2A - SƠ ĐỒ KHỐI ĐƯỜNG ỐNG 5 GIAI ĐOẠN RDM6300 (CHIỀU DỌC)
     # =============================================================
-    fig2_path = os.path.join(cur_dir, "fig2_rdm6300_subsystem.png")
-    if os.path.exists(fig2_path):
-        p_img2 = doc.add_paragraph()
-        p_img2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_img2.paragraph_format.space_before = Pt(0)
-        p_img2.paragraph_format.space_after = Pt(2)
-        p_img2.paragraph_format.keep_with_next = True
-        run_img2 = p_img2.add_run()
-        run_img2.add_picture(fig2_path, width=Inches(5.35))
-        add_caption("Hình 2. Sơ đồ khối chi tiết đường ống 5 giai đoạn thu nhận và giải mã phần cứng thẻ RFID RDM6300")
+    fig2a_path = os.path.join(cur_dir, "fig2a_rdm6300_subsystem.png")
+    if os.path.exists(fig2a_path):
+        p_img2a = doc.add_paragraph()
+        p_img2a.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img2a.paragraph_format.space_before = Pt(0)
+        p_img2a.paragraph_format.space_after = Pt(2)
+        p_img2a.paragraph_format.keep_with_next = True
+        run_img2a = p_img2a.add_run()
+        run_img2a.add_picture(fig2a_path, width=Inches(5.35))
+        add_caption("Hình 2a. Sơ đồ khối chi tiết đường ống 5 giai đoạn thu nhận và giải mã phần cứng thẻ RFID RDM6300 (rtl/rdm6300_mmio.v - Slave 2)")
+
+    doc.add_page_break()
+
+    # =============================================================
+    # TRANG 9: HÌNH 2B - SƠ ĐỒ KHỐI GIAO TIẾP HOST PC UART FIFO (CHIỀU DỌC)
+    # =============================================================
+    fig2b_path = os.path.join(cur_dir, "fig2b_host_uart_subsystem.png")
+    if os.path.exists(fig2b_path):
+        p_img2b = doc.add_paragraph()
+        p_img2b.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img2b.paragraph_format.space_before = Pt(0)
+        p_img2b.paragraph_format.space_after = Pt(2)
+        p_img2b.paragraph_format.keep_with_next = True
+        run_img2b = p_img2b.add_run()
+        run_img2b.add_picture(fig2b_path, width=Inches(5.35))
+        add_caption("Hình 2b. Sơ đồ khối chi tiết khối giao tiếp UART Host PC tích hợp bộ đệm phần cứng FIFO 32 Byte (rtl/host_uart_mmio.v - Slave 3)")
 
     doc.add_page_break()
 
@@ -465,21 +488,21 @@ def create_report():
     # TRANG 9: TÍCH HỢP TOP-LEVEL SOC VÀ BẢN ĐỒ BỘ NHỚ MMIO
     # =============================================================
     add_h2("3.6. Bước 6: Tích hợp hệ thống top-level SoC và giải mã địa chỉ MMIO")
-    add_p("Tại tệp top-level rdm6300_picorv32_soc.v, toàn bộ CPU, bộ nhớ và các ngoại vi được kết nối thông qua bộ giải mã địa chỉ bus MMIO Address Decoder:")
+    add_p("Tại tệp top-level rdm6300_picorv32_soc.v, kiến trúc SoC được phân rã thành các khối mô-đun chuẩn mực: CPU PicoRV32 đóng vai trò Bus Master, bộ liên kết bus soc_interconnect.v đóng vai trò bộ giải mã địa chỉ và ghép bus (Address Decoder & Mux), định tuyến dữ liệu trực tiếp tới 5 khối ngoại vi/bộ nhớ Slaves độc lập:")
 
     # Bảng 1: Memory Map
     t1 = doc.add_table(rows=10, cols=3)
-    t1_headers = ["Dải địa chỉ (Hex)", "Ngoại vi / Chức năng", "Mô tả chi tiết và Phương thức truy xuất"]
+    t1_headers = ["Dải địa chỉ (Hex)", "Khối Slave & Ngoại vi", "Mô tả chi tiết và Phương thức truy xuất"]
     t1_data = [
-        ["0x0000_0000 - 0x0000_03FF", "1KB Data SRAM (data_sram.v)", "Bộ nhớ đọc/ghi nội bộ (256x32-bit): Chứa .data, .bss, ngăn xếp (Stack với đỉnh 0x0000_0400) và hàm flashio_worker."],
-        ["0x0010_0000 - 0x00FF_FFFF", "15MB Flash XIP (spimemio.v)", "Vùng mã lệnh thực thi trực tiếp từ SPI Flash (eXecute In Place). Reset vector đặt tại 0x0025_0000."],
-        ["0x0200_0000", "SPIMEMIO Config & Bit-Bang", "Thanh ghi điều khiển trực tiếp các chân SPI Flash (dùng bởi flashio_worker để ghi/xóa Flash)."],
-        ["0x1000_0000", "REG_RFID_STATUS", "Bit 0: Cờ card_valid (ghi 1 để xóa sau khi đọc); Bit 1: Checksum error."],
-        ["0x1000_0004", "REG_RFID_TAG_HI", "Chứa 8-bit trên của mã thẻ RFID (Version byte)."],
-        ["0x1000_0008", "REG_RFID_TAG_LO", "Chứa 32-bit dưới của mã thẻ RFID (Serial number)."],
-        ["0x3000_0000", "Host UART Baud Divisor", "Thanh ghi chia tần số baud UART kết nối PC (Mặc định: 50MHz / 9600 = 5208)."],
-        ["0x3000_0004", "Host UART Data RX/TX", "Ghi byte để phát lên máy tính; đọc byte máy tính gửi xuống (có đệm FIFO RX/TX)."],
-        ["0x4000_0000", "GPIO / Status LEDs", "Thanh ghi điều khiển 16 LED trạng thái (LED 0 nhịp tim, LED 1 Flash Busy, LED 2 Tag Valid)."],
+        ["0x0000_0000 - 0x0000_03FF", "Slave 0: 1KB Data SRAM (data_sram.v)", "Bộ nhớ đọc/ghi nội bộ (256x32-bit): Chứa .data, .bss, ngăn xếp (Stack với đỉnh 0x0000_0400) và hàm flashio_worker."],
+        ["0x0010_0000 - 0x00FF_FFFF", "Slave 1: 15MB Flash XIP (spimemio.v)", "Vùng mã lệnh thực thi trực tiếp từ SPI Flash (eXecute In Place). Reset vector đặt tại 0x0025_0000."],
+        ["0x0200_0000", "Slave 1: SPIMEMIO Config & Bit-Bang", "Thanh ghi điều khiển trực tiếp các chân SPI Flash (dùng bởi flashio_worker để ghi/xóa Flash)."],
+        ["0x1000_0000", "Slave 2: REG_RFID_STATUS (rdm6300_mmio.v)", "Bit 0: Cờ card_valid (ghi 1 để xóa sau khi đọc); Bit 1: Checksum error."],
+        ["0x1000_0004", "Slave 2: REG_RFID_TAG_HI (rdm6300_mmio.v)", "Chứa 8-bit trên của mã thẻ RFID (Version byte)."],
+        ["0x1000_0008", "Slave 2: REG_RFID_TAG_LO (rdm6300_mmio.v)", "Chứa 32-bit dưới của mã thẻ RFID (Serial number)."],
+        ["0x3000_0000", "Slave 3: Host UART Divisor (host_uart_mmio.v)", "Thanh ghi chia tần số baud UART kết nối PC (Mặc định: 50MHz / 9600 = 5208)."],
+        ["0x3000_0004", "Slave 3: Host UART Data (host_uart_mmio.v)", "Ghi byte để phát lên máy tính; đọc byte máy tính gửi xuống (có đệm FIFO 32B RX/TX)."],
+        ["0x4000_0000", "Slave 4: GPIO / Status LEDs (soc_gpio_mmio.v)", "Thanh ghi điều khiển 16 LED trạng thái (LED 0 nhịp tim, LED 1 Flash Busy, LED 2 Tag Valid)."],
     ]
     for c_idx, h_text in enumerate(t1_headers):
         t1.cell(0, c_idx).paragraphs[0].text = h_text
@@ -492,34 +515,74 @@ def create_report():
     style_table(t1, col_w1, col_a1)
     add_caption("Bảng 1. Bản đồ không gian địa chỉ Memory-Mapped I/O (MMIO) của hệ thống SoC")
 
+    # -------------------------------------------------------------
+    # 3.6.1. CƠ CHẾ LIÊN KẾT BUS VÀ 2 CHẶNG THỰC THI LỆNH
+    # -------------------------------------------------------------
+    add_h3("3.6.1. Cơ chế liên kết bus phần cứng và chu trình thực thi qua hai chặng (soc_interconnect.v)")
+    add_p("Trong thiết kế vi mạch số rdm6300_picorv32_soc.v, CPU PicoRV32, bộ giải mã bus soc_interconnect, bộ điều khiển SPI Flash (spimemio) và bộ nhớ 1KB Data SRAM (data_sram) được liên kết vật lý thông qua các đường dây wire trung gian. Mỗi chu trình thực thi một lệnh firmware (ví dụ lệnh lw a0, 0(sp) nạp từ Flash tại PC = 0x0025_0000 để đọc giá trị từ đỉnh Stack SRAM 0x0000_03F0) diễn ra chính xác qua hai chặng độc lập:")
+
+    add_bullet("1. Chặng 1: Nạp mã lệnh từ SPI Flash qua bus (Instruction Fetch - XIP): ", "Chu trình nạp lệnh từ Flash chip W25Q128 diễn ra qua 4 bước tuần tự với cấu trúc liên kết dây tín hiệu:")
+    add_bullet("  • Bước 1 (CPU phát yêu cầu): ", "rdm6300_picorv32_soc.v#mem_valid, #mem_addr (picorv32, soc_interconnect) — CPU đưa mem_valid=1, mem_instr=1, địa chỉ PC=0x0025_0000 lên bus.")
+    add_bullet("  • Bước 2 (Giải mã địa chỉ trúng Flash): ", "rdm6300_picorv32_soc.v#sel_spimem (soc_interconnect, spimemio) — soc_interconnect so khớp địa chỉ trong dải 0x0010_0000..0x00FF_FFFF và kích hoạt sel_spimem=1 (khối SRAM nghỉ ngơi với sel_sram=0).")
+    add_bullet("  • Bước 3 (Flash trả về 4 byte mã máy): ", "rdm6300_picorv32_soc.v#spimem_rdata, #spimem_ready (spimemio, soc_interconnect) — spimemio đọc xong 4 byte từ chip Flash qua giao thức SPI và báo spimem_ready=1.")
+    add_bullet("  • Bước 4 (Ghép bus trả mã lệnh về CPU): ", "rdm6300_picorv32_soc.v#mem_rdata, #mem_ready (soc_interconnect, picorv32) — soc_interconnect đưa dữ liệu vào mem_rdata và kích hoạt mem_ready=1 để CPU chốt mã máy lệnh lw.")
+
+    # Chèn Hình 3: Sơ đồ Chặng 1
+    phase1_img = os.path.join(cur_dir, "fig2_phase1_instruction_fetch.png")
+    if os.path.exists(phase1_img):
+        p_p1 = doc.add_paragraph()
+        p_p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_p1.paragraph_format.space_before = Pt(4)
+        p_p1.paragraph_format.space_after = Pt(2)
+        p_p1.paragraph_format.keep_with_next = True
+        run_p1 = p_p1.add_run()
+        run_p1.add_picture(phase1_img, width=Inches(6.25))
+        add_caption("Hình 3. Sơ đồ tuần tự tín hiệu Chặng 1: Nạp mã lệnh từ Flash qua bus soc_interconnect (Instruction Fetch - XIP)")
+
+    add_bullet("2. Chặng 2: Truy xuất đọc dữ liệu biến và ngăn xếp từ 1KB SRAM (Data Memory Access): ", "Chu trình đọc dữ liệu thực thi lệnh lw a0, 0(sp) diễn ra qua 4 bước tuần tự với cấu trúc liên kết dây tín hiệu:")
+    add_bullet("  • Bước 1 (CPU phát yêu cầu đọc dữ liệu): ", "rdm6300_picorv32_soc.v#mem_valid, #mem_addr (picorv32, soc_interconnect) — CPU đưa mem_valid=1, mem_instr=0, mem_wstrb=4'b0000, mem_addr=0x0000_03F0 (đỉnh Stack).")
+    add_bullet("  • Bước 2 (Giải mã địa chỉ trúng SRAM): ", "rdm6300_picorv32_soc.v#sel_sram (soc_interconnect, data_sram) — soc_interconnect phát hiện địa chỉ < 0x0000_0400 và bật sel_sram=1 (chip Flash nghỉ ngơi với sel_spimem=0).")
+    add_bullet("  • Bước 3 (SRAM phản hồi trong 1 chu kỳ): ", "rdm6300_picorv32_soc.v#sram_rdata, #sram_ready (data_sram, soc_interconnect) — data_sram truy xuất ô nhớ 32-bit nội bộ, xuất dữ liệu và báo sram_ready=1.")
+    add_bullet("  • Bước 4 (CPU chốt dữ liệu vào thanh ghi): ", "rdm6300_picorv32_soc.v#mem_rdata, #mem_ready (soc_interconnect, picorv32) — soc_interconnect chuyển sram_rdata sang mem_rdata và kích hoạt mem_ready=1; CPU ghi dữ liệu vào thanh ghi a0 trong đúng 1 chu kỳ clock.")
+
+    # Chèn Hình 4: Sơ đồ Chặng 2
+    phase2_img = os.path.join(cur_dir, "fig2_phase2_data_access.png")
+    if os.path.exists(phase2_img):
+        p_p2 = doc.add_paragraph()
+        p_p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_p2.paragraph_format.space_before = Pt(4)
+        p_p2.paragraph_format.space_after = Pt(2)
+        p_p2.paragraph_format.keep_with_next = True
+        run_p2 = p_p2.add_run()
+        run_p2.add_picture(phase2_img, width=Inches(6.25))
+        add_caption("Hình 4. Sơ đồ tuần tự tín hiệu Chặng 2: Truy xuất đọc dữ liệu biến và ngăn xếp từ 1KB Data SRAM (Data Memory Access)")
+
     doc.add_page_break()
 
     # =============================================================
     # TRANG 8: PHẦN MỀM HOST CONSOLE TRÊN MÁY TÍNH
     # =============================================================
     add_h2("3.7. Bước 7: Thiết kế phần mềm host console C trên máy tính")
-    add_p("Phần mềm quản trị trên máy tính (host/main.c) được viết hoàn toàn bằng ngôn ngữ C, biên dịch thành tệp thực thi độc lập kết nối trực tiếp với chip cầu nối FTDI USB-UART qua Win32 API. Ứng dụng cung cấp menu tương tác 13 chức năng chuyên nghiệp:")
+    add_p("Phần mềm quản trị trên máy tính (host/main.c) được viết hoàn toàn bằng ngôn ngữ C, biên dịch thành tệp thực thi độc lập kết nối trực tiếp với chip cầu nối FTDI USB-UART qua Win32 API. Ứng dụng cung cấp menu tương tác 11 chức năng chuyên nghiệp:")
     
     add_console_block([
         "===============================================================",
         "     RDM6300 RFID - PICORV32 - BASYS 3 SPI FLASH MANAGER      ",
         "===============================================================",
         "  [1]  Ping Hardware (Kiem tra ket noi PicoRV32)",
-        "  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu Flash & Export)",
+        "  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu vao Flash)",
         "  [3]  Check RFID Tag in Flash (Kiem tra the da co trong Flash chua)",
-        "  [4]  Delete RFID Tag from Flash (Nhap 10 so in tren the de xoa khoi Flash & Export CSV)",
+        "  [4]  Delete RFID Tag from Flash (Nhap 10 so in tren the de xoa khoi Flash)",
         "  [5]  Virtual Scan: By Decimal (Quet the ao: Nhap 10 so in tren the)",
         "  [6]  Virtual Scan: By Hex (Quet the ao: Nhap ma Hex 10 ky tu)",
         "  [7]  View Access Logs from Flash (Xem nhat ky quet the tu Flash 0x310000)",
-        "  [8]  Export Access Logs to CSV (Xuat nhat ky quet the ra file CSV vao host/logs)",
-        "  [9]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)",
-        "  [10] Erase Authorized Tags Sector (Xoa the da cap phep 0x300000)",
-        "  [11] Get SoC Status (Xem trang thai LED, Flash, PicoRV32)",
-        "  [12] Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)",
-        "  [13] Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)",
+        "  [8]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)",
+        "  [9]  Get SoC Status (Xem trang thai LED, Flash, PicoRV32)",
+        "  [10] Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)",
+        "  [11] Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)",
         "  [0]  Exit (Thoat)",
         "---------------------------------------------------------------",
-        "Lua chon cua ban [0-13]: "
+        "Lua chon cua ban [0-11]: "
     ])
 
     add_p("Điểm nhấn công nghệ của phần mềm Host Console:")
@@ -649,7 +712,7 @@ def create_report():
     add_h3("Kịch bản 1: Kiểm tra kết nối phần cứng (Ping Hardware)")
     add_p("Người dùng chọn phím [1]. Máy tính gửi lệnh 'P' xuống SoC qua UART. PicoRV32 nhận lệnh và phản hồi ngay lập tức:")
     add_console_block([
-        "Lua chon cua ban [0-13]: 1",
+        "Lua chon cua ban [0-11]: 1",
         "-> Gui lenh 'P' (Ping)...",
         "[PHAN HOI] PONG:CPU_OK:TRAP=0:HEARTBEAT_ACTIVE"
     ])
@@ -657,12 +720,11 @@ def create_report():
     add_h3("Kịch bản 2: Đăng ký thẻ mới vào bộ nhớ Flash")
     add_p("Người dùng chọn phím [2] và nhập 10 chữ số in trên thẻ RFID thật (ví dụ: 0007508976). Phần mềm quy đổi thành mã Hex 00007293F0 và gửi lệnh 'N' xuống SoC. PicoRV32 kích hoạt lệnh Page Program ghi vào Flash Sector 48 (0x300000). Đèn LED[1] trên Basys 3 nháy sáng 3 ms rồi tắt, thông báo ghi thành công:")
     add_console_block([
-        "Lua chon cua ban [0-13]: 2",
+        "Lua chon cua ban [0-11]: 2",
         "Nhap 10 chu so in tren the RFID (vi du: 0007508976): 0007508976",
         "-> Da nhan dien the hop le: 0007508976 (FC: 114, ID: 37872) [UID: 00007293F0]",
         "-> Gui ma the 00007293F0 toi PicoRV32 de luu vao Flash...",
-        "[THANH CONG] The moi 00007293F0 (0007508976) da duoc luu vao Flash Basys 3 tai Slot #0 (Dia chi: 0x300000)!",
-        "-> Tu dong xuat danh sach the moi cap nhat ra file CSV vao host/rfids/..."
+        "[THANH CONG] The moi 00007293F0 (0007508976) da duoc luu vao Flash Basys 3 tai Slot #0 (Dia chi: 0x300000)!"
     ])
 
     add_h3("Kịch bản 3: Quẹt thẻ thật trên module RFID RDM6300 (Access Granted)")
@@ -707,15 +769,19 @@ def create_report():
         '  "PDK": "sky130A",',
         '  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",',
         '  "VERILOG_FILES": [',
-        '    "dir::rtl/sync_2ff.v",',
-        '    "dir::rtl/uart_rx.v",',
-        '    "dir::rtl/rdm6300_frame_decoder.v",',
-        '    "dir::rtl/sync_fifo.v",',
-        '    "dir::rtl/simpleuart.v",',
-        '    "dir::rtl/simpleuart_fifo.v",',
-        '    "dir::rtl/spimemio.v",',
-        '    "dir::rtl/data_sram.v",',
-        '    "dir::rtl/picorv32.v",',
+        '    "dir::rtl/core/sync_2ff.v",',
+        '    "dir::rtl/rdm6300/uart_rx.v",',
+        '    "dir::rtl/rdm6300/rdm6300_frame_decoder.v",',
+        '    "dir::rtl/host/sync_fifo.v",',
+        '    "dir::rtl/host/simpleuart.v",',
+        '    "dir::rtl/host/simpleuart_fifo.v",',
+        '    "dir::rtl/core/spimemio.v",',
+        '    "dir::rtl/core/data_sram.v",',
+        '    "dir::rtl/rdm6300/rdm6300_mmio.v",',
+        '    "dir::rtl/host/host_uart_mmio.v",',
+        '    "dir::rtl/core/soc_gpio_mmio.v",',
+        '    "dir::rtl/core/picorv32.v",',
+        '    "dir::rtl/core/soc_interconnect.v",',
         '    "dir::rtl/rdm6300_picorv32_soc.v"',
         '  ],',
         '  "CLOCK_PORT": "clk",',
@@ -731,11 +797,11 @@ def create_report():
         '  "PL_MAX_DISPLACEMENT_Y": 2,',
         '  "PL_OPTIMIZE_MIRRORING": false,',
         '  "RUN_HEURISTIC_DIODE_INSERTION": true,',
-        '  "HEURISTIC_ANTENNA_THRESHOLD": 45,',
+        '  "HEURISTIC_ANTENNA_THRESHOLD": 30,',
         '  "DIODE_PADDING": 0,',
         '  "GRT_OVERFLOW_ITERS": 60,',
-        '  "GRT_ANTENNA_ITERS": 15,',
-        '  "GRT_ANTENNA_MARGIN": 60,',
+        '  "GRT_ANTENNA_ITERS": 25,',
+        '  "GRT_ANTENNA_MARGIN": 75,',
         '  "GRT_ALLOW_CONGESTION": true,',
         '  "GRT_LAYER_ADJUSTMENTS": [0.99, 0.65, 0.30, 0, 0, 0],',
         '  "RUN_ANTENNA_REPAIR": true,',
@@ -747,11 +813,11 @@ def create_report():
     add_p("Ý nghĩa kỹ thuật và cơ chế điều khiển vật lý của từng nhóm tham số cấu hình then chốt được phân tích chi tiết trong Bảng 2:")
 
     # Bảng cấu hình config.json chi tiết
-    t_cfg = doc.add_table(rows=15, cols=3)
+    t_cfg = doc.add_table(rows=16, cols=3)
     t_cfg_headers = ["Tham số cấu hình (Parameter)", "Giá trị thiết lập", "Ý nghĩa thiết kế vật lý & Tác động PnR"]
     t_cfg_data = [
         ["DESIGN_NAME, PDK, STD_CELL_LIBRARY", "rdm6300_picorv32_soc\nsky130A / sky130_fd_sc_hd", "Định danh module đỉnh và chọn bộ thư viện tế bào chuẩn SkyWater 130nm High-Density (7-track, điện áp 1.8V)."],
-        ["VERILOG_FILES", "10 file RTL (.v)", "Khai báo đầy đủ 10 khối RTL Verilog cấu thành hệ thống: PicoRV32, 1KB SRAM, SPIMEMIO, UART FIFO, RDM6300 decoder."],
+        ["VERILOG_FILES", "14 file RTL (.v)", "Khai báo đầy đủ 14 khối RTL Verilog cấu thành hệ thống: PicoRV32, 1KB SRAM, SPIMEMIO, RDM6300, Host UART FIFO, GPIO MMIO, Interconnect và Top SoC."],
         ["CLOCK_PORT, CLOCK_PERIOD", "clk / 20.0 ns (50 MHz)", "Ràng buộc tần số làm việc mục tiêu 50 MHz xuyên suốt các bước Synthesis, Clock Tree Synthesis (CTS) và Sign-off STA."],
         ["PNR_SDC_FILE, SIGNOFF_SDC_FILE", "dir::constraints.sdc", "Đồng nhất ràng buộc định thời (SDC) giữa giai đoạn Place-and-Route và giai đoạn kiểm tra ký duyệt cuối cùng."],
         ["MAX_FANOUT_CONSTRAINT", "12", "Khống chế số tải tối đa của mỗi cổng là 12, chống suy giảm độ dốc sườn xung (slew) và giảm trễ truyền dẫn."],
@@ -760,8 +826,9 @@ def create_report():
         ["PL_RESIZER_HOLD / SETUP_SLACK_MARGIN", "0.25 ns / 0.20 ns", "Biên độ trễ an toàn dự phòng (Guard-band) giúp bộ tối ưu hóa tế bào (Resizer) triệt tiêu vi phạm timing ở mọi góc PVT."],
         ["PL_MAX_DISPLACEMENT_X / Y", "100 / 2", "Giới hạn độ dịch chuyển tế bào theo trục X và Y trong bước tối ưu hóa sau định vị, bảo toàn bố cục tối ưu."],
         ["PL_OPTIMIZE_MIRRORING", "false", "Vô hiệu hóa lật gương tế bào tự do để bảo toàn cấu trúc phân bố chân nguồn và chân đất đồng nhất."],
-        ["RUN_HEURISTIC_DIODE_INSERTION, THRESHOLD", "true / 45", "Kích hoạt thuật toán phỏng đoán chèn diode bảo vệ tự động khi tỷ lệ diện tích dây kim loại / cực cổng vượt ngưỡng 45."],
+        ["RUN_HEURISTIC_DIODE_INSERTION, THRESHOLD", "true / 30", "Kích hoạt thuật toán phỏng đoán chèn diode bảo vệ tự động khi tỷ lệ diện tích dây kim loại / cực cổng vượt ngưỡng 30 (tinh chỉnh từ 45 xuống 30 giúp đạt 0 lỗi Antenna)."],
         ["RUN_ANTENNA_REPAIR, DIODE_ON_PORTS", "true / \"in\"", "Tự động phát hiện và chèn diode tiêu tán điện tích plasma tại tất cả các cổng ngõ vào (Input ports) nối trực tiếp từ pad."],
+        ["GRT_ANTENNA_ITERS, MARGIN", "25 / 75", "Tăng ngân sách 25 vòng lặp sửa lỗi Antenna và nâng biên an toàn router lên 75 để triệt tiêu 100% vi phạm Antenna."],
         ["GRT_LAYER_ADJUSTMENTS", "[0.99, 0.65, 0.30, 0, 0, 0]", "Giảm tải định tuyến trên met1 (99%), met2 (65%), met3 (30%) để đẩy các đường dây dài lên met4/met5, triệt tiêu nghẽn."],
         ["SYNTH_STRATEGY", "\"AREA 0\"", "Chiến lược tổng hợp logic Yosys ưu tiên tối ưu hóa diện tích die silicon, triệt tiêu các cổng logic dư thừa."],
     ]
@@ -775,11 +842,15 @@ def create_report():
     style_table(t_cfg, col_w_cfg, col_a_cfg)
     add_caption("Bảng 3. Bảng phân tích chi tiết các tham số vật lý trong config.json và ý nghĩa PnR trên OpenLane 2")
 
-    add_h2("5.2. Trực quan hóa layout vật lý trên công cụ OpenROAD (Openroad_1.png)")
-    add_p("Hình ảnh bản vẽ layout vật lý sau bước hoàn thiện định tuyến chi tiết (Detailed Routing) và chèn diode bảo vệ được hiển thị trực tiếp trên giao diện công cụ OpenROAD, thể hiện tại Hình 3.")
+    add_h2("5.2. Trực quan hóa layout vật lý trên công cụ OpenROAD (OpenROAD.png)")
+    add_p("Hình ảnh bản vẽ layout vật lý sau bước hoàn thiện định tuyến chi tiết (Detailed Routing) và chèn diode bảo vệ được hiển thị trực tiếp trên giao diện công cụ OpenROAD, thể hiện tại Hình 5.")
 
-    # Chèn Hình 3: Openroad_1.png
-    openroad_path = os.path.join(parent_dir, "Openroad_1.png")
+    # Chèn Hình 5: OpenROAD.png
+    openroad_path = os.path.join(project_root, "OpenROAD.png")
+    if not os.path.exists(openroad_path):
+        openroad_path = os.path.join(parent_dir, "OpenROAD.png")
+    if not os.path.exists(openroad_path):
+        openroad_path = os.path.join(cur_dir, "OpenROAD.png")
     if not os.path.exists(openroad_path):
         openroad_path = os.path.join(cur_dir, "openroad.png")
     if os.path.exists(openroad_path):
@@ -790,7 +861,7 @@ def create_report():
         p_img3.paragraph_format.keep_with_next = True
         run_img3 = p_img3.add_run()
         run_img3.add_picture(openroad_path, width=Inches(5.2))
-        add_caption("Hình 3. Giao diện trực quan hóa layout vật lý chip ASIC trên công cụ OpenROAD (SkyWater Sky130A)")
+        add_caption("Hình 5. Giao diện trực quan hóa layout vật lý chip ASIC trên công cụ OpenROAD (SkyWater Sky130A)")
 
     doc.add_page_break()
 
@@ -798,13 +869,17 @@ def create_report():
     # TRANG 12: BÁO CÁO KÝ DUYỆT CHẾ TẠO (ANTENNA, LVS, DRC PASSED)
     # =============================================================
     add_h2("5.3. Báo cáo ký duyệt chế tạo sign-off toàn diện (AntennaLvsDrc.png)")
-    add_p("Ở lượt chạy chính thức mang mã định danh RUN_2026-09-27_21-51-11, bước kiểm tra khả năng chế tạo ReportManufacturability (bước 75) đã xác nhận thiết kế vi mạch vượt qua 100% các tiêu chí ký duyệt vật lý khắt khe nhất:")
-    add_bullet("Lỗi Antenna: Passed ✅ — ", "0 net violations, 0 pin violations. Thuật toán chèn diode phỏng đoán và chèn diode tại các cổng I/O đã bảo vệ hoàn toàn cực cổng của các transistor khỏi hiện tượng phóng điện plasma.")
-    add_bullet("Kiểm tra LVS (Netgen): Passed ✅ — ", "Netlist trích xuất từ layout GDSII hoàn toàn trùng khớp với Netlist nguyên lý (Circuits match uniquely, 57,544 devices và 50,028 nets trùng khớp 100%, 0 thiết bị sai lệch).")
+    add_p("Ở lượt chạy chính thức mang mã định danh RUN_2026-10-02_02-43-19, bước kiểm tra khả năng chế tạo ReportManufacturability (bước 75) đã xác nhận thiết kế vi mạch vượt qua 100% các tiêu chí ký duyệt vật lý khắt khe nhất:")
+    add_bullet("Lỗi Antenna: Passed ✅ — ", "0 net violations, 0 pin violations. Thuật toán chèn diode phỏng đoán và chèn diode tại các cổng I/O đã bảo vệ hoàn toàn cực cổng của các transistor khỏi hiện tượng phóng điện plasma (tổng cộng 1,289 diodes bảo vệ).")
+    add_bullet("Kiểm tra LVS (Netgen): Passed ✅ — ", "Netlist trích xuất từ layout GDSII hoàn toàn trùng khớp với Netlist nguyên lý (Circuits match uniquely, 58,496 devices và 49,979 nets trùng khớp 100%, 0 thiết bị sai lệch).")
     add_bullet("Kiểm tra DRC (Magic & KLayout): Passed ✅ — ", "0 lỗi vi phạm quy tắc hình học trên cả 2 công cụ kiểm tra độc lập Magic (COUNT: 0) và KLayout (klayout__drc_error__count: 0).")
 
-    # Chèn Hình 4: AntennaLvsDrc.png
-    antenna_lvs_path = os.path.join(parent_dir, "AntennaLvsDrc.png")
+    # Chèn Hình 6: AntennaLvsDrc.png
+    antenna_lvs_path = os.path.join(project_root, "AntennaLvsDrc.png")
+    if not os.path.exists(antenna_lvs_path):
+        antenna_lvs_path = os.path.join(parent_dir, "AntennaLvsDrc.png")
+    if not os.path.exists(antenna_lvs_path):
+        antenna_lvs_path = os.path.join(cur_dir, "AntennaLvsDrc.png")
     if os.path.exists(antenna_lvs_path):
         p_img4 = doc.add_paragraph()
         p_img4.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -813,23 +888,24 @@ def create_report():
         p_img4.paragraph_format.keep_with_next = True
         run_img4 = p_img4.add_run()
         run_img4.add_picture(antenna_lvs_path, width=Inches(5.8))
-        add_caption("Hình 4. Báo cáo kiểm tra chế tạo ký duyệt vật lý sign-off: Antenna Passed, LVS Passed, DRC Passed")
+        add_caption("Hình 6. Báo cáo kiểm tra chế tạo ký duyệt vật lý sign-off: Antenna Passed, LVS Passed, DRC Passed")
 
     # Bảng 2: Thông số Sign-off ASIC
-    t2 = doc.add_table(rows=12, cols=3)
+    t2 = doc.add_table(rows=13, cols=3)
     t2_headers = ["Thông số vật lý / Ký duyệt (Metric)", "Giá trị đạt được", "Tiêu chuẩn / Đánh giá kiểm tra"]
     t2_data = [
         ["Tiến trình công nghệ (Process)", "SkyWater 130nm (sky130_fd_sc_hd)", "Tiến trình CMOS nguồn mở chuẩn công nghiệp"],
         ["Tần số xung nhịp hoạt động (Clock)", "50 MHz (Chu kỳ 20.0 ns)", "Đạt chuẩn định thời tại 50 MHz"],
-        ["Mật độ sử dụng tế bào (Cell Utilization)", "26% (Khởi tạo Floorplan)", "Mật độ tối ưu giải phóng nghẽn định tuyến"],
+        ["Mật độ sử dụng tế bào (Cell Utilization)", "26% (Khởi tạo Floorplan) / 46.01% (Final)", "Mật độ tối ưu giải phóng nghẽn định tuyến"],
         ["Số cổng kết nối ngoại vi (I/O Pins)", "31 pins", "Phân bổ cân đối 4 cạnh die (pin_order.cfg)"],
-        ["Tổng số thiết bị so khớp LVS (Devices)", "57,544 devices", "Circuits match uniquely (Netgen 1.5)"],
-        ["Tổng số đường dây so khớp LVS (Nets)", "50,028 nets", "Circuits match uniquely (Netgen 1.5)"],
-        ["Lỗi quy tắc Antenna (Antenna Violations)", "0 LỖI (Passed ✅)", "0 violating nets, 0 violating pins"],
+        ["Tổng số thiết bị so khớp LVS (Devices)", "58,496 devices", "Circuits match uniquely (Netgen 1.5)"],
+        ["Tổng số đường dây so khớp LVS (Nets)", "49,979 nets", "Circuits match uniquely (Netgen 1.5)"],
+        ["Tổng số Standard Cells (Instances)", "145,969 cells", "Bao gồm logic cells, CTS buffers, hold buffers"],
+        ["Lỗi quy tắc Antenna (Antenna Violations)", "0 LỖI (Passed ✅)", "0 violating nets, 0 violating pins (1,289 diodes)"],
         ["Kiểm tra Magic DRC", "0 LỖI (Passed ✅)", "COUNT: 0 (Sạch 100% lỗi hình học)"],
         ["Kiểm tra KLayout DRC", "0 LỖI (Passed ✅)", "klayout__drc_error__count = 0"],
         ["Kiểm tra đối chiếu Layout - Sơ đồ (LVS)", "PASSED ✅", "0 lỗi LVS, Netlist trùng khớp tuyệt đối"],
-        ["Định thời Setup & Hold (STA)", "MET TIMING ✅", "No setup violations, No hold violations"],
+        ["Định thời Setup & Hold (STA)", "MET TIMING ✅", "No setup violations (WNS +1.84 ns), No hold violations (WNS +0.27 ns)"],
     ]
     for c_idx, h_text in enumerate(t2_headers):
         t2.cell(0, c_idx).paragraphs[0].text = h_text
@@ -839,7 +915,7 @@ def create_report():
     col_w2 = [Inches(2.5), Inches(1.8), Inches(1.97)]
     col_a2 = [WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.LEFT]
     style_table(t2, col_w2, col_a2)
-    add_caption("Bảng 4. Bảng tổng hợp các thông số ký duyệt (Signoff Metrics) của chip ASIC Sky130A (RUN_2026-09-27_21-51-11)")
+    add_caption("Bảng 4. Bảng tổng hợp các thông số ký duyệt (Signoff Metrics) của chip ASIC Sky130A (RUN_2026-10-02_02-43-19)")
 
     doc.add_page_break()
 
@@ -847,40 +923,40 @@ def create_report():
     # TRANG 13: PHÂN TÍCH ĐỊNH THỜI TĨNH STA (MET TIMING) & IR DROP
     # =============================================================
     add_h2("5.4. Đánh giá phân tích định thời tĩnh STA đa góc đo (9 corners) và MET TIMING")
-    add_p("Trong thiết kế vi mạch số chuyên nghiệp, **MET TIMING** là kết quả quan trọng nhất và là điều kiện bắt buộc để chip có thể sản xuất thành công. Phân tích định thời tĩnh Post-PnR bằng OpenROAD trên lượt chạy RUN_2026-09-27_21-51-11 xác nhận rằng hệ thống hoàn toàn sạch lỗi định thời trên cả 9 góc đo công nghệ khắc nghiệt nhất:")
-    add_bullet("1. Không có vi phạm thời gian thiết lập (No Setup Violations): ", "Tại tần số 50 MHz (chu kỳ 20.0 ns), mọi đường truyền dữ liệu tổ hợp đều đến kịp trước sườn xung nhịp tiếp theo (Setup Slack > 0 ở cả 9 corners).")
-    add_bullet("2. Không có vi phạm thời gian duy trì (No Hold Violations): ", "Cây xung nhịp CTS được cân bằng tối ưu và các bộ đệm delay được chèn hợp lý, đảm bảo dữ liệu không bao giờ chạy quá nhanh đè lên chu kỳ cũ (Hold Slack > 0 ở cả 9 corners).")
+    add_p("Trong thiết kế vi mạch số chuyên nghiệp, **MET TIMING** là kết quả quan trọng nhất và là điều kiện bắt buộc để chip có thể sản xuất thành công. Phân tích định thời tĩnh Post-PnR bằng OpenROAD trên lượt chạy RUN_2026-10-02_02-43-19 xác nhận rằng hệ thống hoàn toàn sạch lỗi định thời trên cả 9 góc đo công nghệ khắc nghiệt nhất:")
+    add_bullet("1. Không có vi phạm thời gian thiết lập (No Setup Violations): ", "Tại tần số 50 MHz (chu kỳ 20.0 ns), mọi đường truyền dữ liệu tổ hợp đều đến kịp trước sườn xung nhịp tiếp theo (Setup Slack > 0 ở cả 9 corners, góc xấu nhất max_ss_100C_1v60 đạt slack an toàn +1.84 ns).")
+    add_bullet("2. Không có vi phạm thời gian duy trì (No Hold Violations): ", "Cây xung nhịp CTS được cân bằng tối ưu và các bộ đệm delay được chèn hợp lý, đảm bảo dữ liệu không bao giờ chạy quá nhanh đè lên chu kỳ cũ (Hold Slack > 0 ở cả 9 corners, góc xấu nhất min_ff_n40C_1v95 đạt slack +0.27 ns).")
     add_bullet("3. Không có vi phạm Max Slew & Max Capacitance: ", "Độ dốc sườn xung và tải điện dung trên toàn bộ dây kim loại đều nằm trong ngưỡng an toàn của thư viện cell chuẩn.")
 
     # Bảng 5: STA Summary 9 Corners
     t3 = doc.add_table(rows=10, cols=5)
-    t3_headers = ["Góc đo công nghệ (PVT Corner)", "Điều kiện Môi trường", "Setup Violations", "Hold Violations", "Đánh giá Ký duyệt"]
+    t3_headers = ["Góc đo công nghệ (PVT Corner)", "Điều kiện Môi trường", "Setup Slack (ns)", "Hold Slack (ns)", "Đánh giá Ký duyệt"]
     t3_data = [
-        ["nom_tt_025C_1v80", "Điển hình: 25°C, 1.80V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["nom_ss_100C_1v60", "Chậm: 100°C, 1.60V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["nom_ff_n40C_1v95", "Nhanh: -40°C, 1.95V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["min_tt_025C_1v80", "Điển hình: 25°C, 1.80V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["min_ss_100C_1v60", "Chậm: 100°C, 1.60V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["min_ff_n40C_1v95", "Nhanh: -40°C, 1.95V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["max_tt_025C_1v80", "Điển hình: 25°C, 1.80V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["max_ss_100C_1v60", "Góc xấu nhất: 100°C, 1.60V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
-        ["max_ff_n40C_1v95", "Nhiệt độ âm: -40°C, 1.95V", "0 vi phạm", "0 vi phạm", "MET TIMING ✅"],
+        ["nom_tt_025C_1v80", "Điển hình: 25°C, 1.80V", "+4.67 ns", "+0.58 ns", "MET TIMING ✅"],
+        ["nom_ss_100C_1v60", "Chậm: 100°C, 1.60V", "+1.99 ns", "+0.90 ns", "MET TIMING ✅"],
+        ["nom_ff_n40C_1v95", "Nhanh: -40°C, 1.95V", "+5.73 ns", "+0.28 ns", "MET TIMING ✅"],
+        ["min_tt_025C_1v80", "Điển hình: 25°C, 1.80V", "+4.77 ns", "+0.57 ns", "MET TIMING ✅"],
+        ["min_ss_100C_1v60", "Chậm: 100°C, 1.60V", "+2.16 ns", "+1.07 ns", "MET TIMING ✅"],
+        ["min_ff_n40C_1v95", "Nhanh: -40°C, 1.95V", "+5.80 ns", "+0.27 ns", "MET TIMING ✅"],
+        ["max_tt_025C_1v80", "Điển hình: 25°C, 1.80V", "+4.58 ns", "+0.58 ns", "MET TIMING ✅"],
+        ["max_ss_100C_1v60", "Góc xấu nhất: 100°C, 1.60V", "+1.84 ns", "+0.74 ns", "MET TIMING ✅"],
+        ["max_ff_n40C_1v95", "Nhiệt độ âm: -40°C, 1.95V", "+5.66 ns", "+0.28 ns", "MET TIMING ✅"],
     ]
     for c_idx, h_text in enumerate(t3_headers):
         t3.cell(0, c_idx).paragraphs[0].text = h_text
     for r_idx, row_vals in enumerate(t3_data):
         for c_idx, val in enumerate(row_vals):
             t3.cell(r_idx + 1, c_idx).paragraphs[0].text = val
-    col_w3 = [Inches(1.8), Inches(1.8), Inches(0.9), Inches(0.9), Inches(0.87)]
+    col_w3 = [Inches(1.6), Inches(1.5), Inches(1.0), Inches(1.0), Inches(1.17)]
     col_a3 = [WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.CENTER]
     style_table(t3, col_w3, col_a3)
     add_caption("Bảng 5. Báo cáo phân tích định thời tĩnh STA qua 9 góc đo công nghệ trên OpenROAD (Đạt MET TIMING 100%)")
 
     add_h2("5.5. Phân tích lưới nguồn PDN và kiểm tra sụt áp (IR drop analysis)")
     add_p("Báo cáo phân tích mạng phân phối nguồn (Power Distribution Network - PDN) từ OpenROAD PSM (bước 56) ghi nhận kết quả tuyệt vời:")
-    add_bullet("Độ sụt áp nguồn cấp (VPWR IR Drop): ", "Điện áp danh định 1.80 V, độ sụt áp trung bình chỉ 0.0733 mV, độ sụt áp xấu nhất chỉ 0.739 mV (Tương ứng mức sụt áp cực nhỏ: 0.04%).")
-    add_bullet("Độ nảy điện thế đất (VGND Bounce): ", "Điện áp danh định 0.00 V, điện thế đất xấu nhất chỉ 0.648 mV (Tương ứng mức biến động cực nhỏ: 0.04%).")
-    add_p("Kết quả trên khẳng định mạng lưới nguồn kim loại trên các lớp met4 và met5 được thiết kế cực kỳ vững chắc, đảm bảo nguồn điện ổn định cho toàn bộ 57,544 thiết bị bán dẫn hoạt động đồng thời.")
+    add_bullet("Độ sụt áp nguồn cấp (VPWR IR Drop): ", "Điện áp danh định 1.80 V, độ sụt áp trung bình chỉ 0.0726 mV, độ sụt áp xấu nhất chỉ 0.771 mV (Tương ứng mức sụt áp cực nhỏ: 0.043%).")
+    add_bullet("Độ nảy điện thế đất (VGND Bounce): ", "Điện áp danh định 0.00 V, điện thế đất xấu nhất chỉ 0.589 mV (Tương ứng mức biến động cực nhỏ: 0.033%).")
+    add_p("Kết quả trên khẳng định mạng lưới nguồn kim loại trên các lớp met4 và met5 được thiết kế cực kỳ vững chắc, đảm bảo nguồn điện ổn định cho toàn bộ 58,496 thiết bị bán dẫn hoạt động đồng thời.")
 
     doc.add_page_break()
 
@@ -907,22 +983,22 @@ def create_report():
     add_p("Đồ án \"Thiết kế hệ thống quét và xử lý dữ liệu thẻ RFID tích hợp CPU RISC-V PicoRV32 quản lý dữ liệu trên Flash\" đã hoàn thành xuất sắc toàn bộ các mục tiêu nghiên cứu và yêu cầu kỹ thuật đề ra, từ cấp độ ý tưởng, thiết kế vi kiến trúc, kiểm chứng thực nghiệm trên FPGA đến hiện thực hóa vi mạch bán dẫn ASIC hoàn chỉnh.")
     add_p("Hệ thống giải quyết triệt để nhu cầu thực tế về một thiết bị kiểm soát ra vào vận hành độc lập (Offline Standalone), hoàn toàn không cần kết nối Internet, mang lại độ tin cậy tuyệt đối, độ trễ xác thực gần như tức thời (< 10 µs) và loại trừ mọi nguy cơ an ninh mạng từ xa. Việc ứng dụng bộ nhớ bất biến Non-Volatile SPI Flash là quyết định kiến trúc đúng đắn, cho phép lưu trữ cơ sở dữ liệu danh mục thẻ và nhật ký ra vào an toàn qua nhiều thập kỷ mà không cần pin nuôi.")
     add_p("Trên nền tảng demo FPGA Basys 3, hệ thống đã chứng minh độ ổn định và tính khả thi thực tế cao: Module đọc thẻ RFID RDM6300 thật, chip Flash SPI thật và phần mềm Host Console trên máy tính hoạt động đồng bộ hoàn hảo, xử lý mượt mà toàn bộ các chu trình đăng ký thẻ mới, tra cứu danh mục, kiểm soát ra vào và xuất nhật ký ra file CSV.")
-    add_p("Trên nền tảng ASIC SkyWater Sky130A với công cụ OpenLane 2, lượt chạy chính thức RUN_2026-09-27_21-51-11 đã đạt chuẩn ký duyệt chế tạo hoàn hảo (Full Tapeout Sign-off Ready): Đạt tuyệt đối 0 vi phạm Antenna, 0 lỗi Magic DRC, 0 lỗi KLayout DRC, Netgen LVS Clean (57,544 devices và 50,028 nets trùng khớp 100%), và đạt chuẩn định thời **MET TIMING** trên cả 9 góc đo công nghệ ở tần số 50 MHz. Bản vẽ layout GDSII hoàn chỉnh khẳng định sự thành công rực rỡ của đề tài, sẵn sàng gửi đi gia công sản xuất thương mại.")
+    add_p("Trên nền tảng ASIC SkyWater Sky130A với công cụ OpenLane 2, lượt chạy chính thức RUN_2026-10-02_02-43-19 đã đạt chuẩn ký duyệt chế tạo hoàn hảo (Full Tapeout Sign-off Ready): Đạt tuyệt đối 0 vi phạm Antenna, 0 lỗi Magic DRC, 0 lỗi KLayout DRC, Netgen LVS Clean (58,496 devices và 49,979 nets trùng khớp 100%), và đạt chuẩn định thời **MET TIMING** trên cả 9 góc đo công nghệ ở tần số 50 MHz (Setup Slack +1.84 ns, Hold Slack +0.27 ns). Bản vẽ layout GDSII hoàn chỉnh khẳng định sự thành công rực rỡ của đề tài, sẵn sàng gửi đi gia công sản xuất thương mại.")
 
     # -------------------------------------------------------------
     # Save Document
     # -------------------------------------------------------------
     out_docx_path = os.path.join(cur_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.docx")
     alt_docx_path = os.path.join(cur_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC_v2.docx")
+    doc_docx_path = os.path.join(parent_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.docx")
+    doc_alt_path  = os.path.join(parent_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC_v2.docx")
     
-    doc.save(alt_docx_path)
-    print(f"[SUCCESS] Updated report saved successfully at: {alt_docx_path}")
-    
-    try:
-        doc.save(out_docx_path)
-        print(f"[SUCCESS] Primary report also updated successfully at: {out_docx_path}")
-    except PermissionError:
-        print(f"[NOTE] Primary file {out_docx_path} is currently locked by Word. Available at {alt_docx_path}.")
+    for p in [out_docx_path, alt_docx_path, doc_docx_path, doc_alt_path]:
+        try:
+            doc.save(p)
+            print(f"[SUCCESS] Saved report at: {p}")
+        except Exception as e:
+            print(f"[NOTE] Could not save to {p}: {e}")
 
 if __name__ == "__main__":
     create_report()

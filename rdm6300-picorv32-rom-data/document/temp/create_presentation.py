@@ -49,11 +49,15 @@ def create_deck():
     img_fig1 = os.path.join(cur_dir, "fig1_block_diagram.png")
     img_fig2 = os.path.join(cur_dir, "fig2_rdm6300_subsystem.png")
     img_fig2_h = os.path.join(cur_dir, "fig2_rdm6300_horizontal.png")
-    img_openroad = os.path.join(project_root, "Openroad_1.png")
-    img_signoff = os.path.join(project_root, "AntennaLvsDrc.png")
+    img_fig2a = os.path.join(cur_dir, "fig2a_rdm6300_subsystem.png")
+    img_fig2b = os.path.join(cur_dir, "fig2b_host_uart_subsystem.png")
+    img_phase1 = os.path.join(cur_dir, "fig2_phase1_instruction_fetch.png")
+    img_phase2 = os.path.join(cur_dir, "fig2_phase2_data_access.png")
+    img_openroad = os.path.join(project_root, "OpenROAD.png") if os.path.exists(os.path.join(project_root, "OpenROAD.png")) else (os.path.join(cur_dir, "OpenROAD.png") if os.path.exists(os.path.join(cur_dir, "OpenROAD.png")) else os.path.join(cur_dir, "openroad.png"))
+    img_signoff = os.path.join(project_root, "AntennaLvsDrc.png") if os.path.exists(os.path.join(project_root, "AntennaLvsDrc.png")) else (os.path.join(cur_dir, "AntennaLvsDrc.png") if os.path.exists(os.path.join(cur_dir, "AntennaLvsDrc.png")) else os.path.join(project_root, "AntennaLvsDrc.png"))
 
     # Helper: Add Slide Header (for content slides)
-    def add_header(slide, category, title, slide_num, total_slides=22):
+    def add_header(slide, category, title, slide_num, total_slides=25):
         # Background
         bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
         bg.fill.solid()
@@ -410,12 +414,12 @@ def create_deck():
     p_a0.space_after = Pt(10)
 
     arch_points = [
-        ("CPU RISC-V PicoRV32:", "Hỗ trợ chuẩn tập lệnh RV32I, thiết kế gọn gàng, hiệu suất diện tích silicon cao."),
-        ("1KB On-Chip Data SRAM:", "Chứa ngăn xếp Stack (sp = 0x400), biến .data, .bss và hàm flashio_worker."),
-        ("Flash XIP Execution:", "Thực thi trực tiếp mã máy từ Flash tại địa chỉ reset 0x0025_0000 thông qua SPIMEMIO."),
-        ("Động Cơ Giải Mã RDM6300:", "Phần cứng hóa tự động nhận dạng STX/ETX và so khớp XOR Checksum trong 1 chu kỳ."),
-        ("Đệm FIFO Kép Cho UART:", "Ngăn chặn nghẽn bus hoặc rơi rụng lệnh khi CPU đang bận ghi/xóa Flash."),
-        ("16 Đèn LED Chẩn Đoán:", "Giám sát nhịp tim hệ thống (1Hz), cờ bận Flash, và trạng thái xác thực thẻ.")
+        ("CPU PicoRV32 (Master):", "Lõi vi xử lý RV32I (rtl/core/picorv32.v), điều khiển bus mem_valid/mem_ready."),
+        ("1KB Data SRAM (Slave 0):", "rtl/core/data_sram.v chứa Stack (sp = 0x400), biến .data, .bss và flashio_worker."),
+        ("Flash SPI XIP (Slave 1):", "rtl/core/spimemio.v thực thi mã máy từ Flash tại 0x0025_0000 và hỗ trợ bit-bang."),
+        ("Giải Mã RDM6300 (Slave 2):", "rtl/rdm6300/rdm6300_mmio.v tự động nhận dạng STX/ETX, đối chiếu Checksum 20ns."),
+        ("Host PC UART FIFO (Slave 3):", "rtl/host/host_uart_mmio.v tích hợp đệm kép FIFO 32B chống nghẽn bus khi CPU ghi Flash."),
+        ("16 Đèn LED GPIO (Slave 4):", "rtl/core/soc_gpio_mmio.v giám sát nhịp tim hệ thống (1Hz), cờ bận Flash và xác thực thẻ.")
     ]
     for apt, adesc in arch_points:
         p_pt = tf_arch.add_paragraph()
@@ -607,7 +611,7 @@ def create_deck():
     p_b0.font.color.rgb = C_GREEN
     p_b0.space_after = Pt(3)
     p_b1 = tf_b5.add_paragraph()
-    p_b1.text = "Việc đặc tả rõ ràng 13 chức năng và cấu trúc 16-byte cho từng slot giúp kỹ sư thiết kế phần cứng xác định chính xác số lượng thanh ghi MMIO, kích thước bộ đệm FIFO và các đường ngắt IRQ cần thiết mà không bị dư thừa."
+    p_b1.text = "Việc đặc tả rõ ràng 11 chức năng và cấu trúc 16-byte cho từng slot giúp kỹ sư thiết kế phần cứng xác định chính xác số lượng thanh ghi MMIO, kích thước bộ đệm FIFO và các đường ngắt IRQ cần thiết mà không bị dư thừa."
     p_b1.font.name = "Segoe UI"
     p_b1.font.size = Pt(10.5)
     p_b1.font.color.rgb = C_TEXT_DARK
@@ -624,7 +628,7 @@ def create_deck():
     tf_cpu = tb_cpu.text_frame
     tf_cpu.word_wrap = True
     p_cp0 = tf_cpu.paragraphs[0]
-    p_cp0.text = "🧠 Nhân CPU RISC-V PicoRV32 (rtl/picorv32.v)"
+    p_cp0.text = "🧠 Nhân CPU RISC-V PicoRV32 (rtl/core/picorv32.v)"
     p_cp0.font.name = "Segoe UI"
     p_cp0.font.size = Pt(14)
     p_cp0.font.bold = True
@@ -665,7 +669,7 @@ def create_deck():
     p_rm0.space_after = Pt(8)
 
     ram_items = [
-        ("Mảng nhớ nội bộ 1KB (rtl/data_sram.v):", "Dung lượng chính xác 1 KByte (256 words x 32-bit = 1024 bytes), ánh xạ địa chỉ 0x0000_0000 đến 0x0000_03FF."),
+        ("Mảng nhớ nội bộ 1KB (rtl/core/data_sram.v):", "Dung lượng chính xác 1 KByte (256 words x 32-bit = 1024 bytes), ánh xạ địa chỉ 0x0000_0000 đến 0x0000_03FF."),
         ("Không gian dữ liệu đọc/ghi:", "Chứa ngăn xếp Stack Pointer (sp = 0x0000_0400), biến toàn cục (.data, .bss) và chứa đoạn mã hàm flashio_worker."),
         ("Tối ưu hóa diện tích bán dẫn:", "1KB tối giản giúp khuôn chip chỉ tốn 1.69 mm² trên Sky130 và suy luận hoàn hảo thành khối Block RAM đồng bộ trên FPGA Basys 3."),
         ("Mã Assembly start.s & Linker sections.lds:", "Thiết lập sp = 0x400, sao chép .data từ Flash vào SRAM, xóa sạch .bss về 0 trước khi gọi hàm main().")
@@ -722,7 +726,7 @@ def create_deck():
     p_sp0.space_after = Pt(8)
 
     spi_items = [
-        ("Cầu nối MMIO - SPI Flash (rtl/spimemio.v):", "Chuyển đổi các giao dịch đọc/ghi bus 32-bit của CPU thành chuỗi xung nối tiếp SPI 1-bit điều khiển chip Flash ngoài."),
+        ("Cầu nối MMIO - SPI Flash (rtl/core/spimemio.v):", "Chuyển đổi các giao dịch đọc/ghi bus 32-bit của CPU thành chuỗi xung nối tiếp SPI 1-bit điều khiển chip Flash ngoài."),
         ("Máy trạng thái FSM điều khiển tự động:", "Tự động hóa hoàn toàn phát xung nhịp SCK, hạ chân chọn chip CS_N, đẩy địa chỉ qua MOSI và lấy mẫu dữ liệu từ MISO."),
         ("Tập lệnh Flash phần cứng hỗ trợ:", "• 0x03 / 0x0B: Đọc dữ liệu (Read / Fast Read kèm 8 Dummy Clocks).\n• 0x02: Ghi dữ liệu theo trang 256 bytes (Page Program).\n• 0xD8 / 0x20: Xóa khối Sector 64KB / 4KB (Sector Erase).\n• 0x05: Đọc thanh ghi trạng thái Flash (Read Status Register).")
     ]
@@ -792,27 +796,287 @@ def create_deck():
     p_b1.font.color.rgb = C_TEXT_DARK
 
     # =========================================================================
-    # SLIDE 8: ĐƯỜNG ỐNG GIẢI MÃ PHẦN CỨNG RDM6300 (Hình 2 Chiều Ngang Full-Width)
+    # SLIDE 10: CHẶNG 1: NẠP MÃ LỆNH TỪ SPI FLASH QUA SOC_INTERCONNECT (XIP)
     # =========================================================================
-    s8 = prs.slides.add_slide(blank_layout)
-    add_header(s8, "Chương 3 | Ngoại vi thu nhận RFID", "3.5. Bước 5: Đường Ống 5 Giai Đoạn Thu Nhận & Giải Mã Phần Cứng (Hình 2)", 8)
+    s8_phase1 = prs.slides.add_slide(blank_layout)
+    add_header(s8_phase1, "Chương 3 | Cơ chế thực thi bus liên kết", "Chu Trình Thực Thi: Chặng 1 - Nạp Mã Lệnh Từ SPI Flash (Instruction Fetch - XIP)", 8)
 
-    # Embed High-Res Horizontal Figure 2 across full slide width
-    if os.path.exists(img_fig2_h):
-        # 4320 x 2100 px -> Aspect Ratio 2.05714
-        fig_w = Inches(11.417)
-        fig_h = Inches(5.55)
-        fig_x = Inches(0.958)
-        fig_y = Inches(1.35)
-        s8.shapes.add_picture(img_fig2_h, fig_x, fig_y, width=fig_w, height=fig_h)
-    elif os.path.exists(img_fig2):
-        s8.shapes.add_picture(img_fig2, Inches(0.8), Inches(1.35), width=Inches(11.733))
+    # Left: High-Res Diagram Card
+    if os.path.exists(img_phase1):
+        p1_h = Inches(5.55)
+        p1_w = Inches(7.15)
+        p1_x = Inches(0.8)
+        p1_y = Inches(1.35)
+        add_card(s8_phase1, p1_x, p1_y, p1_w, p1_h, C_BLUE_ACCENT, C_WHITE)
+        s8_phase1.shapes.add_picture(img_phase1, p1_x + Inches(0.08), p1_y + Inches(0.08), width=p1_w - Inches(0.16), height=p1_h - Inches(0.16))
+
+    # Right: Technical Signal Interconnect Card
+    p1_rw = Inches(4.38)
+    p1_rx = Inches(8.15)
+    add_card(s8_phase1, p1_rx, Inches(1.35), p1_rw, Inches(5.55), C_BLUE_ACCENT, C_CARD_BG)
+    tb_p1 = s8_phase1.shapes.add_textbox(p1_rx + Inches(0.2), Inches(1.48), p1_rw - Inches(0.4), Inches(5.25))
+    tf_p1 = tb_p1.text_frame
+    tf_p1.word_wrap = True
+
+    p_p1_0 = tf_p1.paragraphs[0]
+    p_p1_0.text = "⚡ Luồng Tín Hiệu Nạp Lệnh (PC = 0x0025_0000)"
+    p_p1_0.font.name = "Segoe UI"
+    p_p1_0.font.size = Pt(13)
+    p_p1_0.font.bold = True
+    p_p1_0.font.color.rgb = C_BLUE_ACCENT
+    p_p1_0.space_after = Pt(6)
+
+    p1_steps = [
+        ("Khai báo Top-Level rdm6300_picorv32_soc.v:", "CPU, Interconnect, Flash và SRAM được kết nối vật lý bằng các đường dây wire trung gian."),
+        ("Bước 1: CPU phát chu kỳ nạp lệnh:", "rdm6300_picorv32_soc.v#mem_valid, #mem_addr (picorv32, soc_interconnect)\n• mem_valid=1, mem_instr=1, mem_addr=0x0025_0000."),
+        ("Bước 2: Giải mã địa chỉ trúng Flash:", "rdm6300_picorv32_soc.v#sel_spimem (soc_interconnect, spimemio)\n• 0x0025_0000 thuộc 0x0010_0000..0x00FF_FFFF -> sel_spimem=1."),
+        ("Bước 3: Flash trả về 4 byte mã máy:", "rdm6300_picorv32_soc.v#spimem_rdata, #spimem_ready (spimemio, soc_interconnect)\n• Flash đọc 4 byte lệnh 'lw', báo spimem_ready=1."),
+        ("Bước 4: Interconnect trả lệnh về CPU:", "rdm6300_picorv32_soc.v#mem_rdata, #mem_ready (soc_interconnect, picorv32)\n• Ghép bus mem_rdata và mem_ready=1 để CPU chốt lệnh.")
+    ]
+    for st_h, st_t in p1_steps:
+        p = tf_p1.add_paragraph()
+        p.text = f"• {st_h}\n"
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(9.8)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(2)
+        r = p.add_run()
+        r.text = f"  {st_t}"
+        r.font.bold = False
+        r.font.color.rgb = C_TEXT_MUTED
+        r.font.size = Pt(9.0)
+
+    p_sram_idle = tf_p1.add_paragraph()
+    p_sram_idle.text = "💡 Trạng thái SRAM: sel_sram = 0 (Khối SRAM nghỉ ngơi hoàn toàn, giảm công suất tiêu thụ động)."
+    p_sram_idle.font.name = "Segoe UI"
+    p_sram_idle.font.size = Pt(9.2)
+    p_sram_idle.font.bold = True
+    p_sram_idle.font.color.rgb = C_GREEN
+    p_sram_idle.space_before = Pt(4)
 
     # =========================================================================
-    # SLIDE 9: CẤU TRÚC KHUNG 14 BYTE & TOÁN TỬ XOR KIỂM TRA TOÀN VẸN
+    # SLIDE 11: CHẶNG 2: TRUY XUẤT ĐỌC DỮ LIỆU BIẾN & NGĂN XẾP TỪ 1KB SRAM
+    # =========================================================================
+    s9_phase2 = prs.slides.add_slide(blank_layout)
+    add_header(s9_phase2, "Chương 3 | Cơ chế thực thi bus liên kết", "Chu Trình Thực Thi: Chặng 2 - Truy Xuất Dữ Liệu Từ 1KB SRAM (Data Memory Access)", 9)
+
+    # Left: High-Res Diagram Card
+    if os.path.exists(img_phase2):
+        p2_h = Inches(5.55)
+        p2_w = Inches(7.3)
+        p2_x = Inches(0.8)
+        p2_y = Inches(1.35)
+        add_card(s9_phase2, p2_x, p2_y, p2_w, p2_h, C_AMBER, C_WHITE)
+        s9_phase2.shapes.add_picture(img_phase2, p2_x + Inches(0.08), p2_y + Inches(0.08), width=p2_w - Inches(0.16), height=p2_h - Inches(0.16))
+
+    # Right: Technical Signal Interconnect Card
+    p2_rw = Inches(4.23)
+    p2_rx = Inches(8.3)
+    add_card(s9_phase2, p2_rx, Inches(1.35), p2_rw, Inches(5.55), C_AMBER, C_CARD_BG)
+    tb_p2 = s9_phase2.shapes.add_textbox(p2_rx + Inches(0.2), Inches(1.48), p2_rw - Inches(0.4), Inches(5.25))
+    tf_p2 = tb_p2.text_frame
+    tf_p2.word_wrap = True
+
+    p_p2_0 = tf_p2.paragraphs[0]
+    p_p2_0.text = "📦 Luồng Đọc Dữ Liệu SRAM (Stack = 0x0000_03F0)"
+    p_p2_0.font.name = "Segoe UI"
+    p_p2_0.font.size = Pt(13)
+    p_p2_0.font.bold = True
+    p_p2_0.font.color.rgb = C_AMBER
+    p_p2_0.space_after = Pt(6)
+
+    p2_steps = [
+        ("Mục tiêu thực thi lệnh lw a0, 0(sp):", "Đọc dữ liệu 32-bit từ đỉnh Stack trong SRAM đưa vào thanh ghi a0 của CPU."),
+        ("Bước 1: CPU phát chu kỳ đọc dữ liệu:", "rdm6300_picorv32_soc.v#mem_valid, #mem_addr (picorv32, soc_interconnect)\n• mem_valid=1, mem_instr=0, mem_addr=0x0000_03F0."),
+        ("Bước 2: Giải mã địa chỉ trúng SRAM:", "rdm6300_picorv32_soc.v#sel_sram (soc_interconnect, data_sram)\n• Địa chỉ < 0x0000_0400 -> sel_sram=1, sel_spimem=0."),
+        ("Bước 3: SRAM phản hồi trong 1 chu kỳ:", "rdm6300_picorv32_soc.v#sram_rdata, #sram_ready (data_sram, soc_interconnect)\n• Đọc word 32-bit tại offset [9:0], báo sram_ready=1."),
+        ("Bước 4: CPU chốt dữ liệu vào thanh ghi:", "rdm6300_picorv32_soc.v#mem_rdata, #mem_ready (soc_interconnect, picorv32)\n• Chuyển sram_rdata vào thanh ghi a0 trong đúng 1 chu kỳ.")
+    ]
+    for st_h, st_t in p2_steps:
+        p = tf_p2.add_paragraph()
+        p.text = f"• {st_h}\n"
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(9.8)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(2)
+        r = p.add_run()
+        r.text = f"  {st_t}"
+        r.font.bold = False
+        r.font.color.rgb = C_TEXT_MUTED
+        r.font.size = Pt(9.0)
+
+    p_flash_idle = tf_p2.add_paragraph()
+    p_flash_idle.text = "💡 Trạng thái Flash: sel_spimem = 0 (Chip Flash nghỉ ngơi, chân SPI CS_N giữ mức cao 1'b1)."
+    p_flash_idle.font.name = "Segoe UI"
+    p_flash_idle.font.size = Pt(9.2)
+    p_flash_idle.font.bold = True
+    p_flash_idle.font.color.rgb = C_BLUE_ACCENT
+    p_flash_idle.space_before = Pt(4)
+
+    # =========================================================================
+    # SLIDE 10: ĐƯỜNG ỐNG 5 GIAI ĐOẠN THU NHẬN & GIẢI MÃ THẺ RDM6300 (Hình 2a)
+    # =========================================================================
+    s8_rfid = prs.slides.add_slide(blank_layout)
+    add_header(s8_rfid, "Chương 3 | Ngoại vi thu nhận RFID", "3.5. Bước 5a: Đường Ống 5 Giai Đoạn Thu Nhận & Giải Mã Thẻ RFID (Hình 2a)", 10)
+
+    # Left: High-Res Vertical Diagram Card (3.95 in wide x 5.55 in high)
+    diag_w = Inches(3.95)
+    diag_h = Inches(5.55)
+    diag_x = Inches(0.8)
+    diag_y = Inches(1.35)
+    add_card(s8_rfid, diag_x, diag_y, diag_w, diag_h, C_BLUE_ACCENT, C_WHITE)
+    if os.path.exists(img_fig2a):
+        s8_rfid.shapes.add_picture(img_fig2a, diag_x + Inches(0.06), diag_y + Inches(0.06), width=diag_w - Inches(0.12), height=diag_h - Inches(0.12))
+
+    # Right Top: 5-Stage Hardware Pipeline Details Card
+    rc1_x = Inches(4.95)
+    rc1_w = Inches(7.583)
+    rc1_h = Inches(3.45)
+    add_card(s8_rfid, rc1_x, diag_y, rc1_w, rc1_h, C_BLUE_ACCENT, C_CARD_BG)
+    tb_rc1 = s8_rfid.shapes.add_textbox(rc1_x + Inches(0.2), diag_y + Inches(0.15), rc1_w - Inches(0.4), rc1_h - Inches(0.3))
+    tf_rc1 = tb_rc1.text_frame
+    tf_rc1.word_wrap = True
+    p_rc0 = tf_rc1.paragraphs[0]
+    p_rc0.text = "⚡ Chi Tiết 5 Giai Đoạn Đường Ống Phần Cứng RDM6300"
+    p_rc0.font.name = "Segoe UI"
+    p_rc0.font.size = Pt(13)
+    p_rc0.font.bold = True
+    p_rc0.font.color.rgb = C_BLUE_ACCENT
+    p_rc0.space_after = Pt(4)
+
+    rfid_stage_details = [
+        ("GĐ 1: Khối Thu RF 125 kHz:", "Anten cuộn cảm cộng hưởng LC, tách sóng tương tự xuất xung 9600 bps TTL vào rdm6300_rx_i."),
+        ("GĐ 2: Đồng Bộ CDC (sync_2ff.v):", "2 tầng D-FF đồng bộ an toàn sang miền xung 50 MHz, khử triệt để bất ổn định (MTBF > 1,000 năm)."),
+        ("GĐ 3: UART RX (uart_rx.v):", "Bộ chia baud 5208, lấy mẫu đa số 3 điểm (Ticks 7,8,9), lọc sạch xung gai nhiễu, xuất byte_data[7:0]."),
+        ("GĐ 4: FSM & Cây XOR 20ns:", "rdm6300_frame_decoder.v bóc tách khung 14 byte, quy đổi Hex & kiểm tra XOR Checksum trong đúng 1 clock."),
+        ("GĐ 5: Khối rdm6300_mmio.v (Slave 2):", "Chốt 40-bit UID vào REG_RFID_TAG_HI/LO (0x1000_0000), bật cờ card_valid và ngắt card_event_o đánh thức CPU.")
+    ]
+    for st_title, st_desc in rfid_stage_details:
+        p = tf_rc1.add_paragraph()
+        p.text = f"• {st_title} "
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(9.6)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(2)
+        r = p.add_run()
+        r.text = st_desc
+        r.font.bold = False
+        r.font.color.rgb = C_TEXT_MUTED
+
+    # Right Bottom: Hardware Performance & Takeaway Card
+    rc2_y = diag_y + rc1_h + Inches(0.18)
+    rc2_h = Inches(1.92)
+    add_card(s8_rfid, rc1_x, rc2_y, rc1_w, rc2_h, C_GREEN, RGBColor(240, 253, 244))
+    tb_rc2 = s8_rfid.shapes.add_textbox(rc1_x + Inches(0.2), rc2_y + Inches(0.12), rc1_w - Inches(0.4), rc2_h - Inches(0.24))
+    tf_rc2 = tb_rc2.text_frame
+    tf_rc2.word_wrap = True
+    p_rc2_0 = tf_rc2.paragraphs[0]
+    p_rc2_0.text = "💡 ĐẶC TÍNH NỔI BẬT & ĐỘ TIN CẬY BÁN DẪN:"
+    p_rc2_0.font.name = "Segoe UI"
+    p_rc2_0.font.size = Pt(11)
+    p_rc2_0.font.bold = True
+    p_rc2_0.font.color.rgb = C_GREEN
+    p_rc2_0.space_after = Pt(2)
+
+    rfid_key_points = [
+        ("Giải mã phần cứng tức thì:", "Toàn bộ chuỗi giải mã và đối chiếu Checksum chỉ mất 20.0 ns, CPU không tốn tài nguyên polling."),
+        ("Watchdog Timer chống treo:", "Bộ đếm 19-bit (10ms) tự động reset FSM nếu đứt gói; triệt tiêu 100% các khung thẻ giả mạo sai Checksum.")
+    ]
+    for kp_t, kp_d in rfid_key_points:
+        p = tf_rc2.add_paragraph()
+        p.text = f"✔ {kp_t} "
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(9.3)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(1.5)
+        r = p.add_run()
+        r.text = kp_d
+        r.font.bold = False
+        r.font.color.rgb = C_TEXT_MUTED
+
+    # =========================================================================
+    # SLIDE 11: KHỐI NGOẠI VI GIAO TIẾP HOST PC UART TÍCH HỢP FIFO 32 BYTE (Hình 2b)
+    # =========================================================================
+    s8_uart = prs.slides.add_slide(blank_layout)
+    add_header(s8_uart, "Chương 3 | Ngoại vi giao tiếp máy tính", "3.5. Bước 5b: Khối Ngoại Vi Giao Tiếp Host PC UART Tích Hợp FIFO 32B (Hình 2b)", 11)
+
+    # Left: High-Res Vertical Diagram Card (3.95 in wide x 5.55 in high)
+    add_card(s8_uart, diag_x, diag_y, diag_w, diag_h, C_PURPLE, C_WHITE)
+    if os.path.exists(img_fig2b):
+        s8_uart.shapes.add_picture(img_fig2b, diag_x + Inches(0.06), diag_y + Inches(0.06), width=diag_w - Inches(0.12), height=diag_h - Inches(0.12))
+
+    # Right Top: UART FIFO Hardware Architecture Card
+    add_card(s8_uart, rc1_x, diag_y, rc1_w, rc1_h, C_PURPLE, C_CARD_BG)
+    tb_uc1 = s8_uart.shapes.add_textbox(rc1_x + Inches(0.2), diag_y + Inches(0.15), rc1_w - Inches(0.4), rc1_h - Inches(0.3))
+    tf_uc1 = tb_uc1.text_frame
+    tf_uc1.word_wrap = True
+    p_uc0 = tf_uc1.paragraphs[0]
+    p_uc0.text = "⚡ Kiến Trúc Ghép Nối Ngoại Vi UART Host PC & FIFO 32 Byte"
+    p_uc0.font.name = "Segoe UI"
+    p_uc0.font.size = Pt(13)
+    p_uc0.font.bold = True
+    p_uc0.font.color.rgb = C_PURPLE
+    p_uc0.space_after = Pt(4)
+
+    uart_stage_details = [
+        ("GĐ 1: Host Console (host/main.c):", "Phần mềm Win32 C phát gói lệnh nhị phân 11 chức năng và chuẩn hóa dữ liệu thẻ qua cổng USB."),
+        ("GĐ 2: FTDI & CDC (sync_2ff.v):", "IC cầu nối FTDI FT2232 chuyển sang UART TTL 3.3V, tầng 2-FF đồng bộ tín hiệu uart_rx vào miền clock 50 MHz."),
+        ("GĐ 3: UART RX/TX (simpleuart.v):", "Tự động tạo khung nối tiếp và lấy mẫu dữ liệu, bộ chia baudrate lập trình (5208 ➔ 9600, hỗ trợ 115200)."),
+        ("GĐ 4: Bộ Đệm FIFO 32 Byte (sync_fifo.v):", "2 hàng đợi FIFO 32x8-bit độc lập (RX & TX), tự động quản lý con trỏ phần cứng wr_ptr, rd_ptr và cờ trạng thái."),
+        ("GĐ 5: Khối host_uart_mmio.v (Slave 3):", "Ánh xạ REG_PC_UART_DAT/CFG/STATUS (0x3000_0000), bắt tay bus mem_valid/mem_ready trong đúng 1 chu kỳ clock (20ns).")
+    ]
+    for st_title, st_desc in uart_stage_details:
+        p = tf_uc1.add_paragraph()
+        p.text = f"• {st_title} "
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(9.6)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(2)
+        r = p.add_run()
+        r.text = st_desc
+        r.font.bold = False
+        r.font.color.rgb = C_TEXT_MUTED
+
+    # Right Bottom: FIFO Buffer Protection & Zero Loss Card
+    add_card(s8_uart, rc1_x, rc2_y, rc1_w, rc2_h, C_PURPLE, RGBColor(245, 243, 255))
+    tb_uc2 = s8_uart.shapes.add_textbox(rc1_x + Inches(0.2), rc2_y + Inches(0.12), rc1_w - Inches(0.4), rc2_h - Inches(0.24))
+    tf_uc2 = tb_uc2.text_frame
+    tf_uc2.word_wrap = True
+    p_uc2_0 = tf_uc2.paragraphs[0]
+    p_uc2_0.text = "🚀 BẢO VỆ CHỐNG TRÀN BỘ ĐỆM & TOÀN VẸN DỮ LIỆU:"
+    p_uc2_0.font.name = "Segoe UI"
+    p_uc2_0.font.size = Pt(11)
+    p_uc2_0.font.bold = True
+    p_uc2_0.font.color.rgb = C_PURPLE
+    p_uc2_0.space_after = Pt(2)
+
+    uart_key_points = [
+        ("Chống nghẽn khi ghi/xóa Flash:", "Trong chu kỳ xóa Sector hoặc ghi Page Flash (kéo dài tới vài milli-giây), FIFO 32B lưu an toàn chuỗi lệnh Host."),
+        ("Không rơi rụng gói tin (Zero Loss):", "Máy tính có thể truyền chuỗi gói tin liên tục tốc độ cao mà không làm tràn bộ đệm hay treo bus vi xử lý.")
+    ]
+    for kp_t, kp_d in uart_key_points:
+        p = tf_uc2.add_paragraph()
+        p.text = f"✔ {kp_t} "
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(9.3)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(1.5)
+        r = p.add_run()
+        r.text = kp_d
+        r.font.bold = False
+        r.font.color.rgb = C_TEXT_MUTED
+
+    # =========================================================================
+    # SLIDE 12: CẤU TRÚC KHUNG 14 BYTE & TOÁN TỬ XOR KIỂM TRA TOÀN VẸN
     # =========================================================================
     s9 = prs.slides.add_slide(blank_layout)
-    add_header(s9, "Chương 3 | Giao thức dữ liệu RFID", "Cấu Trúc Khung 14 Byte & Chứng Minh Toán Học Cây Toán Tử XOR", 9)
+    add_header(s9, "Chương 3 | Giao thức dữ liệu RFID", "Cấu Trúc Khung 14 Byte & Chứng Minh Toán Học Cây Toán Tử XOR", 12)
 
     add_card(s9, Inches(0.8), Inches(1.35), Inches(11.733), Inches(2.2), C_BLUE_ACCENT)
     tb_fr = s9.shapes.add_textbox(Inches(1.0), Inches(1.45), Inches(11.333), Inches(2.0))
@@ -938,10 +1202,10 @@ def create_deck():
         run_x.font.size = Pt(10)
 
     # =========================================================================
-    # SLIDE 10: QUY HOẠCH BỘ NHỚ FLASH & CƠ CHẾ XIP
+    # SLIDE 13: QUY HOẠCH BỘ NHỚ FLASH & CƠ CHẾ XIP
     # =========================================================================
     s10 = prs.slides.add_slide(blank_layout)
-    add_header(s10, "Chương 3 | Quản lý bộ nhớ Flash", "3.6. Bước 6: Phân Vùng Bộ Nhớ SPI Flash & Cơ Chế Thực Thi XIP", 10)
+    add_header(s10, "Chương 3 | Quản lý bộ nhớ Flash", "3.6. Bước 6: Phân Vùng Bộ Nhớ SPI Flash & Cơ Chế Thực Thi XIP", 13)
 
     add_card(s10, Inches(0.8), Inches(1.35), Inches(6.6), Inches(5.35), C_BLUE_ACCENT)
     tb_m = s10.shapes.add_textbox(Inches(1.0), Inches(1.5), Inches(6.2), Inches(3.2))
@@ -1070,10 +1334,10 @@ def create_deck():
     p_xf1.font.color.rgb = C_TEXT_DARK
 
     # =========================================================================
-    # SLIDE 11: PHẦN MỀM HOST CONSOLE TRÊN MÁY TÍNH (host/main.c)
+    # SLIDE 14: PHẦN MỀM HOST CONSOLE TRÊN MÁY TÍNH (host/main.c)
     # =========================================================================
     s11 = prs.slides.add_slide(blank_layout)
-    add_header(s11, "Chương 3 | Phần mềm quản trị trên máy tính", "3.7. Bước 7: Giao Diện Điều Khiển Host Console 13 Chức Năng (host/main.c)", 11)
+    add_header(s11, "Chương 3 | Phần mềm quản trị trên máy tính", "3.7. Bước 7: Giao Diện Điều Khiển Host Console 11 Chức Năng (host/main.c)", 14)
 
     add_card(s11, Inches(0.8), Inches(1.35), Inches(5.6), Inches(5.35), C_NAVY_MID, RGBColor(15, 23, 42))
     tb_term = s11.shapes.add_textbox(Inches(1.0), Inches(1.5), Inches(5.2), Inches(5.0))
@@ -1096,12 +1360,10 @@ def create_deck():
         "[5]  Virtual Scan: By Decimal (Quet the ao: 10 so)",
         "[6]  Virtual Scan: By Hex (Quet the ao: 10 ky tu Hex)",
         "[7]  View Access Logs from Flash (Xem nhat ky)",
-        "[8]  Export Access Logs to CSV (Xuat file vao host/logs)",
-        "[9]  Erase Access Logs (Sao luu CSV roi xoa Flash)",
-        "[10] Erase Authorized Tags Sector (Xoa toan bo the)",
-        "[11] Get SoC Status (Xem trang thai LED, Flash, CPU)",
-        "[12] Export RFID Tags to CSV (Xuat danh sach the)",
-        "[13] Import RFID Tags from Latest CSV (Nap lai the)",
+        "[8]  Erase Access Logs (Sao luu CSV roi xoa Flash)",
+        "[9]  Get SoC Status (Xem trang thai LED, Flash, CPU)",
+        "[10] Export RFID Tags to CSV (Xuat danh sach the)",
+        "[11] Import RFID Tags from Latest CSV (Nap lai the)",
         "[0]  Exit (Thoat chuong trinh)"
     ]
     for ml in menu_lines:
@@ -1146,10 +1408,10 @@ def create_deck():
         run_hd.font.size = Pt(10.5)
 
     # =========================================================================
-    # SLIDE 12: TỔNG QUAN HỆ THỐNG KIỂM THỬ MÔ PHỎNG & MA TRẬN 63 TEST CASES
+    # SLIDE 15: TỔNG QUAN HỆ THỐNG KIỂM THỬ MÔ PHỎNG & MA TRẬN 63 TEST CASES
     # =========================================================================
     s12 = prs.slides.add_slide(blank_layout)
-    add_header(s12, "Chương 3 | Quy trình thiết kế tuần tự", "3.8. Tổng Quan Hệ Thống Testbench & Ma Trận 63 Test Cases (PASS 100%)", 12, 22)
+    add_header(s12, "Chương 3 | Quy trình thiết kế tuần tự", "3.8. Tổng Quan Hệ Thống Testbench & Ma Trận 63 Test Cases (PASS 100%)", 15)
 
     add_card(s12, Inches(0.8), Inches(1.35), Inches(6.6), Inches(5.35), C_BLUE_ACCENT)
     tb_tb1 = s12.shapes.add_textbox(Inches(1.0), Inches(1.5), Inches(6.2), Inches(5.0))
@@ -1275,10 +1537,10 @@ def create_deck():
         r.font.color.rgb = C_TEXT_MUTED
 
     # =========================================================================
-    # SLIDE 13: STEP 2 - KIỂM THỬ FIRMWARE C & GIAO THỨC HOST (tb_firmware.c)
+    # SLIDE 16: STEP 2 - KIỂM THỬ FIRMWARE C & GIAO THỨC HOST (tb_firmware.c)
     # =========================================================================
     s13 = prs.slides.add_slide(blank_layout)
-    add_header(s13, "Chương 3 | Kiểm thử từng bước: Step 2 Firmware", "3.8.1. Kiểm Thử Bước 2: Logic Firmware Bare-Metal C & Giao Thức Host", 13, 22)
+    add_header(s13, "Chương 3 | Kiểm thử từng bước: Step 2 Firmware", "3.8.1. Kiểm Thử Bước 2: Logic Firmware Bare-Metal C & Giao Thức Host", 16)
 
     col_w_step = Inches(5.7)
     add_card(s13, Inches(0.8), Inches(1.35), col_w_step, Inches(3.3), C_BLUE_ACCENT)
@@ -1375,10 +1637,10 @@ def create_deck():
                   C_BLUE_ACCENT)
 
     # =========================================================================
-    # SLIDE 14: STEP 3 - MÔ PHỎNG CPU PICORV32 & 1KB DATA SRAM (tb_data_sram.v)
+    # SLIDE 17: STEP 3 - MÔ PHỎNG CPU PICORV32 & 1KB DATA SRAM (tb_data_sram.v)
     # =========================================================================
     s14 = prs.slides.add_slide(blank_layout)
-    add_header(s14, "Chương 3 | Kiểm thử từng bước: Step 3 CPU & SRAM", "3.8.2. Kiểm Thử Bước 3: Mô Phỏng Nhân CPU PicoRV32 & 1KB Data SRAM", 14, 22)
+    add_header(s14, "Chương 3 | Kiểm thử từng bước: Step 3 CPU & SRAM", "3.8.2. Kiểm Thử Bước 3: Mô Phỏng Nhân CPU PicoRV32 & 1KB Data SRAM", 17)
 
     add_card(s14, Inches(0.8), Inches(1.35), col_w_step, Inches(3.3), C_BLUE_ACCENT)
     tb_s14_l1 = s14.shapes.add_textbox(Inches(1.0), Inches(1.45), col_w_step - Inches(0.4), Inches(3.1))
@@ -1478,10 +1740,10 @@ def create_deck():
                   C_BLUE_ACCENT)
 
     # =========================================================================
-    # SLIDE 15: STEP 4 - MÔ PHỎNG SPI FLASH CONTROLLER (tb_spi_flash.v)
+    # SLIDE 18: STEP 4 - MÔ PHỎNG SPI FLASH CONTROLLER (tb_spi_flash.v)
     # =========================================================================
     s15 = prs.slides.add_slide(blank_layout)
-    add_header(s15, "Chương 3 | Kiểm thử từng bước: Step 4 SPI Flash", "3.8.3. Kiểm Thử Bước 4: Mô Phỏng Bộ Điều Khiển Bộ Nhớ Ngoài SPI Flash", 15, 22)
+    add_header(s15, "Chương 3 | Kiểm thử từng bước: Step 4 SPI Flash", "3.8.3. Kiểm Thử Bước 4: Mô Phỏng Bộ Điều Khiển Bộ Nhớ Ngoài SPI Flash", 18)
 
     add_card(s15, Inches(0.8), Inches(1.35), col_w_step, Inches(3.3), C_BLUE_ACCENT)
     tb_s15_l1 = s15.shapes.add_textbox(Inches(1.0), Inches(1.45), col_w_step - Inches(0.4), Inches(3.1))
@@ -1579,10 +1841,10 @@ def create_deck():
                   C_BLUE_ACCENT)
 
     # =========================================================================
-    # SLIDE 16: STEP 5 - MÔ PHỎNG ĐƯỜNG ỐNG RFID 5 TẦNG (tb_rdm6300_pipeline.v)
+    # SLIDE 19: STEP 5 - MÔ PHỎNG ĐƯỜNG ỐNG RFID 5 TẦNG (tb_rdm6300_pipeline.v)
     # =========================================================================
     s16 = prs.slides.add_slide(blank_layout)
-    add_header(s16, "Chương 3 | Kiểm thử từng bước: Step 5 RFID Pipeline", "3.8.4. Kiểm Thử Bước 5: Mô Phỏng Đường Ống Thu Nhận RFID 5 Tầng & Cây XOR", 16, 22)
+    add_header(s16, "Chương 3 | Kiểm thử từng bước: Step 5 RFID Pipeline", "3.8.4. Kiểm Thử Bước 5: Mô Phỏng Đường Ống Thu Nhận RFID 5 Tầng & Cây XOR", 19)
 
     add_card(s16, Inches(0.8), Inches(1.35), col_w_step, Inches(3.3), C_BLUE_ACCENT)
     tb_s16_l1 = s16.shapes.add_textbox(Inches(1.0), Inches(1.45), col_w_step - Inches(0.4), Inches(3.1))
@@ -1680,10 +1942,10 @@ def create_deck():
                   C_BLUE_ACCENT)
 
     # =========================================================================
-    # SLIDE 17: STEP 6 - MÔ PHỎNG TÍCH HỢP TOÀN DIỆN TOP SOC (tb_picorv32_rdm6300_flash.v)
+    # SLIDE 20: STEP 6 - MÔ PHỎNG TÍCH HỢP TOÀN DIỆN TOP SOC (tb_picorv32_rdm6300_flash.v)
     # =========================================================================
     s17 = prs.slides.add_slide(blank_layout)
-    add_header(s17, "Chương 3 | Kiểm thử từng bước: Step 6 Top SoC", "3.8.5. Kiểm Thử Bước 6: Mô Phỏng Tích Hợp Toàn Diện Top SoC & End-to-End", 17, 22)
+    add_header(s17, "Chương 3 | Kiểm thử từng bước: Step 6 Top SoC", "3.8.5. Kiểm Thử Bước 6: Mô Phỏng Tích Hợp Toàn Diện Top SoC & End-to-End", 20)
 
     add_card(s17, Inches(0.8), Inches(1.35), col_w_step, Inches(3.3), C_BLUE_ACCENT)
     tb_s17_l1 = s17.shapes.add_textbox(Inches(1.0), Inches(1.45), col_w_step - Inches(0.4), Inches(3.1))
@@ -1780,10 +2042,10 @@ def create_deck():
                   ">>> XÁC THỰC BƯỚC 6: 8/8 FULL-SYSTEM SOC PASS (100%) <<<",
                   C_BLUE_ACCENT)
     # =========================================================================
-    # SLIDE 18: THỰC NGHIỆM TRÊN FPGA BASYS 3 (Hardware Demo)
+    # SLIDE 21: THỰC NGHIỆM TRÊN FPGA BASYS 3 (Hardware Demo)
     # =========================================================================
     s18 = prs.slides.add_slide(blank_layout)
-    add_header(s18, "Chương 4 | Demo kiểm chứng thực nghiệm", "Tạo Mẫu Phần Cứng & Kiểm Chứng Thực Tế Trên Bo Mạch Basys 3", 18, 22)
+    add_header(s18, "Chương 4 | Demo kiểm chứng thực nghiệm", "Tạo Mẫu Phần Cứng & Kiểm Chứng Thực Tế Trên Bo Mạch Basys 3", 21)
 
     col3_w = Inches(3.68)
     col3_h = Inches(3.45)
@@ -1913,10 +2175,10 @@ def create_deck():
         p_l.space_after = Pt(1)
 
     # =========================================================================
-    # SLIDE 19: THIẾT KẾ VẬT LÝ ASIC TRÊN OPENLANE 2 (Openroad_1.png Căn Khung)
+    # SLIDE 22: THIẾT KẾ VẬT LÝ ASIC TRÊN OPENLANE 2 (Openroad_1.png Căn Khung)
     # =========================================================================
     s19 = prs.slides.add_slide(blank_layout)
-    add_header(s19, "Chương 5 | Hiện thực hóa vi mạch ASIC", "Thiết Kế Vật Lý Vi Mạch Trên OpenLane 2 & OpenROAD (Sky130A)", 19, 22)
+    add_header(s19, "Chương 5 | Hiện thực hóa vi mạch ASIC", "Thiết Kế Vật Lý Vi Mạch Trên OpenLane 2 & OpenROAD (Sky130A)", 22)
 
     # Left: Framed Openroad_1.png
     if os.path.exists(img_openroad):
@@ -1941,9 +2203,9 @@ def create_deck():
         ("Công nghệ chế tạo:", "SkyWater 130nm Standard Cells (sky130_fd_sc_hd)."),
         ("Kích thước Die:", "1300 µm x 1300 µm (Diện tích: 1.69 mm²)."),
         ("Kích thước Core:", "1270 µm x 1270 µm (Mật độ Core Utilization tối ưu)."),
-        ("Số lượng linh kiện:", "57,544 transistors / devices."),
-        ("Số lượng dây kim loại:", "50,028 nets định tuyến đa lớp (met1 đến met5)."),
-        ("Mạng lưới nguồn PDN:", "Thanh kim loại Met4 và Met5 đan lưới, độ sụt áp tồi nhất chỉ 0.04% (0.739 mV)."),
+        ("Số lượng linh kiện:", "58,496 transistors / devices (145,969 standard cells)."),
+        ("Số lượng dây kim loại:", "49,979 nets định tuyến đa lớp (met1 đến met5)."),
+        ("Mạng lưới nguồn PDN:", "Thanh kim loại Met4 và Met5 đan lưới, độ sụt áp tồi nhất chỉ 0.043% (0.771 mV)."),
         ("Tần số mục tiêu:", "50.0 MHz (Chu kỳ xung nhịp CLK = 20.0 ns).")
     ]
     for sp, sd in phys_specs:
@@ -1961,10 +2223,10 @@ def create_deck():
         r.font.size = Pt(10)
 
     # =========================================================================
-    # SLIDE 20: KẾT QUẢ KÝ DUYỆT CHẾ TẠO SIGN-OFF TOÀN DIỆN
+    # SLIDE 23: KẾT QUẢ KÝ DUYỆT CHẾ TẠO SIGN-OFF TOÀN DIỆN
     # =========================================================================
     s20 = prs.slides.add_slide(blank_layout)
-    add_header(s20, "Chương 5 | Báo cáo kiểm định Sign-off", "Kết Quả Ký Duyệt Bán Dẫn Tuyệt Đối (Run RUN_2026-09-27_21-51-11)", 20, 22)
+    add_header(s20, "Chương 5 | Báo cáo kiểm định Sign-off", "Kết Quả Ký Duyệt Bán Dẫn Tuyệt Đối (Run RUN_2026-10-02_02-43-19)", 23)
 
     # Left: Sign-off Metrics Cards
     left_so_w = Inches(6.6)
@@ -1982,11 +2244,11 @@ def create_deck():
     p_so0.space_after = Pt(10)
 
     so_metrics = [
-        ("Netgen LVS (Layout vs Schematic):", "CLEAN 100% | 57,544 devices và 50,028 nets trùng khớp tuyệt đối, 0 mismatch, 0 lỗi nối dây."),
+        ("Netgen LVS (Layout vs Schematic):", "CLEAN 100% | 58,496 devices và 49,979 nets trùng khớp tuyệt đối, 0 mismatch, 0 lỗi nối dây."),
         ("Magic DRC & KLayout DRC:", "0 vi phạm hình học bán dẫn (0 violations)."),
-        ("Hiệu ứng Ăng-ten (Antenna Rules):", "0 net vi phạm, 0 pin vi phạm trên tất cả các lớp kim loại sau khi chèn diode bảo vệ tự động."),
-        ("Định thời tĩnh STA (Timing Sign-off):", "ĐẠT MET TIMING trên toàn bộ 9 góc đo công nghệ (PVT Corners: nom, min, max, tt, ss, ff) ở tần số 50 MHz. Không có lỗi Setup, không có lỗi Hold."),
-        ("Kiểm tra sụt áp (IR Drop Analysis):", "Sụt áp nguồn danh định 1.8V xấu nhất chỉ 0.739 mV (tương đương 0.04%).")
+        ("Hiệu ứng Ăng-ten (Antenna Rules):", "0 net vi phạm, 0 pin vi phạm trên tất cả các lớp kim loại (chèn 1,289 diodes bảo vệ)."),
+        ("Định thời tĩnh STA (Timing Sign-off):", "ĐẠT MET TIMING trên toàn bộ 9 góc đo công nghệ ở 50 MHz (Setup Slack +1.84 ns, Hold Slack +0.27 ns). Không có lỗi Setup, không có lỗi Hold."),
+        ("Kiểm tra sụt áp (IR Drop Analysis):", "Sụt áp nguồn danh định 1.8V xấu nhất chỉ 0.771 mV (tương đương 0.043%).")
     ]
     for m_title, m_desc in so_metrics:
         p = tf_so.add_paragraph()
@@ -2005,9 +2267,9 @@ def create_deck():
     # 4 metric summary chips at bottom of Left Card
     so_badges = [
         (Inches(1.0), Inches(5.12), "Khuôn Chip Die Size", "1300 x 1300 µm (1.69 mm²)", C_BLUE_ACCENT),
-        (Inches(4.15), Inches(5.12), "Thiết Bị Netgen LVS", "57,544 Devs (0 Mismatch)", C_GREEN),
+        (Inches(4.15), Inches(5.12), "Thiết Bị Netgen LVS", "58,496 Devs (0 Mismatch)", C_GREEN),
         (Inches(1.0), Inches(5.82), "Kiểm Tra DRC & Antenna", "0 DRC | 0 Antenna", C_PURPLE),
-        (Inches(4.15), Inches(5.82), "STA Timing 50.0 MHz", "MET TIMING (9/9 Corners)", C_GREEN),
+        (Inches(4.15), Inches(5.82), "STA Timing 50.0 MHz", "MET TIMING (Slack +1.84ns)", C_GREEN),
     ]
     for bx, by, b_title, b_val, b_col in so_badges:
         bd_shape = s20.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, bx, by, Inches(3.0), Inches(0.65))
@@ -2054,11 +2316,11 @@ def create_deck():
     p_stah.space_after = Pt(6)
 
     corners = [
-        ("nom_tt_025C_1v80", "Điển hình: 25°C, 1.8V", "MET TIMING ✅"),
-        ("nom_ss_100C_1v60", "Chậm: 100°C, 1.6V", "MET TIMING ✅"),
-        ("nom_ff_n40C_1v95", "Nhanh: -40°C, 1.95V", "MET TIMING ✅"),
-        ("min_ss_100C_1v60", "Góc trễ lớn nhất", "MET TIMING ✅"),
-        ("max_ff_n40C_1v95", "Góc nhanh nhất", "MET TIMING ✅"),
+        ("nom_tt_025C_1v80", "Điển hình: 25°C, 1.8V", "MET TIMING ✅ (+4.67ns)"),
+        ("nom_ss_100C_1v60", "Chậm: 100°C, 1.6V", "MET TIMING ✅ (+1.99ns)"),
+        ("nom_ff_n40C_1v95", "Nhanh: -40°C, 1.95V", "MET TIMING ✅ (+5.73ns)"),
+        ("min_ss_100C_1v60", "Góc trễ lớn nhất", "MET TIMING ✅ (+2.16ns)"),
+        ("max_ss_100C_1v60", "Góc xấu nhất", "MET TIMING ✅ (+1.84ns)"),
     ]
     for c_name, c_cond, c_eval in corners:
         p_c = tf_sta.add_paragraph()
@@ -2075,17 +2337,17 @@ def create_deck():
         r_c.font.color.rgb = C_GREEN
 
     p_ir = tf_sta.add_paragraph()
-    p_ir.text = "\n• Worst IR Drop: 0.04% (0.739 mV) — Mạng PDN cực kỳ vững chắc!"
+    p_ir.text = "\n• Worst IR Drop: 0.043% (0.771 mV) — Mạng PDN cực kỳ vững chắc!"
     p_ir.font.name = "Segoe UI"
     p_ir.font.size = Pt(10.5)
     p_ir.font.bold = True
     p_ir.font.color.rgb = C_PURPLE
 
     # =========================================================================
-    # SLIDE 21: THẢO LUẬN & ĐÁNH GIÁ TỐI ƯU HÓA PPA
+    # SLIDE 24: THẢO LUẬN & ĐÁNH GIÁ TỐI ƯU HÓA PPA
     # =========================================================================
     s21 = prs.slides.add_slide(blank_layout)
-    add_header(s21, "Chương 6 | Đánh giá kỹ thuật", "Thảo Luận & Đánh Giá Tối Ưu Hóa PPA (Power - Performance - Area)", 21, 22)
+    add_header(s21, "Chương 6 | Đánh giá kỹ thuật", "Thảo Luận & Đánh Giá Tối Ưu Hóa PPA (Power - Performance - Area)", 24)
 
     col3_h = Inches(3.85)
     add_card(s21, start_x, top_y, col3_w, col3_h, C_BLUE_ACCENT)
@@ -2134,7 +2396,7 @@ def create_deck():
     ppa_b2 = [
         ("1KB Data SRAM tinh gọn:", "Được đo ni đóng giày đúng nhu cầu lưu Stack Pointer (0x400) và biến, tiết kiệm diện tích."),
         ("Tận dụng Flash ngoài:", "Lưu firmware XIP và cơ sở dữ liệu trên Flash SPI giúp khuôn chip chỉ tốn 1.69 mm²."),
-        ("Lưới nguồn PDN vững chắc:", "Độ sụt áp chỉ 0.04% đảm bảo tiết kiệm điện năng và vận hành ổn định lâu dài.")
+        ("Lưới nguồn PDN vững chắc:", "Độ sụt áp chỉ 0.043% (0.771 mV) đảm bảo tiết kiệm điện năng và vận hành ổn định lâu dài.")
     ]
     for bt, bd in ppa_b2:
         p = tf_ppa2.add_paragraph()
@@ -2195,13 +2457,13 @@ def create_deck():
     p_p0.space_after = Pt(2)
 
     p_p1 = tf_ppabot.add_paragraph()
-    p_p1.text = "• Hiệu năng (Performance): Xác thực thẻ tức thì (< 10 µs), giải mã phần cứng 1 chu kỳ clock song song không tốn tài nguyên CPU.\n• Diện tích & Điện năng (Area & Power): Khuôn chip tối giản 1.69 mm² nhờ kiến trúc Flash XIP & SRAM 1KB, sụt áp chỉ 0.04% (0.739 mV).\n• Khả năng mở rộng: Sẵn sàng nâng cấp macro OpenRAM và bus Quad-SPI 4-bit."
+    p_p1.text = "• Hiệu năng (Performance): Xác thực thẻ tức thì (< 10 µs), giải mã phần cứng 1 chu kỳ clock song song không tốn tài nguyên CPU.\n• Diện tích & Điện năng (Area & Power): Khuôn chip 1.69 mm², tiêu thụ chỉ 64.5 mW, sụt áp chỉ 0.043% (0.771 mV).\n• Khả năng mở rộng: Sẵn sàng nâng cấp macro OpenRAM và bus Quad-SPI 4-bit."
     p_p1.font.name = "Segoe UI"
     p_p1.font.size = Pt(9.5)
     p_p1.font.color.rgb = C_TEXT_DARK
 
     # =========================================================================
-    # SLIDE 22: KẾT LUẬN & TỔNG KẾT ĐỀ TÀI (Thank You Slide)
+    # SLIDE 25: KẾT LUẬN & TỔNG KẾT ĐỀ TÀI (Thank You Slide)
     # =========================================================================
     s22 = prs.slides.add_slide(blank_layout)
     bg22 = s22.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
@@ -2230,7 +2492,7 @@ def create_deck():
     concl_points = [
         ("Hoàn thành xuất sắc mục tiêu thiết kế SoC chuyên dụng:", "Hiện thực hóa hệ thống kiểm soát ra vào độc lập (Offline Standalone), loại bỏ hoàn toàn rủi ro bảo mật và độ trễ mạng."),
         ("Kiểm chứng thực nghiệm 100% trên FPGA Basys 3:", "Xác thực module RDM6300 thật, thẻ RFID thật, chip SPI Flash thật và phần mềm Host C hoạt động đồng bộ hoàn hảo."),
-        ("Đạt chuẩn ký duyệt chế tạo bán dẫn (Full Tapeout Ready):", "Lượt chạy OpenLane 2 đạt 0 lỗi DRC, 0 lỗi LVS (57,544 devices khớp 100%), 0 vi phạm Antenna, và MET TIMING ở cả 9 corners tần số 50 MHz."),
+        ("Đạt chuẩn ký duyệt chế tạo bán dẫn (Full Tapeout Ready):", "Lượt chạy OpenLane 2 (RUN_2026-10-02_02-43-19) đạt 0 lỗi DRC, 0 lỗi LVS (58,496 devices khớp 100%), 0 vi phạm Antenna, và MET TIMING ở cả 9 corners tần số 50 MHz."),
         ("Phương pháp thiết kế Software-First khoa học:", "Định hình tập lệnh và chức năng phần mềm trước giúp tối ưu hóa tối đa diện tích silicon và thời gian phát triển.")
     ]
     for cp, cd in concl_points:
@@ -2256,14 +2518,19 @@ def create_deck():
     p_thanks.font.color.rgb = C_CYAN_ACCENT
 
     # Save Presentation
-        # Save Presentation to document/ directory
-    out_pptx_1 = os.path.join(doc_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.pptx")
-    out_pptx_2 = os.path.join(doc_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC_v2.pptx")
-    prs.save(out_pptx_1)
-    prs.save(out_pptx_2)
-    print(f"[SUCCESS] Comprehensive 22-Slide PPTX generated successfully at:")
-    print(f"  - {out_pptx_1}")
-    print(f"  - {out_pptx_2}")
+        # Save Presentation to all directories
+    targets = [
+        os.path.join(doc_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.pptx"),
+        os.path.join(doc_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC_v2.pptx"),
+        os.path.join(cur_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.pptx"),
+        os.path.join(cur_dir, "Bao_Cao_Do_An_RDM6300_PicoRV32_SoC_v2.pptx"),
+    ]
+    for p in targets:
+        try:
+            prs.save(p)
+            print(f"[SUCCESS] Saved PPTX at: {p}")
+        except Exception as e:
+            print(f"[NOTE] Could not save to {p}: {e}")
 
 if __name__ == '__main__':
     create_deck()

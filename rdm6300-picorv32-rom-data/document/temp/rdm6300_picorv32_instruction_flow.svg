@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1660 1740" width="1660" height="1740">
+  <defs>
+    <style>
+      .title-box { fill: #ffffff; stroke: #000000; stroke-width: 2.5; }
+      .col-box { fill: #ffffff; stroke: #000000; stroke-width: 2.2; }
+      .banner-box { fill: #ffffff; stroke: #000000; stroke-width: 2; }
+      .step-box { fill: #ffffff; stroke: #000000; stroke-width: 1.8; }
+      .lifeline { stroke: #888888; stroke-width: 1.8; stroke-dasharray: 6,6; }
+      .flow-arrow { stroke: #000000; stroke-width: 2.2; fill: none; }
+      .arrowhead { fill: #000000; }
+      .txt-title { font-family: Arial, Helvetica, sans-serif; font-size: 24px; font-weight: bold; text-anchor: middle; fill: #000000; }
+      .txt-subtitle { font-family: Arial, Helvetica, sans-serif; font-size: 16px; text-anchor: middle; fill: #222222; }
+      .txt-col-title { font-family: Arial, Helvetica, sans-serif; font-size: 18.5px; font-weight: bold; text-anchor: middle; fill: #000000; }
+      .txt-col-desc { font-family: Arial, Helvetica, sans-serif; font-size: 14px; text-anchor: middle; fill: #222222; }
+      .txt-banner { font-family: Arial, Helvetica, sans-serif; font-size: 17.5px; font-weight: bold; fill: #000000; }
+      .txt-banner-sub { font-family: Arial, Helvetica, sans-serif; font-size: 14.5px; fill: #222222; }
+      .txt-step-title { font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; fill: #000000; }
+      .txt-step-body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; fill: #111111; }
+      .txt-label { font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: bold; fill: #000000; }
+      .label-bg { fill: #ffffff; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 10 5 L 0 8.5 z" class="arrowhead" />
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect x="0" y="0" width="1660" height="1740" fill="#ffffff" />
+
+  <!-- 1. Title Banner -->
+  <rect x="30" y="20" width="1600" height="70" class="title-box" />
+  <text x="830" y="47" class="txt-title">SƠ ĐỒ TRÌNH TỰ THỰC THI 1 LỆNH FIRMWARE QUA SOC_INTERCONNECT</text>
+  <text x="830" y="73" class="txt-subtitle">Ví dụ: Lệnh đọc biến từ ngăn xếp Stack: int x = local_var; (Mã máy RISC-V: lw a0, 0(sp))</text>
+
+  <!-- 2. Column Headers -->
+  <!-- Col 1: CPU -->
+  <rect x="40" y="110" width="360" height="85" class="col-box" />
+  <text x="220" y="139" class="txt-col-title">CỘT 1: PicoRV32 CPU (MASTER)</text>
+  <text x="220" y="162" class="txt-col-desc">Native Memory Bus (cpu_mem_*)</text>
+  <text x="220" y="180" class="txt-col-desc">Nạp lệnh, Giải mã, Thực thi, Đọc/Ghi dữ liệu</text>
+
+  <!-- Col 2: soc_interconnect -->
+  <rect x="455" y="110" width="360" height="85" class="col-box" />
+  <text x="635" y="139" class="txt-col-title">CỘT 2: soc_interconnect.v</text>
+  <text x="635" y="162" class="txt-col-desc">Address Decoder &amp; Bus Multiplexer</text>
+  <text x="635" y="180" class="txt-col-desc">Giải mã địa chỉ, bật sel_*, ghép rdata / ready</text>
+
+  <!-- Col 3: SPI Flash -->
+  <rect x="865" y="110" width="360" height="85" class="col-box" />
+  <text x="1045" y="139" class="txt-col-title">CỘT 3: SPI FLASH (spimemio.v)</text>
+  <text x="1045" y="162" class="txt-col-desc">0x0010_0000 - 0x00FF_FFFF</text>
+  <text x="1045" y="180" class="txt-col-desc">Chứa mã lệnh XIP (firmware) &amp; Database UID</text>
+
+  <!-- Col 4: 1KB SRAM -->
+  <rect x="1270" y="110" width="360" height="85" class="col-box" />
+  <text x="1450" y="139" class="txt-col-title">CỘT 4: 1KB DATA SRAM (data_sram)</text>
+  <text x="1450" y="162" class="txt-col-desc">0x0000_0000 - 0x0000_03FF</text>
+  <text x="1450" y="180" class="txt-col-desc">Chứa ngăn xếp Stack (sp), biến cục bộ (.data, .bss)</text>
+
+  <!-- Vertical Lifelines -->
+  <line x1="220" y1="195" x2="220" y2="1710" class="lifeline" />
+  <line x1="635" y1="195" x2="635" y2="1710" class="lifeline" />
+  <line x1="1045" y1="195" x2="1045" y2="1710" class="lifeline" />
+  <line x1="1450" y1="195" x2="1450" y2="1710" class="lifeline" />
+
+  <!-- ============================================================= -->
+  <!-- CHẶNG 1: INSTRUCTION FETCH FROM FLASH                         -->
+  <!-- ============================================================= -->
+  <rect x="40" y="215" width="1590" height="40" class="banner-box" />
+  <text x="55" y="241" class="txt-banner">CHẶNG 1: NẠP MÃ LỆNH TỪ FLASH (INSTRUCTION FETCH - XIP VIA FLASH)</text>
+
+  <!-- Step 1: CPU initiates fetch -->
+  <rect x="50" y="270" width="340" height="85" class="step-box" />
+  <text x="65" y="295" class="txt-step-title">Bước 1: CPU phát chu kỳ nạp lệnh</text>
+  <text x="65" y="316" class="txt-step-body">• cpu_mem_valid = 1</text>
+  <text x="65" y="335" class="txt-step-body">• cpu_mem_addr = 0x0025_0000 (Vị trí mã lệnh)</text>
+
+  <!-- Step 1 Arrow: Lifeline 1 -> Lifeline 2 -->
+  <line x1="220" y1="380" x2="635" y2="380" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="270" y="367" width="315" height="26" class="label-bg" />
+  <text x="427" y="385" class="txt-label" text-anchor="middle">cpu_mem_valid = 1, addr = 0x0025_0000</text>
+
+  <!-- Step 2: Interconnect Decodes Flash -->
+  <rect x="465" y="405" width="340" height="85" class="step-box" />
+  <text x="480" y="430" class="txt-step-title">Bước 2: Giải mã địa chỉ Flash</text>
+  <text x="480" y="451" class="txt-step-body">• 0x0025_0000 ∈ [0x0010_0000..0x0100_0000)</text>
+  <text x="480" y="470" class="txt-step-body">• Kích hoạt: sel_spimem = 1 (khóa sel_sram = 0)</text>
+
+  <!-- Step 2 Arrow: Lifeline 2 -> Lifeline 3 -->
+  <line x1="635" y1="515" x2="1045" y2="515" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="670" y="502" width="340" height="26" class="label-bg" />
+  <text x="840" y="520" class="txt-label" text-anchor="middle">sel_spimem = 1 (Kích hoạt bộ điều khiển Flash)</text>
+
+  <!-- Step 3: Flash reads 4 bytes -->
+  <rect x="875" y="540" width="340" height="85" class="step-box" />
+  <text x="890" y="565" class="txt-step-title">Bước 3: Giao tiếp SPI Flash ngoài</text>
+  <text x="890" y="586" class="txt-step-body">• spimemio phát chuỗi xung SPI (SCK/MOSI/MISO)</text>
+  <text x="890" y="605" class="txt-step-body">• CPU tự động tạm dừng (Stall) chờ nạp mã lệnh</text>
+
+  <!-- Step 4: Flash returns opcode & ready -->
+  <rect x="875" y="640" width="340" height="75" class="step-box" />
+  <text x="890" y="665" class="txt-step-title">Bước 4: Flash trả mã lệnh &amp; Báo xong</text>
+  <text x="890" y="686" class="txt-step-body">• spimem_rdata = Mã opcode 32-bit (lw)</text>
+  <text x="890" y="703" class="txt-step-body">• Kích hoạt: spimem_ready = 1</text>
+
+  <!-- Step 4 Arrow: Lifeline 3 -> Lifeline 2 -->
+  <line x1="1045" y1="740" x2="635" y2="740" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="670" y="727" width="340" height="26" class="label-bg" />
+  <text x="840" y="745" class="txt-label" text-anchor="middle">spimem_rdata (mã opcode lw), ready = 1</text>
+
+  <!-- Step 5: Interconnect Mux to CPU -->
+  <rect x="465" y="765" width="340" height="75" class="step-box" />
+  <text x="480" y="790" class="txt-step-title">Bước 5: Ghép kênh dữ liệu về CPU</text>
+  <text x="480" y="811" class="txt-step-body">• cpu_mem_rdata = spimem_rdata</text>
+  <text x="480" y="828" class="txt-step-body">• cpu_mem_ready = spimem_ready = 1</text>
+
+  <!-- Step 5 Arrow: Lifeline 2 -> Lifeline 1 -->
+  <line x1="635" y1="865" x2="220" y2="865" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="280" y="852" width="295" height="26" class="label-bg" />
+  <text x="427" y="870" class="txt-label" text-anchor="middle">cpu_mem_rdata, cpu_mem_ready = 1</text>
+
+  <!-- Step 6: CPU Latches Opcode -->
+  <rect x="50" y="890" width="340" height="75" class="step-box" />
+  <text x="65" y="915" class="txt-step-title">Bước 6: CPU nhận mã lệnh vào IR</text>
+  <text x="65" y="936" class="txt-step-body">• Chốt opcode lw vào thanh ghi lệnh (IR)</text>
+  <text x="65" y="953" class="txt-step-body">• Hạ cpu_mem_valid = 0 (Xong chu kỳ đọc)</text>
+
+  <!-- ============================================================= -->
+  <!-- GIAI ĐOẠN TRUNG GIAN                                          -->
+  <!-- ============================================================= -->
+  <rect x="40" y="985" width="1590" height="65" class="banner-box" />
+  <text x="55" y="1010" class="txt-banner">GIAI ĐOẠN TRUNG GIAN: GIẢI MÃ LỆNH NỘI BỘ CPU (INSTRUCTION DECODE &amp; ALU)</text>
+  <text x="55" y="1035" class="txt-banner-sub">• CPU giải mã opcode 'lw': Xác định cần đọc 1 từ (4-byte) từ con trỏ ngăn xếp: addr = sp + 0 = 0x0000_03F0 (vùng 1KB SRAM). Phát chu kỳ bus mới!</text>
+
+  <!-- ============================================================= -->
+  <!-- CHẶNG 2: DATA MEMORY ACCESS TO SRAM                           -->
+  <!-- ============================================================= -->
+  <rect x="40" y="1065" width="1590" height="40" class="banner-box" />
+  <text x="55" y="1091" class="txt-banner">CHẶNG 2: ĐỌC DỮ LIỆU TỪ SRAM (DATA MEMORY ACCESS - 1KB DATA SRAM)</text>
+
+  <!-- Step 7: CPU initiates data read -->
+  <rect x="50" y="1120" width="340" height="85" class="step-box" />
+  <text x="65" y="1145" class="txt-step-title">Bước 7: CPU phát chu kỳ đọc dữ liệu</text>
+  <text x="65" y="1166" class="txt-step-body">• cpu_mem_valid = 1</text>
+  <text x="65" y="1185" class="txt-step-body">• cpu_mem_addr = 0x0000_03F0 (Địa chỉ Stack)</text>
+
+  <!-- Step 7 Arrow: Lifeline 1 -> Lifeline 2 -->
+  <line x1="220" y1="1230" x2="635" y2="1230" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="270" y="1217" width="315" height="26" class="label-bg" />
+  <text x="427" y="1235" class="txt-label" text-anchor="middle">cpu_mem_valid = 1, addr = 0x0000_03F0</text>
+
+  <!-- Step 8: Interconnect Decodes SRAM -->
+  <rect x="465" y="1255" width="340" height="85" class="step-box" />
+  <text x="480" y="1280" class="txt-step-title">Bước 8: Giải mã địa chỉ SRAM</text>
+  <text x="480" y="1301" class="txt-step-body">• 0x0000_03F0 &lt; 0x0000_0400 (Dưới 1KB)</text>
+  <text x="480" y="1320" class="txt-step-body">• Kích hoạt: sel_sram = 1 (Cột 3 Flash nghỉ)</text>
+
+  <!-- Step 8 Arrow: Lifeline 2 -> Lifeline 4 -->
+  <line x1="635" y1="1365" x2="1450" y2="1365" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="880" y="1352" width="320" height="26" class="label-bg" />
+  <text x="1042" y="1370" class="txt-label" text-anchor="middle">sel_sram = 1 (Kích hoạt 1KB Data SRAM)</text>
+
+  <!-- Step 9: SRAM reads data -->
+  <rect x="1280" y="1390" width="340" height="85" class="step-box" />
+  <text x="1295" y="1415" class="txt-step-title">Bước 9: SRAM truy xuất ô nhớ 0x3F0</text>
+  <text x="1295" y="1436" class="txt-step-body">• SRAM on-chip đọc ô nhớ Stack 0x3F0</text>
+  <text x="1295" y="1455" class="txt-step-body">• Xuất dữ liệu: sram_rdata = Giá trị biến x</text>
+
+  <!-- Step 10 Arrow: Lifeline 4 -> Lifeline 2 -->
+  <line x1="1450" y1="1500" x2="635" y2="1500" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="880" y="1487" width="320" height="26" class="label-bg" />
+  <text x="1042" y="1505" class="txt-label" text-anchor="middle">sram_rdata (biến x), sram_ready = 1</text>
+
+  <!-- Step 10b: Interconnect Mux to CPU -->
+  <rect x="465" y="1525" width="340" height="75" class="step-box" />
+  <text x="480" y="1550" class="txt-step-title">Bước 10: Ghép kênh dữ liệu SRAM về CPU</text>
+  <text x="480" y="1571" class="txt-step-body">• cpu_mem_rdata = sram_rdata</text>
+  <text x="480" y="1588" class="txt-step-body">• cpu_mem_ready = sram_ready = 1</text>
+
+  <!-- Step 11 Arrow: Lifeline 2 -> Lifeline 1 -->
+  <line x1="635" y1="1625" x2="220" y2="1625" class="flow-arrow" marker-end="url(#arrow)" />
+  <rect x="280" y="1612" width="295" height="26" class="label-bg" />
+  <text x="427" y="1630" class="txt-label" text-anchor="middle">cpu_mem_rdata, cpu_mem_ready = 1</text>
+
+  <!-- Step 11: CPU Latches Data & Completes -->
+  <rect x="50" y="1645" width="340" height="85" class="step-box" />
+  <text x="65" y="1670" class="txt-step-title">Bước 11: CPU chốt dữ liệu vào a0</text>
+  <text x="65" y="1691" class="txt-step-body">• Ghi giá trị biến vào thanh ghi mục tiêu a0</text>
+  <text x="65" y="1710" class="txt-step-body">• Tăng PC = PC + 4 -&gt; LỆNH HOÀN TẤT 100%!</text>
+
+</svg>

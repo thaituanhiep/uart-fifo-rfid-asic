@@ -17,19 +17,27 @@ module tb_uart_ping;
 
     rdm6300_picorv32_soc #(
         .CLK_FREQ_HZ(100_000_000),
-        .UART_BAUD(6_250_000), // DIV = 16
-        .FLASH_BASE(24'h30_0000),
-        .BOOT_HEX("firmware.hex")
+        .UART_BAUD(6_250_000) // DIV = 16
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
         .rdm6300_rx_i(rdm6300_rx_i),
         .uart_tx_o(uart_tx_o),
         .uart_rx_i(uart_rx_i),
-        .flash_csn(),
-        .flash_sck(),
-        .flash_mosi(),
-        .flash_miso(1'b1),
+        .flash_csb(),
+        .flash_clk(),
+        .flash_io0_oe(),
+        .flash_io1_oe(),
+        .flash_io2_oe(),
+        .flash_io3_oe(),
+        .flash_io0_do(),
+        .flash_io1_do(),
+        .flash_io2_do(),
+        .flash_io3_do(),
+        .flash_io0_di(1'b0),
+        .flash_io1_di(1'b1),
+        .flash_io2_di(1'b1),
+        .flash_io3_di(1'b1),
         .leds_o(leds_o),
         .cpu_trap(cpu_trap),
         .card_event_o(),

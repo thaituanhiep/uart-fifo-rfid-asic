@@ -4,7 +4,8 @@ echo ========================================================
 echo   Compiling Host PC C Console Application (Windows)
 echo ========================================================
 
-set "XILINX_MINGW=D:\Xilinx\2025.1\tps\win64\msys64\mingw64\bin"
+set "XILINX_MINGW=D:\Xilinx\2025.1\tps\mingw\10.0.0\win64.o\nt\bin"
+if not exist "%XILINX_MINGW%\gcc.exe" set "XILINX_MINGW=D:\Xilinx\2025.1\tps\win64\msys64\mingw64\bin"
 if exist "%XILINX_MINGW%\gcc.exe" (
     set "PATH=%XILINX_MINGW%;%PATH%"
 )

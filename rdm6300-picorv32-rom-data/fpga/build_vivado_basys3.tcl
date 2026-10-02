@@ -16,15 +16,19 @@ create_project -in_memory -part xc7a35tcpg236-1
 
 # 2. Add Verilog RTL Source Files
 read_verilog [list \
-    "$root_dir/rtl/sync_2ff.v" \
-    "$root_dir/rtl/uart_rx.v" \
-    "$root_dir/rtl/rdm6300_frame_decoder.v" \
-    "$root_dir/rtl/sync_fifo.v" \
-    "$root_dir/rtl/simpleuart.v" \
-    "$root_dir/rtl/simpleuart_fifo.v" \
-    "$root_dir/rtl/spimemio.v" \
-    "$root_dir/rtl/data_sram.v" \
-    "$root_dir/rtl/picorv32.v" \
+    "$root_dir/rtl/core/sync_2ff.v" \
+    "$root_dir/rtl/core/spimemio.v" \
+    "$root_dir/rtl/core/data_sram.v" \
+    "$root_dir/rtl/core/soc_gpio_mmio.v" \
+    "$root_dir/rtl/core/picorv32.v" \
+    "$root_dir/rtl/core/soc_interconnect.v" \
+    "$root_dir/rtl/rdm6300/uart_rx.v" \
+    "$root_dir/rtl/rdm6300/rdm6300_frame_decoder.v" \
+    "$root_dir/rtl/rdm6300/rdm6300_mmio.v" \
+    "$root_dir/rtl/host/sync_fifo.v" \
+    "$root_dir/rtl/host/simpleuart.v" \
+    "$root_dir/rtl/host/simpleuart_fifo.v" \
+    "$root_dir/rtl/host/host_uart_mmio.v" \
     "$root_dir/rtl/rdm6300_picorv32_soc.v" \
     "$root_dir/fpga/rtl/top_basys3_picorv32_rdm6300.v" \
 ]

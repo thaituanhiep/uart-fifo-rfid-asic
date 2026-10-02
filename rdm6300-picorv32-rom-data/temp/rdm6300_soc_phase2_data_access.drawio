@@ -1,0 +1,66 @@
+<mxfile host="Electron" modified="2026-10-02T00:00:00.000Z" agent="Antigravity" version="21.0.0" type="device">
+  <diagram id="phase2_data_access" name="Chặng 2: Truy xuất dữ liệu (Data Access)">
+    <mxGraphModel dx="1800" dy="1740" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1740" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="&lt;b style=&quot;font-size:26px;&quot;&gt;CHẶNG 2: TRUY XUẤT DỮ LIỆU TỪ SRAM QUA SOC_INTERCONNECT (DATA MEMORY ACCESS)&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18px;color:#444;&quot;&gt;Ví dụ: Lệnh lw a0, 0(sp) đọc biến local_var từ đỉnh Stack sp = 0x0000_03F0 — Tín hiệu trên các mũi tên: rdm6300_picorv32_soc.v#tên_biến (module nguồn, module đích)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+  <mxGeometry x="20" y="20" width="1760" height="80" as="geometry"/>
+</mxCell><mxCell id="3" value="&lt;b style=&quot;font-size:22px;&quot;&gt;CỘT 1: PicoRV32 CPU (MASTER)&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:17px;color:#333;&quot;&gt;File nguồn: rtl/picorv32.v&lt;br/&gt;Giải mã opcode, phát chu kỳ đọc Stack: mem_valid, mem_addr&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+  <mxGeometry x="20" y="115" width="560" height="115" as="geometry"/>
+</mxCell><mxCell id="4" value="&lt;b style=&quot;font-size:22px;&quot;&gt;CỘT 2: soc_interconnect (TRỌNG TÀI BUS)&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:17px;color:#333;&quot;&gt;File nguồn: rtl/soc_interconnect.v&lt;br/&gt;Giải mã địa chỉ, bật sel_sram = 1, ghép sram_rdata về CPU&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+  <mxGeometry x="620" y="115" width="560" height="115" as="geometry"/>
+</mxCell><mxCell id="5" value="&lt;b style=&quot;font-size:22px;&quot;&gt;CỘT 3: 1KB ON-CHIP DATA SRAM (SLAVE 0)&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:17px;color:#333;&quot;&gt;File nguồn: rtl/data_sram.v (256 từ x 32-bit = 1024 Bytes)&lt;br/&gt;Dải địa chỉ SRAM: 0x0000_0000 - 0x0000_03FF&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+  <mxGeometry x="1220" y="115" width="560" height="115" as="geometry"/>
+</mxCell><mxCell id="6" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=2;strokeColor=#888888;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="300" y="1720" as="sourcePoint"/>
+    <mxPoint x="300" y="230" as="targetPoint"/>
+  </mxGeometry>
+</mxCell><mxCell id="7" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=2;strokeColor=#888888;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="900" y="1720" as="sourcePoint"/>
+    <mxPoint x="900" y="230" as="targetPoint"/>
+  </mxGeometry>
+</mxCell><mxCell id="8" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=2;strokeColor=#888888;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="1500" y="1720" as="sourcePoint"/>
+    <mxPoint x="1500" y="230" as="targetPoint"/>
+  </mxGeometry>
+</mxCell><mxCell id="9" value="&lt;b style=&quot;font-size:19px;&quot;&gt;[TIỀN ĐỀ] ALU tính addr = 32'h0000_03F0 (SRAM). Khối Flash nghỉ ngơi do sel_spimem = 0 (CS_N giữ mức cao 1'b1)&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;" vertex="1" parent="1">
+  <mxGeometry x="20" y="245" width="1760" height="55" as="geometry"/>
+</mxCell><mxCell id="10" value="&lt;b style=&quot;font-size:21px;&quot;&gt;Bước 7: CPU phát chu kỳ đọc Stack SRAM&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18px;&quot;&gt;• mem_valid = 1 & mem_instr = 0 (Đọc dữ liệu)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• mem_addr = 0x0000_03F0 (Địa chỉ đỉnh Stack)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• mem_wstrb = 4'b0000 (Chu kỳ đọc, không ghi)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;align=left;spacingLeft=16;spacingRight=16;" vertex="1" parent="1">
+  <mxGeometry x="20" y="320" width="560" height="170" as="geometry"/>
+</mxCell><mxCell id="11" value="&lt;b style=&quot;font-size:21px;&quot;&gt;Bước 8: Interconnect giải mã chọn SRAM&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18px;&quot;&gt;• So khớp: 32'h0000_03F0 < 32'h0000_0400&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• Bật sel_sram = 1 (Kích hoạt khối 1KB Data SRAM)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• Khóa sel_spimem = 0 (Bộ điều khiển Flash nghỉ)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;align=left;spacingLeft=16;spacingRight=16;" vertex="1" parent="1">
+  <mxGeometry x="620" y="620" width="560" height="170" as="geometry"/>
+</mxCell><mxCell id="12" value="&lt;b style=&quot;font-size:21px;&quot;&gt;Bước 9: SRAM đọc ô nhớ & Phản hồi (1 cycle)&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18px;&quot;&gt;• Đọc mem[addr] trong rtl/data_sram.v (Stack 0x3F0)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• sram_rdata = Giá trị biến local_var từ Stack&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• sram_ready = 1 (Phản hồi tức thì trong 1 cycle 20ns)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;align=left;spacingLeft=16;spacingRight=16;" vertex="1" parent="1">
+  <mxGeometry x="1220" y="920" width="560" height="170" as="geometry"/>
+</mxCell><mxCell id="13" value="&lt;b style=&quot;font-size:21px;&quot;&gt;Bước 10: Interconnect ghép dữ liệu về CPU&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18px;&quot;&gt;• mem_rdata = sram_rdata (Chuyển dữ liệu biến)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• mem_ready = sram_ready = 1 (Báo CPU chốt)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;align=left;spacingLeft=16;spacingRight=16;" vertex="1" parent="1">
+  <mxGeometry x="620" y="1220" width="560" height="135" as="geometry"/>
+</mxCell><mxCell id="14" value="&lt;b style=&quot;font-size:21px;&quot;&gt;Bước 11: CPU chốt dữ liệu vào a0 & Hoàn tất&lt;/b&gt;&lt;br/&gt;&lt;span style=&quot;font-size:18px;&quot;&gt;• Ghi cpuregs[10] = mem_rdata (Thanh ghi a0/x10)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• Hạ mem_valid = 0 (Kết thúc chu kỳ đọc dữ liệu)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• Tăng reg_pc = reg_pc + 4 (Chuyển sang lệnh kế)&lt;/span&gt;<br/>&lt;span style=&quot;font-size:18px;&quot;&gt;• LỆNH FIRMWARE HOÀN TẤT THỰC THI 100%!&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;align=left;spacingLeft=16;spacingRight=16;" vertex="1" parent="1">
+  <mxGeometry x="20" y="1485" width="560" height="205" as="geometry"/>
+</mxCell><mxCell id="15" value="&lt;b style=&quot;font-size:19px;&quot;&gt;rdm6300_picorv32_soc.v#mem_valid, #mem_addr&lt;br/&gt;(từ picorv32 ➔ soc_interconnect)&lt;/b&gt;" style="endArrow=classic;html=1;strokeWidth=3.5;strokeColor=#000000;labelBackgroundColor=#ffffff;align=center;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="300" y="560" as="sourcePoint"/>
+    <mxPoint x="900" y="560" as="targetPoint"/>
+  </mxGeometry>
+</mxCell><mxCell id="16" value="&lt;b style=&quot;font-size:19px;&quot;&gt;rdm6300_picorv32_soc.v#sel_sram&lt;br/&gt;(từ soc_interconnect ➔ data_sram)&lt;/b&gt;" style="endArrow=classic;html=1;strokeWidth=3.5;strokeColor=#000000;labelBackgroundColor=#ffffff;align=center;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="900" y="860" as="sourcePoint"/>
+    <mxPoint x="1500" y="860" as="targetPoint"/>
+  </mxGeometry>
+</mxCell><mxCell id="17" value="&lt;b style=&quot;font-size:19px;&quot;&gt;rdm6300_picorv32_soc.v#sram_rdata, #sram_ready&lt;br/&gt;(từ data_sram ➔ soc_interconnect)&lt;/b&gt;" style="endArrow=classic;html=1;strokeWidth=3.5;strokeColor=#000000;labelBackgroundColor=#ffffff;align=center;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="1500" y="1160" as="sourcePoint"/>
+    <mxPoint x="900" y="1160" as="targetPoint"/>
+  </mxGeometry>
+</mxCell><mxCell id="18" value="&lt;b style=&quot;font-size:19px;&quot;&gt;rdm6300_picorv32_soc.v#mem_rdata, #mem_ready&lt;br/&gt;(từ soc_interconnect ➔ picorv32)&lt;/b&gt;" style="endArrow=classic;html=1;strokeWidth=3.5;strokeColor=#000000;labelBackgroundColor=#ffffff;align=center;" edge="1" parent="1">
+  <mxGeometry width="50" height="50" relative="1" as="geometry">
+    <mxPoint x="900" y="1425" as="sourcePoint"/>
+    <mxPoint x="300" y="1425" as="targetPoint"/>
+  </mxGeometry>
+</mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

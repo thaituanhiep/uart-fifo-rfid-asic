@@ -361,7 +361,7 @@ void export_tags_to_csv(serial_port_t port) {
 
     fprintf(f, "10 so in tren the\n");
 
-    printf("\n-> Gui lenh 'F' (Doc danh sach the tu SPI Flash de xuat CSV vao folder rfids)...\n");
+    printf("\n-> Dang doc danh sach the tu SPI Flash va xuat ra tap tin CSV...\n");
     flush_serial(port);
     write_serial(port, "F\n", 2);
 
@@ -748,8 +748,6 @@ void delete_tag_from_flash(serial_port_t port) {
             printf("                                  (CHI XOA DUY NHAT THE NAY, KHONG XOA TOAN BO FLASH)\n");
             printf("===================================================================================\n");
 
-            printf("\n-> Tu dong xuat danh sach the con lai ra file CSV moi trong host/rfids/...\n");
-            export_tags_to_csv(port);
             done = true;
             break;
         } else if (strstr(resp, "ERR:TAG_NOT_FOUND")) {
@@ -780,21 +778,19 @@ void print_menu(void) {
     printf("     RDM6300 RFID - PICORV32 - BASYS 3 SPI FLASH MANAGER      \n");
     printf("===============================================================\n");
     printf("  [1]  Ping Hardware (Kiem tra ket noi PicoRV32)\n");
-    printf("  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu Flash & Export)\n");
+    printf("  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu vao Flash)\n");
     printf("  [3]  Check RFID Tag in Flash (Kiem tra the da co trong Flash chua)\n");
-    printf("  [4]  Delete RFID Tag from Flash (Nhap 10 so in tren the de xoa khoi Flash & Export CSV)\n");
+    printf("  [4]  Delete RFID Tag from Flash (Nhap 10 so in tren the de xoa khoi Flash)\n");
     printf("  [5]  Virtual Scan: By Decimal (Quet the ao: Nhap 10 so in tren the)\n");
     printf("  [6]  Virtual Scan: By Hex (Quet the ao: Nhap ma Hex 10 ky tu)\n");
     printf("  [7]  View Access Logs from Flash (Xem nhat ky quet the tu Flash 0x310000)\n");
-    printf("  [8]  Export Access Logs to CSV (Xuat nhat ky quet the ra file CSV vao host/logs)\n");
-    printf("  [9]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)\n");
-    printf("  [10] Erase Authorized Tags Sector (Xoa the da cap phep 0x300000)\n");
-    printf("  [11] Get SoC Status (Xem trang thai LED, Flash, PicoRV32)\n");
-    printf("  [12] Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)\n");
-    printf("  [13] Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)\n");
+    printf("  [8]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)\n");
+    printf("  [9]  Get SoC Status (Xem trang thai LED, Flash, PicoRV32)\n");
+    printf("  [10] Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)\n");
+    printf("  [11] Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)\n");
     printf("  [0]  Exit (Thoat)\n");
     printf("---------------------------------------------------------------\n");
-    printf("Lua chon cua ban [0-13]: ");
+    printf("Lua chon cua ban [0-11]: ");
 }
 
 int main(int argc, char *argv[]) {
@@ -889,8 +885,6 @@ int main(int argc, char *argv[]) {
                             sscanf(resp, "OK:MANUAL_TAG_SAVED:SLOT:%d:%31s", &slot, tag);
                             printf("[THANH CONG] The moi %s (%010u) da duoc luu vao Flash Basys 3 tai Slot #%d (Dia chi: 0x%06X)!\n",
                                    tag, (unsigned int)val, slot, 0x300000 + slot * 16);
-                            printf("-> Tu dong xuat danh sach the moi cap nhat ra file CSV...\n");
-                            export_tags_to_csv(port);
                             done = true;
                             break;
                         } else if (strstr(resp, "INFO:EXISTS:SLOT:")) {
@@ -1197,12 +1191,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 8: { // Export Access Logs to CSV
-                export_logs_to_csv(port, NULL, 0, false);
-                break;
-            }
-
-            case 9: { // Erase Access Logs (Save to CSV first, then erase Flash 0x310000)
+            case 8: { // Erase Access Logs (Save to CSV first, then erase Flash 0x310000)
                 char backup_file[MAX_PATH] = "";
                 printf("\n===============================================================\n");
                 printf("          XOA NHAT KY QUET THE (AUTO-BACKUP VAO CSV)          \n");
@@ -1231,19 +1220,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 10: { // Erase Authorized Tags Sector (0x300000)
-                printf("\n-> Gui lenh 'E' (Xoa sector SPI Flash danh muc the 0x300000)...\n");
-                flush_serial(port);
-                write_serial(port, "E\n", 2);
-                if (read_line_serial(port, resp, sizeof(resp), 3000) > 0) {
-                    printf("[THANH CONG] %s\n", resp);
-                } else {
-                    printf("[CANH BAO] Timeout khi xoa Flash!\n");
-                }
-                break;
-            }
-
-            case 11: { // Status
+            case 9: { // Status
                 printf("\n-> Gui lenh 'S' (Xem trang thai)...\n");
                 flush_serial(port);
                 write_serial(port, "S\n", 2);
@@ -1255,18 +1232,20 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 12: { // Export RFID Tags to CSV
+            case 10:   // Export RFID Tags to CSV (Menu [10] hoac legacy [12])
+            case 12: {
                 export_tags_to_csv(port);
                 break;
             }
 
-            case 13: { // Import RFID Tags from Latest CSV
+            case 11:   // Import RFID Tags from Latest CSV (Menu [11] hoac legacy [13])
+            case 13: {
                 import_tags_from_latest_csv(port);
                 break;
             }
 
             default:
-                printf("\nLua chon khong hop le! Vui long chon tu 0 den 13.\n");
+                printf("\nLua chon khong hop le! Vui long chon tu 0 den 11.\n");
                 break;
         }
 

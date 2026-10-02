@@ -9,19 +9,20 @@ echo   Running Step 3 Simulation in AMD Vivado Simulator (xsim)
 echo ======================================================================
 echo.
 
-set "VIVADO_BIN=C:\AMDDesignTools\2025.2\Vivado\bin"
-if not exist "%VIVADO_BIN%\xvlog.bat" (
+set "VIVADO_BIN=D:\Xilinx\2025.1\Vivado\bin"
+if not exist "%VIVADO_BIN%\xvlog.bat" set "VIVADO_BIN=C:\AMDDesignTools\2025.2\Vivado\bin"
+if exist "%VIVADO_BIN%\xvlog.bat" (
+    set "PATH=%VIVADO_BIN%;%PATH%"
+) else (
     where xvlog >nul 2>nul
     if %ERRORLEVEL% neq 0 (
         echo [ERROR] Vivado toolchain not found in PATH or %VIVADO_BIN%!
         exit /b 1
     )
-) else (
-    set "PATH=%VIVADO_BIN%;%PATH%"
 )
 
 echo [1/3] Compiling Verilog RTL and Testbench with xvlog...
-call xvlog -i ../../rtl ../../rtl/data_sram.v tb_data_sram.v
+call xvlog -i ../../rtl ../../rtl/core/data_sram.v tb_data_sram.v
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
 echo [2/3] Elaborating design with xelab...

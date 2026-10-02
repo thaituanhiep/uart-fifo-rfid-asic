@@ -55,6 +55,7 @@ if %ERRORLEVEL% neq 0 (
 )
 
 copy /y firmware.hex ..\rtl\firmware.hex >nul
+copy /y firmware.hex ..\rtl\core\firmware.hex >nul
 copy /y firmware.hex ..\fpga\rtl\firmware.hex >nul
 copy /y firmware.hex ..\tb\firmware.hex >nul
 copy /y firmware.hex ..\tb\step6_top_soc_integration\firmware.hex >nul

@@ -3,10 +3,12 @@ rem ============================================================================
 rem Build & Execute Firmware Unit & Protocol Testbench (Step 2)
 rem ==============================================================================
 echo ======================================================================
-echo   Step 2: Firmware & Protocol Testbench Runner
+echo   Step 2: Firmware and Protocol Testbench Runner
 echo ======================================================================
 
-set "GCC_BIN=C:\AMDDesignTools\2025.2\tps\mingw\10.0.0\win64.o\nt\bin\gcc.exe"
+set "GCC_BIN=D:\Xilinx\2025.1\tps\mingw\10.0.0\win64.o\nt\bin\gcc.exe"
+if not exist "%GCC_BIN%" set "GCC_BIN=D:\Xilinx\2025.1\tps\win64\msys64\mingw64\bin\gcc.exe"
+if not exist "%GCC_BIN%" set "GCC_BIN=C:\AMDDesignTools\2025.2\tps\mingw\10.0.0\win64.o\nt\bin\gcc.exe"
 if exist "%GCC_BIN%" (
     echo [INFO] Compiling tb_firmware.c using MinGW GCC...
     "%GCC_BIN%" -O2 -Wall -Wextra tb_firmware.c -o tb_firmware.exe 2>nul

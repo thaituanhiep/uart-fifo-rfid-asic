@@ -8,7 +8,8 @@ Thư mục này chứa toàn bộ các file phục vụ cho quá trình kiểm t
 - `tb_uart_ping.v`: Testbench Verilog kiểm tra nhanh giao tiếp UART ping-pong giữa PicoRV32 SoC và máy tính chủ.
 - `firmware.hex`: File định dạng Verilog HEX chứa mã máy thực thi (firmware C) của CPU PicoRV32, được nạp vào SPI Flash / ROM khi khởi động.
 - `test_top_soc.py`: Bộ kiểm thử tự động hóa toàn diện 8 Test Cases cho luồng tích hợp phần cứng và phần mềm.
-- `run_tb_step6.bat`: Kịch bản thực thi nhanh 1-click cho Bước 6.
+- `run_tb_step6.bat`: Kịch bản thực thi nhanh 1-click cho Bước 6 bằng Python test harness.
+- `run_vivado_sim.bat`: Kịch bản biên dịch toàn bộ 14 module Verilog RTL và mô phỏng trên AMD Vivado Simulator (xvlog, xelab, xsim).
 - `README.md`: Tài liệu hướng dẫn chi tiết của thư mục này.
 
 ---
@@ -30,12 +31,14 @@ Thư mục này chứa toàn bộ các file phục vụ cho quá trình kiểm t
 
 ## 3. Cách chạy kiểm tra
 
-### Cách 1: Chạy bằng file Batch (Windows)
+### Cách 1: Chạy mô phỏng RTL trực tiếp trên Vivado Simulator (xsim)
 ```cmd
-run_tb_step6.bat
+run_vivado_sim.bat
 ```
 
-### Cách 2: Chạy trực tiếp bằng Python
+### Cách 2: Chạy kiểm thử tự động hóa bằng Python
 ```cmd
+run_tb_step6.bat
+# hoặc
 py test_top_soc.py
 ```

@@ -18,6 +18,7 @@ tb/
 │   ├── tb_data_sram.v            # Testbench Verilog kiểm tra chu kỳ bus SRAM & byte strobes
 │   ├── test_picorv32_sram.py     # Bộ kiểm thử tự động 12 test case cho CPU & SRAM
 │   ├── run_tb_step3.bat          # Script chạy 1-click cho Bước 3
+│   ├── run_vivado_sim.bat        # Mô phỏng RTL trên Vivado Simulator (xsim)
 │   └── README.md                 # Tài liệu đặc tả Bước 3
 │
 ├── step4_spimemio_flash/         # Bước 4: Bộ điều khiển bộ nhớ ngoài SPI Flash (spimemio)
@@ -30,6 +31,7 @@ tb/
 │   ├── tb_rdm6300_pipeline.v     # Testbench Verilog mô phỏng đường ống 5 giai đoạn (2FF->UART->FIFO->Decoder->XOR)
 │   ├── test_rdm6300_pipeline.py  # Bộ kiểm thử tự động 12 test case cho đường ống RFID
 │   ├── run_tb_step5.bat          # Script chạy 1-click cho Bước 5
+│   ├── run_vivado_sim.bat        # Mô phỏng RTL trên Vivado Simulator (xsim)
 │   └── README.md                 # Tài liệu đặc tả Bước 5
 │
 ├── step6_top_soc_integration/    # Bước 6: Tích hợp toàn diện toàn hệ thống SoC
@@ -37,7 +39,8 @@ tb/
 │   ├── tb_uart_ping.v            # Testbench Verilog kiểm tra UART ping
 │   ├── firmware.hex              # Mã máy Verilog HEX nạp vào hệ thống mô phỏng
 │   ├── test_top_soc.py           # Bộ kiểm thử tự động 8 test case cho luồng phần cứng + phần mềm
-│   ├── run_tb_step6.bat          # Script chạy 1-click cho Bước 6
+│   ├── run_tb_step6.bat          # Script chạy 1-click cho Bước 6 bằng Python
+│   ├── run_vivado_sim.bat        # Mô phỏng RTL toàn bộ 14 module trên Vivado Simulator (xsim)
 │   └── README.md                 # Tài liệu đặc tả Bước 6
 │
 ├── firmware.hex                  # File HEX gốc được sinh tự động khi build firmware

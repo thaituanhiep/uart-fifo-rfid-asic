@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-10-02T05:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="soc_firmware_flow" name="Firmware Execution Flow">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1560" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title Banner -->
+        <mxCell id="title" value="&lt;b style=&quot;font-size:22px;&quot;&gt;SƠ ĐỒ LUỒNG ĐIỀU KHIỂN &amp;amp; XỬ LÝ FIRMWARE (FIRMWARE CONTROL &amp;amp; DATA FLOW)&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="30" y="20" width="1500" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================= -->
+        <!-- LEVEL 1: TWO INCOMING EVENT SOURCES                           -->
+        <!-- ============================================================= -->
+        <!-- Source 1: Host PC -->
+        <mxCell id="src_pc" value="&lt;b style=&quot;font-size:16px;&quot;&gt;NGUỒN 1: HOST PC&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;(Gõ lệnh điều khiển UART qua cổng COM)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="120" y="95" width="560" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Source 2: RFID Reader -->
+        <mxCell id="src_rfid" value="&lt;b style=&quot;font-size:16px;&quot;&gt;NGUỒN 2: THẺ RFID RDM6300&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;(Quẹt thẻ sóng vô tuyến 125kHz)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="880" y="95" width="560" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Level 1 Hardware Receivers -->
+        <mxCell id="hw_pc" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;Khối thu Host PC UART (0x3000_0004)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;sync_2ff + simpleuart (9600 Baud) + sync_fifo (32-byte đệm an toàn)&lt;br&gt;Đệm dữ liệu lệnh, chống mất/tràn gói khi CPU bận&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="120" y="180" width="560" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="hw_rfid" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;Khối thu Thẻ RFID RDM6300 (0x1000_0000)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;sync_2ff + uart_rx (9600 Baud) + rdm6300_frame_decoder&lt;br&gt;Kiểm tra XOR Checksum 14-byte 1-cycle -&amp;gt; Chốt UID vào TAG_HI / TAG_LO &amp;amp; Bật cờ card_valid&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="880" y="180" width="560" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_src_pc" value="uart_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="src_pc" target="hw_pc" />
+        <mxCell id="e_src_rfid" value="rdm6300_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="src_rfid" target="hw_rfid" />
+
+        <!-- ============================================================= -->
+        <!-- LEVEL 2: CENTRAL SOC INTERCONNECT                             -->
+        <!-- ============================================================= -->
+        <mxCell id="soc_bus" value="&lt;b style=&quot;font-size:17px;&quot;&gt;soc_interconnect.v (Address Decoder &amp;amp; Bus Multiplexer)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13.5px;&quot;&gt;Giải mã địa chỉ, kích hoạt tín hiệu chọn khối sel_* và ghép kênh dữ liệu đọc rdata / tín hiệu ready&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="460" y="295" width="640" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Edges into soc_interconnect -->
+        <mxCell id="e_pc_bus" value="0x3000_0004" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="hw_pc" target="soc_bus">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="400" y="275" />
+              <mxPoint x="620" y="275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_rfid_bus" value="0x1000_0000" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="hw_rfid" target="soc_bus">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="275" />
+              <mxPoint x="940" y="275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ============================================================= -->
+        <!-- LEVEL 3: DETAILED PICORV32 CPU FIRMWARE (C MAIN.C)            -->
+        <!-- ============================================================= -->
+        <mxCell id="cpu_box" value="&lt;b style=&quot;font-size:18px;&quot;&gt;PicoRV32 RISC-V CPU CORE (FIRMWARE C main.c) - BỘ NÃO ĐIỀU PHỐI HỆ THỐNG&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;verticalAlign=top;align=center;spacingTop=12;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="50" y="405" width="1460" height="325" as="geometry" />
+        </mxCell>
+
+        <!-- CPU Edge from Interconnect -->
+        <mxCell id="e_bus_cpu" value="PicoRV32 Native Memory Bus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2.5;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="soc_bus" target="cpu_box" />
+
+        <!-- Sub-box 1: XIP Fetch -->
+        <mxCell id="cpu_xip" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;1. Nạp Mã Lệnh XIP (Fetch Code từ Flash)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;line-height:1.6;&quot;&gt;• &lt;b&gt;PC Reset = 0x0025_0000&lt;/b&gt; (vị trí đầu firmware.bin)&lt;br&gt;• CPU phát chu kỳ đọc &lt;b&gt;mem_valid=1, mem_instr=1&lt;/b&gt;&lt;br&gt;• &lt;b&gt;spimemio&lt;/b&gt; phát xung nhịp SPI đọc 4 byte từ Flash ngoài&lt;br&gt;• CPU tự động tạm dừng (&lt;b&gt;Stall&lt;/b&gt;) chờ Flash trả dữ liệu&lt;br&gt;• Chốt từ 32-bit vào thanh ghi lệnh (IR), tăng &lt;b&gt;PC = PC + 4&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Thực thi trực tiếp tại chỗ, không cần nạp vào RAM!&lt;/b&gt;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;align=left;spacingLeft=15;" vertex="1" parent="cpu_box">
+          <mxGeometry x="25" y="45" width="445" height="260" as="geometry" />
+        </mxCell>
+
+        <!-- Sub-box 2: while(1) loop -->
+        <mxCell id="cpu_loop" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;2. Vòng Lặp Chính Firmware (while(1) Event Loop)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;line-height:1.6;&quot;&gt;• &lt;b&gt;Bước 1: poll_rdm6300()&lt;/b&gt;&lt;br&gt;  Đọc 0x1000_0000: nếu card_valid=1 -&amp;gt; đọc UID &amp;amp; xóa cờ&lt;br&gt;• &lt;b&gt;Bước 2: uart_getc_nonblock()&lt;/b&gt;&lt;br&gt;  Đọc 0x3000_0004: lấy byte lệnh từ đỉnh hàng đợi FIFO&lt;br&gt;• &lt;b&gt;Bước 3: Điều phối lệnh switch(cmd)&lt;/b&gt;&lt;br&gt;  &#39;P&#39;: Ping | &#39;V&#39;: Quét thẻ ảo | &#39;F&#39;: Đọc thẻ | &#39;W&#39;: Ghi thẻ | &#39;E&#39;: Xóa&lt;br&gt;• &lt;b&gt;Bước 4: Tra cứu database &amp;amp; Ra quyết định&lt;/b&gt;&lt;br&gt;  So sánh UID với Flash -&amp;gt; Hợp lệ (Granted) / Bị từ chối (Denied)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;align=left;spacingLeft=15;" vertex="1" parent="cpu_box">
+          <mxGeometry x="495" y="45" width="470" height="260" as="geometry" />
+        </mxCell>
+
+        <!-- Sub-box 3: 1KB Data SRAM -->
+        <mxCell id="cpu_sram" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;3. Bộ Nhớ 1KB Data SRAM (0x0000_0000)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;line-height:1.6;&quot;&gt;• Ngăn xếp &lt;b&gt;Stack: sp = 0x0000_0400&lt;/b&gt; (đỉnh 1KB SRAM)&lt;br&gt;• Lưu trữ các biến toàn cục &amp;amp; cục bộ C (.data, .bss)&lt;br&gt;• Mảng đệm: last_tag_hex[11], vtag[12], input_tag[11]&lt;br&gt;• Độ trễ đọc/ghi: &lt;b&gt;Cố định đúng 1 chu kỳ clock&lt;/b&gt;&lt;br&gt;• Đảm bảo CPU tính toán và xử lý logic C tốc độ tối đa&lt;br&gt;• Không chứa mã lệnh, chỉ chứa dữ liệu động!&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;align=left;spacingLeft=15;" vertex="1" parent="cpu_box">
+          <mxGeometry x="990" y="45" width="445" height="260" as="geometry" />
+        </mxCell>
+
+        <!-- ============================================================= -->
+        <!-- LEVEL 4: THREE OUTBOUND ACTION CHANNELS                       -->
+        <!-- ============================================================= -->
+        <!-- Action 1: SPI Flash -->
+        <mxCell id="act_flash" value="&lt;b style=&quot;font-size:16px;&quot;&gt;1. SPI FLASH NGOÀI (spimemio.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;• Tra cứu database danh sách thẻ hợp lệ (&lt;b&gt;0x0030_0000&lt;/b&gt;)&lt;br&gt;• Ghi nhật ký truy cập (Access Log) vào Sector 49 (&lt;b&gt;0x0031_0000&lt;/b&gt;)&lt;br&gt;• Bản ghi 16-byte: Magic + UID + Timestamp + Số lượt quẹt&lt;br&gt;• &lt;b&gt;Lưu trữ vĩnh viễn, không mất dữ liệu khi ngắt nguồn&lt;/b&gt;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="50" y="780" width="455" height="145" as="geometry" />
+        </mxCell>
+
+        <!-- Action 2: GPIO LEDs -->
+        <mxCell id="act_leds" value="&lt;b style=&quot;font-size:16px;&quot;&gt;2. GPIO STATUS LEDS (0x4000_0000)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;Firmware ghi thanh ghi điều khiển leds_o[15:0]:&lt;br&gt;• &lt;b&gt;Bit 1 (0x0002):&lt;/b&gt; Bật LED Xanh -&amp;gt; &lt;b&gt;CHO PHÉP TRUY CẬP (GRANTED)&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Bit 2 (0x0004):&lt;/b&gt; Bật LED Đỏ -&amp;gt; &lt;b&gt;TỪ CHỐI TRUY CẬP (DENIED)&lt;/b&gt;&lt;br&gt;• &lt;b&gt;Bit 3 (0x0008):&lt;/b&gt; Bật LED Vàng -&amp;gt; &lt;b&gt;ĐANG GHI/XÓA FLASH BẬN&lt;/b&gt;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="550" y="780" width="460" height="145" as="geometry" />
+        </mxCell>
+
+        <!-- Action 3: Host PC UART TX -->
+        <mxCell id="act_uart" value="&lt;b style=&quot;font-size:16px;&quot;&gt;3. HOST PC UART (simpleuart.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;Firmware ghi từng ký tự vào 0x3000_0004 -&amp;gt; chân &lt;b&gt;uart_tx_o&lt;/b&gt;:&lt;br&gt;• &lt;b&gt;PONG: PicoRV32 Active&lt;/b&gt;&lt;br&gt;• &lt;b&gt;SCAN:TAG=000073161D:ACCESS_GRANTED:SLOT=0&lt;/b&gt;&lt;br&gt;• &lt;b&gt;LOG_ITEM:0:SUCC:000073161D:1&lt;/b&gt;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="780" width="455" height="145" as="geometry" />
+        </mxCell>
+
+        <!-- Edges from CPU to Outbound Actions -->
+        <mxCell id="e_cpu_flash" value="0x0030_0000" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="277" y="730" as="sourcePoint" />
+            <mxPoint x="277" y="780" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_cpu_leds" value="0x4000_0000" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="780" y="730" as="sourcePoint" />
+            <mxPoint x="780" y="780" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="e_cpu_uart" value="0x3000_0004" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1282" y="730" as="sourcePoint" />
+            <mxPoint x="1282" y="780" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Final Target Entities -->
+        <mxCell id="tgt_flash" value="&lt;b style=&quot;font-size:15px;&quot;&gt;Chip Nhớ SPI Flash W25Q128 (16 MByte Off-Chip)&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="50" y="970" width="455" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tgt_pc" value="&lt;b style=&quot;font-size:15px;&quot;&gt;Màn Hình Máy Tính Host PC (Giao Diện Người Dùng)&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.8;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="970" width="455" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e_act_tgt_flash" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="act_flash" target="tgt_flash" />
+        <mxCell id="e_act_tgt_pc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="act_uart" target="tgt_pc" />
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
