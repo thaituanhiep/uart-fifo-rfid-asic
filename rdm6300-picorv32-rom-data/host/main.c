@@ -781,16 +781,14 @@ void print_menu(void) {
     printf("  [2]  Input & Save New RFID Tag (Nhap 10 so in tren the de luu vao Flash)\n");
     printf("  [3]  Check RFID Tag in Flash (Kiem tra the da co trong Flash chua)\n");
     printf("  [4]  Delete RFID Tag from Flash (Nhap 10 so in tren the de xoa khoi Flash)\n");
-    printf("  [5]  Virtual Scan: By Decimal (Quet the ao: Nhap 10 so in tren the)\n");
-    printf("  [6]  Virtual Scan: By Hex (Quet the ao: Nhap ma Hex 10 ky tu)\n");
-    printf("  [7]  View Access Logs from Flash (Xem nhat ky quet the tu Flash 0x310000)\n");
-    printf("  [8]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)\n");
-    printf("  [9]  Get SoC Status (Xem trang thai LED, Flash, PicoRV32)\n");
-    printf("  [10] Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)\n");
-    printf("  [11] Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)\n");
+    printf("  [5]  Virtual Scan (Quet the ao: Nhap 10 so in tren the)\n");
+    printf("  [6]  View Access Logs from Flash (Xem nhat ky quet the tu Flash 0x310000)\n");
+    printf("  [7]  Erase Access Logs (Sao luu ra CSV truoc roi xoa nhat ky trong Flash 0x310000)\n");
+    printf("  [8]  Export RFID Tags to CSV (Xuat danh sach the ra file CSV vao host/rfids)\n");
+    printf("  [9]  Import RFID Tags from Latest CSV (Xoa Flash & Nap the tu file CSV gan nhat)\n");
     printf("  [0]  Exit (Thoat)\n");
     printf("---------------------------------------------------------------\n");
-    printf("Lua chon cua ban [0-11]: ");
+    printf("Lua chon cua ban [0-9]: ");
 }
 
 int main(int argc, char *argv[]) {
@@ -1052,92 +1050,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 6: { // Virtual Scan: By Hex
-                char custom_tag[128];
-                printf("\n--- QUET THE RFID AO (NHAP MA HEX 10 KY TU) ---\n");
-                printf("Nhap ma Hex 10 ky tu cua the (vi du: 00007293F0 hoac 010054DA65): ");
-                if (fgets(custom_tag, sizeof(custom_tag), stdin)) {
-                    char *nl = strchr(custom_tag, '\n');
-                    if (nl) *nl = '\0';
-                    nl = strchr(custom_tag, '\r');
-                    if (nl) *nl = '\0';
-
-                    char clean[32];
-                    int clen = 0;
-                    for (int i = 0; custom_tag[i] && clen < 10; i++) {
-                        char c = custom_tag[i];
-                        if (isspace((unsigned char)c)) continue;
-                        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
-                            if (c >= 'a' && c <= 'f') c = c - 'a' + 'A';
-                            clean[clen++] = c;
-                        } else {
-                            clen = -1;
-                            break;
-                        }
-                    }
-                    if (clen != 10) {
-                        printf("[LOI] Vui long nhap dung 10 ky tu Hex hop le (0-9, A-F)!\n");
-                        break;
-                    }
-                    clean[10] = '\0';
-
-                    uint32_t val = (uint32_t)strtoul(clean + 2, NULL, 16);
-                    unsigned int fc = (val >> 16) & 0xFF;
-                    unsigned int id = val & 0xFFFF;
-                    printf("-> Dang mo phong quet the qua PicoRV32 SoC:\n");
-                    printf("   + Ma Hex (UID 10 ky tu) : %s\n", clean);
-                    printf("   + Tuong duong in tren the: %010u  (%03u,%05u)\n", (unsigned int)val, fc, id);
-
-                    char send_buf[32];
-                    snprintf(send_buf, sizeof(send_buf), "V%s\n", clean);
-                    flush_serial(port);
-                    write_serial(port, send_buf, strlen(send_buf));
-
-                    bool done = false;
-                    while (read_line_serial(port, resp, sizeof(resp), 2500) > 0) {
-                        if (strstr(resp, "ACCESS:GRANTED:SLOT:")) {
-                            int tag_slot = 0, log_slot = 0;
-                            char r_tag[32] = "";
-                            sscanf(resp, "ACCESS:GRANTED:SLOT:%d:%10[^:]:LOG:%d", &tag_slot, r_tag, &log_slot);
-                            printf("\n===============================================================\n");
-                            printf("  [ACCESS GRANTED] >>> XAC THUC THANH CONG! <<<\n");
-                            printf("===============================================================\n");
-                            printf("  - The quet         : %010u (%03u,%05u)  [UID: %s]\n", (unsigned int)val, fc, id, clean);
-                            printf("  - Ket qua          : THE HOP LE (Khop Slot #%d, Dia chi 0x%06X)\n",
-                                   tag_slot, 0x300000 + tag_slot * 16);
-                            printf("  - Nhat ky Flash    : Da ghi vao Log Slot #%d (Dia chi 0x%06X)\n",
-                                   log_slot, 0x310000 + log_slot * 16);
-                            printf("===============================================================\n");
-                            done = true;
-                            break;
-                        } else if (strstr(resp, "ACCESS:DENIED:")) {
-                            int log_slot = 0;
-                            char r_tag[32] = "";
-                            sscanf(resp, "ACCESS:DENIED:%10[^:]:LOG:%d", r_tag, &log_slot);
-                            printf("\n===============================================================\n");
-                            printf("  [ACCESS DENIED] >>> TU CHOI TRUY CAP (THE KHONG HOP LE)! <<<\n");
-                            printf("===============================================================\n");
-                            printf("  - The quet         : %010u (%03u,%05u)  [UID: %s]\n", (unsigned int)val, fc, id, clean);
-                            printf("  - Ket qua          : THE CHUA DANG KY trong he thong!\n");
-                            printf("  - Nhat ky Flash    : Da ghi vao Log Slot #%d (Dia chi 0x%06X)\n",
-                                   log_slot, 0x310000 + log_slot * 16);
-                            printf("===============================================================\n");
-                            done = true;
-                            break;
-                        } else if (strstr(resp, "ERR:")) {
-                            printf("[LOI] %s\n", resp);
-                            done = true;
-                            break;
-                        }
-                    }
-                    if (!done) {
-                        printf("[CANH BAO] Timeout khi quet the ao!\n");
-                    }
-                }
-                break;
-            }
-
-            case 7: { // View Access Logs from Flash (0x310000)
+            case 6: { // View Access Logs from Flash (0x310000)
                 printf("\n-> Gui lenh 'L' (Doc nhat ky quet the tu SPI Flash Basys 3)...\n");
                 flush_serial(port);
                 write_serial(port, "L\n", 2);
@@ -1191,7 +1104,7 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 8: { // Erase Access Logs (Save to CSV first, then erase Flash 0x310000)
+            case 7: { // Erase Access Logs (Save to CSV first, then erase Flash 0x310000)
                 char backup_file[MAX_PATH] = "";
                 printf("\n===============================================================\n");
                 printf("          XOA NHAT KY QUET THE (AUTO-BACKUP VAO CSV)          \n");
@@ -1220,32 +1133,18 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case 9: { // Status
-                printf("\n-> Gui lenh 'S' (Xem trang thai)...\n");
-                flush_serial(port);
-                write_serial(port, "S\n", 2);
-                if (read_line_serial(port, resp, sizeof(resp), 1500) > 0) {
-                    printf("[TRANG THAI] %s\n", resp);
-                } else {
-                    printf("[CANH BAO] Timeout!\n");
-                }
-                break;
-            }
-
-            case 10:   // Export RFID Tags to CSV (Menu [10] hoac legacy [12])
-            case 12: {
+            case 8: { // Export RFID Tags to CSV
                 export_tags_to_csv(port);
                 break;
             }
 
-            case 11:   // Import RFID Tags from Latest CSV (Menu [11] hoac legacy [13])
-            case 13: {
+            case 9: { // Import RFID Tags from Latest CSV
                 import_tags_from_latest_csv(port);
                 break;
             }
 
             default:
-                printf("\nLua chon khong hop le! Vui long chon tu 0 den 11.\n");
+                printf("\nLua chon khong hop le! Vui long chon tu 0 den 9.\n");
                 break;
         }
 

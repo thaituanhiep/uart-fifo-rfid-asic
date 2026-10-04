@@ -3,12 +3,23 @@ CROSS ?= riscv64-unknown-elf-
 CC = $(CROSS)gcc
 OBJCOPY = $(CROSS)objcopy
 
-CFLAGS = -march=rv32i -mabi=ilp32 -O2 -ffreestanding -nostdlib -Wall -Wextra
+CFLAGS = -march=rv32i -mabi=ilp32 -Os -ffreestanding -nostdlib -Wall -Wextra \
+         -I. -Icommon -Idrivers -Iprotocol -Iapp
 
-all: firmware.hex
+SRCS = start.s main.c \
+       common/hex_utils.c \
+       drivers/uart.c \
+       drivers/flash.c \
+       protocol/rdm6300_parser.c \
+       app/access_control.c
 
-firmware.elf: start.s main.c sections.lds
-	$(CC) $(CFLAGS) -Wl,-Bstatic,-T,sections.lds,--strip-debug -o $@ start.s main.c
+all: firmware.bin firmware.hex
+
+firmware.elf: $(SRCS) sections.lds
+	$(CC) $(CFLAGS) -Wl,-Bstatic,-T,sections.lds,--strip-debug -o $@ $(SRCS)
+
+firmware.bin: firmware.elf
+	$(OBJCOPY) -O binary $< $@
 
 # Direct GNU toolchain export to Verilog memory hex format (no Python needed)
 firmware.hex: firmware.elf

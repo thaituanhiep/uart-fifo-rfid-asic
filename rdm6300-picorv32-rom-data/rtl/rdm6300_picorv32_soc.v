@@ -230,16 +230,16 @@ module rdm6300_picorv32_soc #(
     );
 
     // ========================================================================
-    // 5. Slave 2: RDM6300 RFID Controller & Decoder (0x1000_0000 - 0x1000_0008)
+    // 5. Slave 2: RDM6300 RFID Reader UART Peripheral (0x1000_0000 - 0x1000_0004)
     // ========================================================================
-    rdm6300_mmio #(
-        .CLK_FREQ_HZ(CLK_FREQ_HZ),
-        .UART_BAUD(UART_BAUD),
-        .FRAME_TIMEOUT_CYCLES(CLK_FREQ_HZ / 200)
-    ) u_rdm6300_mmio (
+    uart_mmio #(
+        .DEFAULT_DIV(DEFAULT_DIV),
+        .FIFO_DEPTH(32)
+    ) u_rfid_uart (
         .clk(clk),
         .rst_n(rst_n),
-        .rdm_rx_i(rdm6300_rx_i),
+        .rx_i(rdm6300_rx_i),
+        .tx_o(),
 
         .valid(sel_rfid),
         .addr(mem_addr[3:0]),
@@ -248,29 +248,29 @@ module rdm6300_picorv32_soc #(
         .rdata(rfid_rdata),
         .ready(rfid_ready),
 
-        .card_event_o(card_event_o),
-        .tag_raw_o(),
-        .tag_ready_o()
+        .rx_activity_o(card_event_o)
     );
 
     // ========================================================================
     // 6. Slave 3: Host PC UART Controller with FIFOs (0x3000_0000 - 0x3000_0004)
     // ========================================================================
-    host_uart_mmio #(
+    uart_mmio #(
         .DEFAULT_DIV(DEFAULT_DIV),
         .FIFO_DEPTH(32)
-    ) u_host_uart_mmio (
+    ) u_host_uart (
         .clk(clk),
         .rst_n(rst_n),
-        .uart_rx_i(uart_rx_i),
-        .uart_tx_o(uart_tx_o),
+        .rx_i(uart_rx_i),
+        .tx_o(uart_tx_o),
 
         .valid(sel_uart),
         .addr(mem_addr[3:0]),
         .wdata(mem_wdata),
         .wstrb(mem_wstrb),
         .rdata(uart_rdata),
-        .ready(uart_ready)
+        .ready(uart_ready),
+
+        .rx_activity_o()
     );
 
     // ========================================================================

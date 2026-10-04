@@ -73,7 +73,7 @@
         <!-- ============================================================= -->
         <!-- 4. BUS: CENTRAL MEMORY BUS INTERCONNECT (soc_interconnect.v)  -->
         <!-- ============================================================= -->
-        <mxCell id="bus" value="&lt;b style=&quot;font-size:17px;&quot;&gt;Internal Memory Bus Interconnect (rtl/core/soc_interconnect.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;font-weight:bold;&quot;&gt;MMIO Address Decoder &amp;amp; Bus Multiplexer (1 Master ➔ 5 Dedicated Slaves)&lt;/span&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:4px 0;&quot;/&gt;&lt;span style=&quot;font-size:11px;font-weight:600;&quot;&gt;S0: rtl/core/data_sram.v (0x0000_0000) | S1: rtl/core/spimemio.v (0x0010_0000)&lt;br/&gt;S2: rtl/rdm6300/rdm6300_mmio.v (0x1000_0000) | S3: rtl/host/host_uart_mmio.v (0x3000_0000) | S4: rtl/core/soc_gpio_mmio.v (0x4000_0000)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+        <mxCell id="bus" value="&lt;b style=&quot;font-size:17px;&quot;&gt;Internal Memory Bus Interconnect (rtl/core/soc_interconnect.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;font-weight:bold;&quot;&gt;MMIO Address Decoder &amp;amp; Bus Multiplexer (1 Master ➔ 5 Dedicated Slaves)&lt;/span&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:4px 0;&quot;/&gt;&lt;span style=&quot;font-size:11px;font-weight:600;&quot;&gt;S0: rtl/core/data_sram.v (0x0000_0000) | S1: rtl/core/spimemio.v (0x0010_0000)&lt;br/&gt;S2: rtl/uart/uart_mmio.v [u_rfid_uart] (0x1000_0000) | S3: rtl/uart/uart_mmio.v [u_host_uart] (0x3000_0000) | S4: rtl/core/soc_gpio_mmio.v (0x4000_0000)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
           <mxGeometry x="475" y="75" width="610" height="120" as="geometry" />
         </mxCell>
 
@@ -92,89 +92,100 @@
         </mxCell>
 
         <!-- ============================================================= -->
-        <!-- 7. SLAVE 2: RDM6300 RFID MMIO MODULE (rtl/rdm6300_mmio.v)      -->
+        <!-- 7. SLAVE 2: RFID READER UART MMIO (rtl/uart/uart_mmio.v)       -->
         <!-- ============================================================= -->
         <mxCell id="rfid_box" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
           <mxGeometry x="770" y="230" width="625" height="245" as="geometry" />
-        </mxCell>        <mxCell id="rfid_banner" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 2: rtl/rdm6300/rdm6300_mmio.v (RFID MMIO Peripheral Module)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;font-weight:bold;&quot;&gt;MMIO Address: 0x1000_0000 - 0x1000_0008 | Bus Select: sel_rfid&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+        </mxCell>
+        <mxCell id="rfid_banner" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;SLAVE 2: rtl/uart/uart_mmio.v [u_rfid_uart] (RFID Reader UART MMIO)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;font-weight:bold;&quot;&gt;MMIO Address: 0x1000_0000 - 0x1000_0004 | Bus Select: sel_rfid | 9600 Baud (CLK_DIV=5208)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
           <mxGeometry x="770" y="230" width="625" height="42" as="geometry" />
         </mxCell>
 
-        <mxCell id="rfid_reg" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;MMIO Registers&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:bold;&quot;&gt;(in rdm6300_mmio.v)&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;&quot;&gt;STATUS (0x0)&lt;br&gt;TAG_HI (0x4)&lt;br&gt;TAG_LO (0x8)&lt;br&gt;&lt;br&gt;card_valid_o&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="785" y="285" width="130" height="175" as="geometry" />
+        <mxCell id="rfid_reg" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;MMIO Registers&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10.5px;font-weight:bold;&quot;&gt;(in uart_mmio.v)&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;DIV (0x1000_0000)&lt;br&gt;DAT (0x1000_0004)&lt;br&gt;&lt;br&gt;&lt;b style=&quot;color:#000;&quot;&gt;card_event_o&lt;/b&gt;&lt;br&gt;1-Cycle Ready&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="785" y="280" width="130" height="152" as="geometry" />
         </mxCell>
 
-        <mxCell id="rfid_dec" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;rdm6300_&lt;br&gt;frame_decoder&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(frame_decoder.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;14-Byte Frame&lt;br&gt;1-Cycle XOR Check&lt;br&gt;Watchdog 10ms&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="930" y="285" width="145" height="175" as="geometry" />
+        <mxCell id="rfid_fifo" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_fifo&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:10.5px;&quot;&gt;(rtl/uart/sync_fifo.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;32-Byte RX FIFO&lt;br&gt;&lt;b&gt;Zero Packet Drop&lt;/b&gt;&lt;br&gt;wr_ptr / rd_ptr&lt;br&gt;FIFO Not-Empty&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="930" y="280" width="135" height="152" as="geometry" />
         </mxCell>
 
-        <mxCell id="rfid_rx" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;uart_rx&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/rdm6300/uart_rx.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;9600 Baud&lt;br&gt;8-N-1 UART&lt;br&gt;Majority Sampler&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="285" width="115" height="175" as="geometry" />
+        <mxCell id="rfid_core" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;simpleuart&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:10.5px;&quot;&gt;(rtl/uart/simpleuart.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;9600 Baud 8-N-1&lt;br&gt;UART RX Core&lt;br&gt;CLK_DIV = 5208&lt;br&gt;Shift Register&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="280" width="130" height="152" as="geometry" />
         </mxCell>
 
-        <mxCell id="rfid_sync" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_2ff&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/core/sync_2ff.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;2-FF CDC Sync&lt;br&gt;MTBF &gt; 1000 Yrs&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1220" y="285" width="130" height="175" as="geometry" />
+        <mxCell id="rfid_sync" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_2ff&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:10.5px;&quot;&gt;(rtl/uart/sync_2ff.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;2-FF CDC Sync&lt;br&gt;MTBF &gt; 1000 Yrs&lt;br&gt;Anti-Metastability&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="1225" y="280" width="125" height="152" as="geometry" />
+        </mxCell>
+
+        <!-- RFID Software Parsing Note Box -->
+        <mxCell id="rfid_note" value="&lt;span style=&quot;font-size:11px;font-weight:bold;&quot;&gt;★ Giải mã khung 14 byte &amp;amp; Checksum XOR thực hiện trong C Firmware (firmware/protocol/rdm6300_parser.c)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8f9fa;strokeColor=#cccccc;strokeWidth=1;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="785" y="443" width="565" height="22" as="geometry" />
         </mxCell>
 
         <!-- RFID Internal Signal Connections -->
         <mxCell id="ar_rfid_in" value="rdm6300_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1530" y="372" as="sourcePoint" />
-            <mxPoint x="1350" y="372" as="targetPoint" />
+            <mxPoint x="1530" y="360" as="sourcePoint" />
+            <mxPoint x="1350" y="360" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="ar_s_rx" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_sync" target="rfid_rx" />
-        <mxCell id="ar_rx_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_rx" target="rfid_dec" />
-        <mxCell id="ar_dec_reg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_dec" target="rfid_reg" />
+        <mxCell id="ar_s_core" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_sync" target="rfid_core" />
+        <mxCell id="ar_core_fifo_rfid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_core" target="rfid_fifo" />
+        <mxCell id="ar_fifo_reg_rfid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_fifo" target="rfid_reg" />
 
         <!-- ============================================================= -->
-        <!-- 8. SLAVE 3: HOST PC UART MMIO MODULE (rtl/host_uart_mmio.v)    -->
+        <!-- 8. SLAVE 3: HOST PC UART MMIO (rtl/uart/uart_mmio.v)           -->
         <!-- ============================================================= -->
         <mxCell id="uart_box" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
           <mxGeometry x="770" y="500" width="625" height="245" as="geometry" />
         </mxCell>
 
-        <mxCell id="uart_banner" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 3: rtl/host/host_uart_mmio.v (Host PC UART MMIO Peripheral Module)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;font-weight:bold;&quot;&gt;MMIO Address: 0x3000_0000 - 0x3000_0004 | Bus Select: sel_uart&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+        <mxCell id="uart_banner" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;SLAVE 3: rtl/uart/uart_mmio.v [u_host_uart] (Host PC UART MMIO Module)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;font-weight:bold;&quot;&gt;MMIO Address: 0x3000_0000 - 0x3000_0004 | Bus Select: sel_uart | Full-Duplex (CLK_DIV=5208)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
           <mxGeometry x="770" y="500" width="625" height="42" as="geometry" />
         </mxCell>
 
-        <mxCell id="u_mmio" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;UART MMIO&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:bold;&quot;&gt;(in host_uart_mmio.v)&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;DIV (0x3000_0000)&lt;br&gt;DAT (0x3000_0004)&lt;br&gt;&lt;br&gt;FIFO Control&lt;br&gt;1-Cycle Ready&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="785" y="555" width="130" height="175" as="geometry" />
+        <mxCell id="u_mmio" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;MMIO Registers&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10.5px;font-weight:bold;&quot;&gt;(in uart_mmio.v)&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;DIV (0x3000_0000)&lt;br&gt;DAT (0x3000_0004)&lt;br&gt;&lt;br&gt;FIFO Control&lt;br&gt;1-Cycle Ready&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="785" y="550" width="130" height="152" as="geometry" />
         </mxCell>
 
-        <mxCell id="u_fifo" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_fifo (x2)&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/host/sync_fifo.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;32-Byte RX FIFO&lt;br&gt;32-Byte TX FIFO&lt;br&gt;Zero Packet Drop&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="930" y="555" width="135" height="175" as="geometry" />
+        <mxCell id="u_fifo" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_fifo (x2)&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:10.5px;&quot;&gt;(rtl/uart/sync_fifo.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;32-Byte RX FIFO&lt;br&gt;32-Byte TX FIFO&lt;br&gt;&lt;b&gt;Zero Packet Drop&lt;/b&gt;&lt;br&gt;Decouples CPU/Flash&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="930" y="550" width="135" height="152" as="geometry" />
         </mxCell>
 
-        <mxCell id="u_core" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;simpleuart&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/host/simpleuart.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;Full-Duplex UART&lt;br&gt;TX / RX Core&lt;br&gt;Baud Divisor 5208&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1080" y="555" width="140" height="175" as="geometry" />
+        <mxCell id="u_core" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;simpleuart&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:10.5px;&quot;&gt;(rtl/uart/simpleuart.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;Full-Duplex UART&lt;br&gt;TX / RX Core&lt;br&gt;Baud Divisor 5208&lt;br&gt;9600 Baud 8-N-1&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="550" width="130" height="152" as="geometry" />
         </mxCell>
 
-        <mxCell id="u_sync" value="&lt;b style=&quot;font-size:14px;&quot;&gt;sync_2ff&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;&quot;&gt;(rtl/core/sync_2ff.v)&lt;br&gt;CDC Sync&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1235" y="555" width="120" height="80" as="geometry" />
+        <mxCell id="u_sync" value="&lt;b style=&quot;font-size:14px;&quot;&gt;sync_2ff&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:10.5px;&quot;&gt;(rtl/uart/sync_2ff.v)&lt;br&gt;CDC Sync&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="1225" y="550" width="125" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- Host Console Note Box -->
+        <mxCell id="uart_note" value="&lt;span style=&quot;font-size:11px;font-weight:bold;&quot;&gt;★ Giao tiếp 11 lệnh Host PC, truyền nhận nhị phân &amp;amp; chuỗi Wiegand/Dec/Hex an toàn không mất gói&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8f9fa;strokeColor=#cccccc;strokeWidth=1;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="785" y="713" width="565" height="22" as="geometry" />
         </mxCell>
 
         <!-- UART External Signals -->
         <mxCell id="ar_pc_rx" value="uart_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1530" y="595" as="sourcePoint" />
-            <mxPoint x="1355" y="595" as="targetPoint" />
+            <mxPoint x="1530" y="587" as="sourcePoint" />
+            <mxPoint x="1350" y="587" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
         <mxCell id="ar_pc_tx" value="uart_tx_o" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1220" y="680" as="sourcePoint" />
-            <mxPoint x="1530" y="680" as="targetPoint" />
+            <mxPoint x="1210" y="665" as="sourcePoint" />
+            <mxPoint x="1530" y="665" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
         <mxCell id="ar_u_sync_core" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="u_sync" target="u_core">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="1230" y="595" />
-              <mxPoint x="1230" y="595" />
+              <mxPoint x="1225" y="587" />
+              <mxPoint x="1210" y="587" />
             </Array>
           </mxGeometry>
         </mxCell>
@@ -226,15 +237,15 @@
         <!-- Bus Trunk to Peripherals (Slave 2, Slave 3, Slave 4) -->
         <mxCell id="b_bus_rfid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="740" y="372" as="sourcePoint" />
-            <mxPoint x="785" y="372" as="targetPoint" />
+            <mxPoint x="740" y="360" as="sourcePoint" />
+            <mxPoint x="785" y="360" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
         <mxCell id="b_bus_uart" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="740" y="642" as="sourcePoint" />
-            <mxPoint x="785" y="642" as="targetPoint" />
+            <mxPoint x="740" y="630" as="sourcePoint" />
+            <mxPoint x="785" y="630" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
@@ -248,7 +259,7 @@
         <!-- ============================================================= -->
         <!-- 11. BOTTOM ARCHITECTURAL SUMMARY BANNER                       -->
         <!-- ============================================================= -->
-        <mxCell id="arch_summary" value="&lt;b style=&quot;font-size:13.5px;&quot;&gt;Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;font-weight:600;&quot;&gt;Khu vực 1: rtl/core/ (CPU, SRAM, Flash, Interconnect, GPIO) | Khu vực 2: rtl/rdm6300/ (RFID MMIO) | Khu vực 3: rtl/host/ (Host UART)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+        <mxCell id="arch_summary" value="&lt;b style=&quot;font-size:13.5px;&quot;&gt;Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;font-weight:600;&quot;&gt;Cấu trúc mô-đun chuẩn hóa: rtl/core/ (CPU, 1KB SRAM, Flash XIP spimemio, Interconnect, GPIO) | rtl/uart/ (Dual Unified UART MMIO với FIFO 32B: u_rfid_uart &amp;amp; u_host_uart)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
           <mxGeometry x="475" y="825" width="920" height="50" as="geometry" />
         </mxCell>
 

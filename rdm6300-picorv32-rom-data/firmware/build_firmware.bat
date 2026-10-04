@@ -36,7 +36,7 @@ exit /b 1
 :compile
 echo Using toolchain: %CROSS%gcc
 
-%CROSS%gcc -march=rv32i -mabi=ilp32 -Os -ffreestanding -nostdlib -Wl,-Bstatic,-T,sections.lds,--strip-debug -o firmware.elf start.s main.c
+%CROSS%gcc -march=rv32i -mabi=ilp32 -Os -ffreestanding -nostdlib -I. -Icommon -Idrivers -Iprotocol -Iapp -Wl,-Bstatic,-T,sections.lds,--strip-debug -o firmware.elf start.s main.c common/hex_utils.c drivers/uart.c drivers/flash.c protocol/rdm6300_parser.c app/access_control.c
 if %ERRORLEVEL% neq 0 (
     echo [ERROR] Compilation failed!
     exit /b 1
@@ -58,7 +58,6 @@ copy /y firmware.hex ..\rtl\firmware.hex >nul
 copy /y firmware.hex ..\rtl\core\firmware.hex >nul
 copy /y firmware.hex ..\fpga\rtl\firmware.hex >nul
 copy /y firmware.hex ..\tb\firmware.hex >nul
-copy /y firmware.hex ..\tb\step6_top_soc_integration\firmware.hex >nul
 
 echo [SUCCESS] firmware.hex generated and copied to rtl/, fpga/rtl/, and tb/ successfully!
 exit /b 0

@@ -78,8 +78,8 @@
   <text x="500" y="160" font-size="10.5" font-weight="bold" fill="#000000">• S0: rtl/core/data_sram.v (0x0000_0000)</text>
   <text x="500" y="180" font-size="10.5" font-weight="bold" fill="#000000">• S1: rtl/core/spimemio.v (0x0010_0000)</text>
   <!-- Right column -->
-  <text x="785" y="155" font-size="10.5" font-weight="bold" fill="#000000">• S2: rtl/rdm6300/rdm6300_mmio.v (0x1000_0000)</text>
-  <text x="785" y="172" font-size="10.5" font-weight="bold" fill="#000000">• S3: rtl/host/host_uart_mmio.v (0x3000_0000)</text>
+  <text x="785" y="155" font-size="10.5" font-weight="bold" fill="#000000">• S2: rtl/uart/uart_mmio.v [u_rfid_uart] (0x1000_0000)</text>
+  <text x="785" y="172" font-size="10.5" font-weight="bold" fill="#000000">• S3: rtl/uart/uart_mmio.v [u_host_uart] (0x3000_0000)</text>
   <text x="785" y="189" font-size="10.5" font-weight="bold" fill="#000000">• S4: rtl/core/soc_gpio_mmio.v (0x4000_0000)</text>
 
   <!-- ===================================================================== -->
@@ -110,109 +110,121 @@
   <text x="592" y="545" font-size="13" fill="#222222" text-anchor="middle">Native 32-bit Memory Bus</text>
 
   <!-- ===================================================================== -->
-  <!-- 7. SLAVE 2: RDM6300 RFID MMIO MODULE (rtl/rdm6300_mmio.v)             -->
+  <!-- 7. SLAVE 2: RFID READER UART MMIO (rtl/uart/uart_mmio.v)              -->
   <!-- ===================================================================== -->
   <rect x="770" y="230" width="625" height="245" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
   <rect x="770" y="230" width="625" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
-  <text x="1082" y="250" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 2: rtl/rdm6300/rdm6300_mmio.v (RFID MMIO Peripheral Module)</text>
-  <text x="1082" y="266" font-size="12" font-weight="bold" fill="#333333" text-anchor="middle">MMIO Address: 0x1000_0000 - 0x1000_0008 | Bus Select: sel_rfid</text>
+  <text x="1082" y="249" font-size="15.5" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 2: rtl/uart/uart_mmio.v [u_rfid_uart] (RFID Reader UART MMIO)</text>
+  <text x="1082" y="265" font-size="11.5" font-weight="bold" fill="#333333" text-anchor="middle">MMIO Address: 0x1000_0000 - 0x1000_0004 | Bus Select: sel_rfid | 9600 Baud (CLK_DIV=5208)</text>
 
   <!-- RFID Submodules -->
-  <rect x="785" y="285" width="130" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="850" y="320" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">MMIO Registers</text>
-  <text x="850" y="338" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(in rdm6300_mmio.v)</text>
-  <line x1="795" y1="350" x2="905" y2="350" stroke="#aaaaaa" />
-  <text x="850" y="375" font-size="11.5" fill="#222222" text-anchor="middle">STATUS (0x0)</text>
-  <text x="850" y="395" font-size="11.5" fill="#222222" text-anchor="middle">TAG_HI (0x4)</text>
-  <text x="850" y="415" font-size="11.5" fill="#222222" text-anchor="middle">TAG_LO (0x8)</text>
-  <text x="850" y="445" font-size="11.5" font-weight="bold" fill="#000000" text-anchor="middle">card_valid_o</text>
+  <rect x="785" y="280" width="130" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="850" y="312" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">MMIO Registers</text>
+  <text x="850" y="329" font-size="10.5" font-weight="bold" fill="#444444" text-anchor="middle">(in uart_mmio.v)</text>
+  <line x1="795" y1="337" x2="905" y2="337" stroke="#aaaaaa" />
+  <text x="850" y="358" font-size="11" fill="#222222" text-anchor="middle">DIV (0x1000_0000)</text>
+  <text x="850" y="377" font-size="11" fill="#222222" text-anchor="middle">DAT (0x1000_0004)</text>
+  <text x="850" y="401" font-size="10.5" font-weight="bold" fill="#000000" text-anchor="middle">card_event_o</text>
+  <text x="850" y="423" font-size="10" fill="#444444" text-anchor="middle">1-Cycle Ready</text>
 
-  <rect x="930" y="285" width="145" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1002" y="325" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">rdm6300_</text>
-  <text x="1002" y="345" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">frame_decoder</text>
-  <text x="1002" y="365" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(frame_decoder.v)</text>
-  <line x1="945" y1="375" x2="1060" y2="375" stroke="#aaaaaa" />
-  <text x="1002" y="400" font-size="11" fill="#333333" text-anchor="middle">14-Byte ASCII Frame</text>
-  <text x="1002" y="420" font-size="11" fill="#333333" text-anchor="middle">1-Cycle XOR Check</text>
-  <text x="1002" y="440" font-size="11" fill="#333333" text-anchor="middle">Watchdog 10ms</text>
+  <rect x="930" y="280" width="135" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="997" y="312" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_fifo</text>
+  <text x="997" y="329" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/uart/sync_fifo.v)</text>
+  <line x1="945" y1="337" x2="1050" y2="337" stroke="#aaaaaa" />
+  <text x="997" y="358" font-size="11" fill="#333333" text-anchor="middle">32-Byte RX FIFO</text>
+  <text x="997" y="378" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">Zero Packet Drop</text>
+  <text x="997" y="398" font-size="10.5" fill="#333333" text-anchor="middle">wr_ptr / rd_ptr</text>
+  <text x="997" y="418" font-size="10" fill="#555555" text-anchor="middle">FIFO Not Empty Flag</text>
 
-  <rect x="1090" y="285" width="115" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1147" y="325" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">uart_rx</text>
-  <text x="1147" y="345" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/rdm6300/uart_rx.v)</text>
-  <line x1="1105" y1="365" x2="1190" y2="365" stroke="#aaaaaa" />
-  <text x="1147" y="395" font-size="11.5" fill="#333333" text-anchor="middle">9600 Baud</text>
-  <text x="1147" y="415" font-size="11.5" fill="#333333" text-anchor="middle">8-N-1 UART</text>
-  <text x="1147" y="435" font-size="11.5" fill="#333333" text-anchor="middle">Majority Sampler</text>
+  <rect x="1080" y="280" width="130" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="1145" y="312" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">simpleuart</text>
+  <text x="1145" y="329" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/uart/simpleuart.v)</text>
+  <line x1="1095" y1="337" x2="1195" y2="337" stroke="#aaaaaa" />
+  <text x="1145" y="358" font-size="11" fill="#333333" text-anchor="middle">9600 Baud 8-N-1</text>
+  <text x="1145" y="378" font-size="11" fill="#333333" text-anchor="middle">UART RX Core</text>
+  <text x="1145" y="398" font-size="10.5" fill="#333333" text-anchor="middle">Baud Divisor 5208</text>
+  <text x="1145" y="418" font-size="10" fill="#555555" text-anchor="middle">RX Shift Register</text>
 
-  <rect x="1220" y="285" width="130" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1285" y="325" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_2ff</text>
-  <text x="1285" y="345" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/core/sync_2ff.v)</text>
-  <line x1="1235" y1="365" x2="1335" y2="365" stroke="#aaaaaa" />
-  <text x="1285" y="395" font-size="11.5" fill="#333333" text-anchor="middle">2-FF CDC</text>
-  <text x="1285" y="415" font-size="11.5" fill="#333333" text-anchor="middle">Synchronizer</text>
-  <text x="1285" y="435" font-size="11.5" fill="#333333" text-anchor="middle">MTBF &gt; 1000 Yrs</text>
+  <rect x="1225" y="280" width="125" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="1287" y="312" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_2ff</text>
+  <text x="1287" y="329" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/uart/sync_2ff.v)</text>
+  <line x1="1240" y1="337" x2="1335" y2="337" stroke="#aaaaaa" />
+  <text x="1287" y="360" font-size="11" fill="#333333" text-anchor="middle">2-FF CDC</text>
+  <text x="1287" y="380" font-size="11" fill="#333333" text-anchor="middle">Synchronizer</text>
+  <text x="1287" y="402" font-size="10.5" fill="#333333" text-anchor="middle">MTBF &gt; 1000 Yrs</text>
+  <text x="1287" y="422" font-size="10" fill="#555555" text-anchor="middle">Anti-Metastability</text>
+
+  <!-- RFID Software Parsing Note Box -->
+  <rect x="785" y="443" width="565" height="22" fill="#f8f9fa" stroke="#cccccc" stroke-width="1" />
+  <text x="1067" y="458" font-size="10.5" font-weight="bold" fill="#333333" text-anchor="middle">★ Giải mã khung 14-byte &amp; Checksum XOR thực hiện trong C Firmware (firmware/protocol/rdm6300_parser.c)</text>
 
   <!-- RFID Signal Connections -->
   <g stroke="#000000" stroke-width="1.8" fill="none">
-    <path d="M 1530 372 L 1350 372" marker-end="url(#arr_end)" />
-    <path d="M 1220 372 L 1205 372" marker-end="url(#arr_end)" />
-    <path d="M 1090 372 L 1075 372" marker-end="url(#arr_end)" />
-    <path d="M 930 372 L 915 372" marker-end="url(#arr_end)" />
+    <path d="M 1530 360 L 1350 360" marker-end="url(#arr_end)" />
+    <path d="M 1225 360 L 1210 360" marker-end="url(#arr_end)" />
+    <path d="M 1080 360 L 1065 360" marker-end="url(#arr_end)" />
+    <path d="M 930 360 L 915 360" marker-end="url(#arr_end)" />
   </g>
   <rect x="1385" y="347" width="125" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
   <text x="1447" y="364" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">rdm6300_rx_i</text>
 
   <!-- ============================================================= -->
-  <!-- 8. SLAVE 3: HOST PC UART MMIO MODULE (rtl/host_uart_mmio.v)    -->
+  <!-- 8. SLAVE 3: HOST PC UART MMIO (rtl/uart/uart_mmio.v)                  -->
   <!-- ============================================================= -->
   <rect x="770" y="500" width="625" height="245" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
   <rect x="770" y="500" width="625" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
-  <text x="1082" y="520" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 3: rtl/host/host_uart_mmio.v (Host PC UART MMIO Peripheral Module)</text>
-  <text x="1082" y="536" font-size="12" font-weight="bold" fill="#333333" text-anchor="middle">MMIO Address: 0x3000_0000 - 0x3000_0004 | Bus Select: sel_uart</text>
+  <text x="1082" y="519" font-size="15.5" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 3: rtl/uart/uart_mmio.v [u_host_uart] (Host PC UART MMIO Module)</text>
+  <text x="1082" y="535" font-size="11.5" font-weight="bold" fill="#333333" text-anchor="middle">MMIO Address: 0x3000_0000 - 0x3000_0004 | Bus Select: sel_uart | Full-Duplex (CLK_DIV=5208)</text>
 
   <!-- UART Submodules -->
-  <rect x="785" y="555" width="130" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="850" y="590" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">UART MMIO</text>
-  <text x="850" y="608" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(in host_uart_mmio.v)</text>
-  <line x1="795" y1="620" x2="905" y2="620" stroke="#aaaaaa" />
-  <text x="850" y="645" font-size="11.5" fill="#222222" text-anchor="middle">DIV (0x3000_0000)</text>
-  <text x="850" y="665" font-size="11.5" fill="#222222" text-anchor="middle">DAT (0x3000_0004)</text>
-  <text x="850" y="695" font-size="11" fill="#333333" text-anchor="middle">FIFO Control</text>
-  <text x="850" y="715" font-size="11" fill="#333333" text-anchor="middle">1-Cycle Ready</text>
+  <rect x="785" y="550" width="130" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="850" y="580" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">MMIO Registers</text>
+  <text x="850" y="598" font-size="10.5" font-weight="bold" fill="#444444" text-anchor="middle">(in uart_mmio.v)</text>
+  <line x1="795" y1="607" x2="905" y2="607" stroke="#aaaaaa" />
+  <text x="850" y="630" font-size="11" fill="#222222" text-anchor="middle">DIV (0x3000_0000)</text>
+  <text x="850" y="650" font-size="11" fill="#222222" text-anchor="middle">DAT (0x3000_0004)</text>
+  <text x="850" y="672" font-size="10.5" fill="#333333" text-anchor="middle">FIFO Control</text>
+  <text x="850" y="692" font-size="10" fill="#555555" text-anchor="middle">1-Cycle Ready</text>
 
-  <rect x="930" y="555" width="135" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="997" y="595" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_fifo (x2)</text>
-  <text x="997" y="615" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/host/sync_fifo.v)</text>
-  <line x1="945" y1="628" x2="1050" y2="628" stroke="#aaaaaa" />
-  <text x="997" y="655" font-size="11.5" fill="#333333" text-anchor="middle">32-Byte RX FIFO</text>
-  <text x="997" y="675" font-size="11.5" fill="#333333" text-anchor="middle">32-Byte TX FIFO</text>
-  <text x="997" y="705" font-size="11.5" font-weight="bold" fill="#000000" text-anchor="middle">Zero Packet Drop</text>
+  <rect x="930" y="550" width="135" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="997" y="580" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_fifo (x2)</text>
+  <text x="997" y="598" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/uart/sync_fifo.v)</text>
+  <line x1="945" y1="607" x2="1050" y2="607" stroke="#aaaaaa" />
+  <text x="997" y="630" font-size="11" fill="#333333" text-anchor="middle">32-Byte RX FIFO</text>
+  <text x="997" y="650" font-size="11" fill="#333333" text-anchor="middle">32-Byte TX FIFO</text>
+  <text x="997" y="672" font-size="10.5" font-weight="bold" fill="#000000" text-anchor="middle">Zero Packet Drop</text>
+  <text x="997" y="692" font-size="10" fill="#555555" text-anchor="middle">Decouples CPU/Flash</text>
 
-  <rect x="1080" y="555" width="140" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1150" y="595" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">simpleuart</text>
-  <text x="1150" y="615" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/host/simpleuart.v)</text>
-  <line x1="1095" y1="628" x2="1205" y2="628" stroke="#aaaaaa" />
-  <text x="1150" y="655" font-size="11.5" fill="#333333" text-anchor="middle">Full-Duplex UART</text>
-  <text x="1150" y="675" font-size="11.5" fill="#333333" text-anchor="middle">TX / RX Core</text>
-  <text x="1150" y="705" font-size="11.5" fill="#333333" text-anchor="middle">Baud Divisor 5208</text>
+  <rect x="1080" y="550" width="130" height="152" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="1145" y="580" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">simpleuart</text>
+  <text x="1145" y="598" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/uart/simpleuart.v)</text>
+  <line x1="1095" y1="607" x2="1195" y2="607" stroke="#aaaaaa" />
+  <text x="1145" y="630" font-size="11" fill="#333333" text-anchor="middle">Full-Duplex UART</text>
+  <text x="1145" y="650" font-size="11" fill="#333333" text-anchor="middle">TX / RX Core</text>
+  <text x="1145" y="672" font-size="10.5" fill="#333333" text-anchor="middle">Baud Divisor 5208</text>
+  <text x="1145" y="692" font-size="10" fill="#555555" text-anchor="middle">9600 Baud 8-N-1</text>
 
-  <rect x="1235" y="555" width="120" height="80" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1295" y="588" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">sync_2ff</text>
-  <text x="1295" y="608" font-size="9.5" fill="#444444" text-anchor="middle">(rtl/core/sync_2ff.v)</text>
-  <text x="1295" y="624" font-size="10.5" fill="#444444" text-anchor="middle">CDC Sync</text>
+  <rect x="1225" y="550" width="125" height="75" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
+  <text x="1287" y="577" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">sync_2ff</text>
+  <text x="1287" y="595" font-size="9.5" fill="#444444" text-anchor="middle">(rtl/uart/sync_2ff.v)</text>
+  <text x="1287" y="613" font-size="10.5" fill="#444444" text-anchor="middle">CDC Sync</text>
+
+  <!-- Host Console Note Box -->
+  <rect x="785" y="713" width="565" height="22" fill="#f8f9fa" stroke="#cccccc" stroke-width="1" />
+  <text x="1067" y="728" font-size="10.5" font-weight="bold" fill="#333333" text-anchor="middle">★ Giao tiếp 11 lệnh Host PC, truyền nhận nhị phân &amp; chuỗi Wiegand/Dec/Hex an toàn không mất gói</text>
 
   <!-- UART Internal & External Signal Lines -->
   <g stroke="#000000" stroke-width="1.8" fill="none">
-    <path d="M 1530 595 L 1355 595" marker-end="url(#arr_end)" />
-    <path d="M 1235 595 L 1220 595" marker-end="url(#arr_end)" />
-    <path d="M 915 642 L 930 642" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
-    <path d="M 1065 642 L 1080 642" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
-    <path d="M 1220 680 L 1530 680" marker-end="url(#arr_end)" />
+    <path d="M 1530 587 L 1350 587" marker-end="url(#arr_end)" />
+    <path d="M 1225 587 L 1210 587" marker-end="url(#arr_end)" />
+    <path d="M 915 630 L 930 630" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
+    <path d="M 1065 630 L 1080 630" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
+    <path d="M 1210 665 L 1530 665" marker-end="url(#arr_end)" />
   </g>
-  <rect x="1395" y="570" width="105" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
-  <text x="1447" y="587" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_rx_i</text>
-  <rect x="1395" y="655" width="105" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
-  <text x="1447" y="672" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_tx_o</text>
+  <rect x="1395" y="562" width="105" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="1447" y="579" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_rx_i</text>
+  <rect x="1395" y="650" width="105" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
+  <text x="1447" y="667" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_tx_o</text>
 
   <!-- ============================================================= -->
   <!-- 9. SLAVE 4: GPIO MMIO MODULE (rtl/soc_gpio_mmio.v)             -->
@@ -247,18 +259,18 @@
   <!-- Bus Trunk from Interconnect to Peripherals (Vertical Bus Backbone) -->
   <path d="M 740 195 L 740 735" stroke="#000000" stroke-width="4.5" fill="none" />
   <!-- Branch to RFID Subsystem (Slave 2) -->
-  <path d="M 740 372 L 785 372" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
+  <path d="M 740 360 L 785 360" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
 
   <!-- Branch to Host PC UART Subsystem (Slave 3) -->
-  <path d="M 740 642 L 785 642" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
+  <path d="M 740 630 L 785 630" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
 
   <!-- Branch to GPIO Status LEDs (Slave 4) -->
   <path d="M 740 735 L 710 735" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
 
   <!-- Corner junction dots on Bus Backbone -->
   <circle cx="740" cy="195" r="4.5" fill="#000000" />
-  <circle cx="740" cy="372" r="4.5" fill="#000000" />
-  <circle cx="740" cy="642" r="4.5" fill="#000000" />
+  <circle cx="740" cy="360" r="4.5" fill="#000000" />
+  <circle cx="740" cy="630" r="4.5" fill="#000000" />
   <circle cx="740" cy="735" r="4.5" fill="#000000" />
 
   <!-- ============================================================= -->
@@ -266,6 +278,6 @@
   <!-- ============================================================= -->
   <rect x="475" y="825" width="920" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.8" />
   <text x="935" y="846" font-size="13.5" font-weight="bold" fill="#000000" text-anchor="middle">Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)</text>
-  <text x="935" y="865" font-size="11.5" font-weight="bold" fill="#222222" text-anchor="middle">Khu vực 1: rtl/core/ (CPU, SRAM, Flash, Interconnect, GPIO) | Khu vực 2: rtl/rdm6300/ (RFID MMIO) | Khu vực 3: rtl/host/ (Host UART)</text>
+  <text x="935" y="865" font-size="11.5" font-weight="bold" fill="#222222" text-anchor="middle">Cấu trúc mô-đun chuẩn hóa: rtl/core/ (CPU PicoRV32, 1KB SRAM, Flash XIP spimemio, Interconnect, GPIO) | rtl/uart/ (Dual Unified UART MMIO với FIFO 32B: u_rfid_uart &amp; u_host_uart)</text>
 
 </svg>

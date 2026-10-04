@@ -1,85 +1,59 @@
 # Hệ Thống Testbench & Môi Trường Kiểm Thử SoC PicoRV32 RFID RDM6300
 
-Tất cả các file phục vụ cho từng file testbench đã được quy hoạch gọn gàng và độc lập trong từng thư mục riêng biệt tương ứng với từng bước thiết kế trong đồ án.
+Thư mục `tb/` được tinh gọn tập trung vào 2 bài test cốt lõi:
+1. **`tb_uart_rtl.v`**: Kiểm thử Pure RTL cấp module cho khối ngoại vi UART MMIO (`uart_mmio.v`), bộ đệm FIFO 32 byte (`sync_fifo.v`), và bộ truyền nhận (`simpleuart.v`, `simpleuart_fifo.v`).
+2. **`tb_uart_ping.v`**: Kiểm thử tích hợp toàn diện Top SoC (`rdm6300_picorv32_soc.v`), mô phỏng CPU PicoRV32 khởi động mã C thực tế từ mô hình SPI Flash XIP (`firmware.hex`), xuất chuỗi chào mừng qua UART và xử lý lệnh kiểm tra kết nối Ping ('P' -> "PONG").
 
 ---
 
-## 1. Cấu Trúc Thư Mục Tổng Thể (`tb/`)
+## 1. Cấu Trúc Thư Mục Tinh Gọn (`tb/`)
 
 ```
 tb/
-├── step2_firmware/               # Bước 2: Thiết kế firmware & giao thức truyền thông
-│   ├── tb_firmware.c             # Harness C mô phỏng môi trường CPU & toàn bộ hàm firmware
-│   ├── test_firmware.py          # Bộ kiểm thử tự động 21 test case cho firmware
-│   ├── run_tb_firmware.bat       # Script chạy 1-click cho Bước 2
-│   └── README.md                 # Tài liệu đặc tả Bước 2
-│
-├── step3_picorv32_sram/          # Bước 3: Nhân xử lý PicoRV32 & 1KB Data SRAM
-│   ├── tb_data_sram.v            # Testbench Verilog kiểm tra chu kỳ bus SRAM & byte strobes
-│   ├── test_picorv32_sram.py     # Bộ kiểm thử tự động 12 test case cho CPU & SRAM
-│   ├── run_tb_step3.bat          # Script chạy 1-click cho Bước 3
-│   ├── run_vivado_sim.bat        # Mô phỏng RTL trên Vivado Simulator (xsim)
-│   └── README.md                 # Tài liệu đặc tả Bước 3
-│
-├── step4_spimemio_flash/         # Bước 4: Bộ điều khiển bộ nhớ ngoài SPI Flash (spimemio)
-│   ├── tb_spi_flash.v            # Testbench Verilog mô phỏng SPI Flash Controller & mô hình Flash
-│   ├── test_spimemio.py          # Bộ kiểm thử tự động 10 test case cho SPI Flash & XIP
-│   ├── run_tb_step4.bat          # Script chạy 1-click cho Bước 4
-│   └── README.md                 # Tài liệu đặc tả Bước 4
-│
-├── step5_rdm6300_pipeline/       # Bước 5: Đường ống 5 giai đoạn thu nhận & giải mã thẻ RFID
-│   ├── tb_rdm6300_pipeline.v     # Testbench Verilog mô phỏng đường ống 5 giai đoạn (2FF->UART->FIFO->Decoder->XOR)
-│   ├── test_rdm6300_pipeline.py  # Bộ kiểm thử tự động 12 test case cho đường ống RFID
-│   ├── run_tb_step5.bat          # Script chạy 1-click cho Bước 5
-│   ├── run_vivado_sim.bat        # Mô phỏng RTL trên Vivado Simulator (xsim)
-│   └── README.md                 # Tài liệu đặc tả Bước 5
-│
-├── step6_top_soc_integration/    # Bước 6: Tích hợp toàn diện toàn hệ thống SoC
-│   ├── tb_picorv32_rdm6300_flash.v # Testbench Verilog tích hợp toàn hệ thống SoC + Flash + RFID + UART
-│   ├── tb_uart_ping.v            # Testbench Verilog kiểm tra UART ping
-│   ├── firmware.hex              # Mã máy Verilog HEX nạp vào hệ thống mô phỏng
-│   ├── test_top_soc.py           # Bộ kiểm thử tự động 8 test case cho luồng phần cứng + phần mềm
-│   ├── run_tb_step6.bat          # Script chạy 1-click cho Bước 6 bằng Python
-│   ├── run_vivado_sim.bat        # Mô phỏng RTL toàn bộ 14 module trên Vivado Simulator (xsim)
-│   └── README.md                 # Tài liệu đặc tả Bước 6
-│
-├── firmware.hex                  # File HEX gốc được sinh tự động khi build firmware
-├── run_all_testbenches.py        # Master Python runner chạy toàn bộ 5 bước (63 test cases)
-├── run_all_testbenches.bat       # Master batch script 1-click chạy toàn bộ test suite
-└── README.md                     # Tài liệu hướng dẫn này
+├── tb_uart_rtl.v        # Testbench RTL thuần kiểm thử ngoại vi UART MMIO, bus cycle, FIFO
+├── tb_uart_ping.v       # Testbench Top SoC: Boot C firmware từ SPI Flash, Ping-Pong UART
+├── firmware.hex         # Mã máy Verilog HEX thực thi (RV32IMC) nạp vào mô hình SPI Flash
+├── run_sim_uart.bat     # Script chạy mô phỏng tb_uart_rtl trên Vivado Simulator (xsim)
+├── run_sim_ping.bat     # Script chạy mô phỏng tb_uart_ping trên Vivado Simulator (xsim)
+├── run_all_tb.bat       # Master runner chạy tuần tự cả 2 testbench
+└── README.md            # Tài liệu đặc tả testbench
 ```
 
 ---
 
-## 2. Bảng Thống Kê Số Lượng Test Cases
+## 2. Đặc Tả Chi Tiết Từng Testbench
 
-| Thư Mục | Bước Thiết Kế | Số Test Cases | Tỷ Lệ Đạt (Pass Rate) | Trạng Thái |
-| :--- | :--- | :---: | :---: | :---: |
-| `step2_firmware/` | Bước 2: Thiết kế firmware & giao thức | 21 | 100.0% | **PASS** |
-| `step3_picorv32_sram/` | Bước 3: Nhân PicoRV32 & 1KB SRAM | 12 | 100.0% | **PASS** |
-| `step4_spimemio_flash/` | Bước 4: Bộ điều khiển SPI Flash (`spimemio`) | 10 | 100.0% | **PASS** |
-| `step5_rdm6300_pipeline/`| Bước 5: Đường ống thu nhận RFID 5 giai đoạn | 12 | 100.0% | **PASS** |
-| `step6_top_soc_integration/` | Bước 6: Tích hợp toàn hệ thống SoC | 8 | 100.0% | **PASS** |
-| **TỔNG CỘNG** | **Toàn bộ hệ sinh thái vi mạch SoC** | **63** | **100.0%** | **CERTIFIED** |
+### 2.1. Testbench UART RTL (`tb_uart_rtl.v`)
+- **Mục tiêu**: Kiểm tra độ chính xác phần cứng của bộ điều khiển UART MMIO mà không cần nhân CPU.
+- **Các kịch bản kiểm thử**:
+  1. *Default Divider*: Kiểm tra thanh ghi Prescaler tại offset `0x00` nạp đúng `DEFAULT_DIV`.
+  2. *Divider Configuration*: Ghi và đọc lại giá trị Prescaler mới qua bus MMIO.
+  3. *Serial TX Waveform*: Ghi ký tự vào offset `0x04`, kiểm tra dạng sóng nối tiếp (Start bit, 8 data bits LSB-first, Stop bit).
+  4. *Serial RX & FIFO*: Bắn tín hiệu nối tiếp vào chân `rx_i`, xác nhận cờ `rx_activity_o` tích cực và đọc dữ liệu qua offset `0x04`. Kiểm tra trả về `0xFFFFFFFF` khi FIFO rỗng.
+  5. *Multi-Byte Burst*: Bắn liên tiếp nhiều byte dữ liệu kiểm tra cơ chế chống tràn của FIFO.
+
+### 2.2. Testbench Top SoC Ping-Pong (`tb_uart_ping.v`)
+- **Mục tiêu**: Kiểm tra hệ thống Top-level hoàn chỉnh gồm CPU PicoRV32, SPI Flash Controller (`spimemio`), 1KB SRAM, Interconnect và UART.
+- **Các kịch bản kiểm thử**:
+  1. *Power-On Reset & Boot Flash*: CPU PicoRV32 thức dậy tại vector `0x00250000`, đọc lệnh qua XIP từ mô hình SPI Flash (nạp từ `firmware.hex`).
+  2. *C Startup Banner*: CPU in toàn bộ chuỗi chào mừng ra cổng UART Host PC.
+  3. *Host Ping Processing*: Testbench đóng vai trò PC Host gửi byte lệnh `'P'` (`0x50`) và `'\n'` (`0x0A`).
+  4. *Response Verification*: CPU phản hồi chuỗi `"PONG: PicoRV32 Active"`.
+  5. *CPU Health*: Khẳng định `cpu_trap == 0` (CPU hoạt động mượt mà, không gặp lệnh lỗi hoặc tràn bộ nhớ).
 
 ---
 
-## 3. Hướng Dẫn Thực Thi
+## 3. Hướng Dẫn Chạy Mô Phỏng 1-Click
 
-### Chạy toàn bộ 63 Test Cases cùng lúc:
-Chạy file script trong thư mục `tb/`:
-```cmd
-run_all_testbenches.bat
-```
-Hoặc:
-```cmd
-py run_all_testbenches.py
-```
+Yêu cầu môi trường: AMD Vivado 2025.1 hoặc mới hơn đã cài đặt trên máy.
 
-### Chạy riêng từng bước:
-Người dùng chỉ cần di chuyển vào thư mục tương ứng và chạy file `.bat` hoặc `.py`:
-- **Bước 2**: `cd step2_firmware && run_tb_firmware.bat`
-- **Bước 3**: `cd step3_picorv32_sram && run_tb_step3.bat`
-- **Bước 4**: `cd step4_spimemio_flash && run_tb_step4.bat`
-- **Bước 5**: `cd step5_rdm6300_pipeline && run_tb_step5.bat`
-- **Bước 6**: `cd step6_top_soc_integration && run_tb_step6.bat`
+- **Chạy toàn bộ test suite (Khuyến nghị)**:
+  ```cmd
+  run_all_tb.bat
+  ```
+
+- **Chạy riêng lẻ từng bài test**:
+  ```cmd
+  run_sim_uart.bat   :: Kiểm thử UART RTL
+  run_sim_ping.bat   :: Kiểm thử Top SoC Boot & Ping
+  ```

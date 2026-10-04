@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Script: generate_drawio_bnw_diagram.py
-Generates the authentic Draw.io Black & White schematic block diagram matching
-the complete modular SoC architecture with 5 distinct Slaves:
-- Master: PicoRV32 RISC-V CPU Core (rtl/picorv32.v)
-- Bus: Internal Memory Bus Interconnect (rtl/soc_interconnect.v)
-- Slave 0: 1KB Data SRAM (rtl/data_sram.v) - 0x0000_0000
-- Slave 1: SPIMEMIO Flash Controller (rtl/spimemio.v) - 0x0010_0000 / 0x0200_0000
-- Slave 2: RDM6300 RFID MMIO Peripheral (rtl/rdm6300_mmio.v) - 0x1000_0000
-- Slave 3: Host PC UART MMIO Peripheral & FIFOs (rtl/host_uart_mmio.v) - 0x3000_0000
-- Slave 4: GPIO MMIO Peripheral & LEDs (rtl/soc_gpio_mmio.v) - 0x4000_0000
+Generates the authentic Draw.io Black & White schematic block diagram:
+- Master: PicoRV32 RISC-V CPU Core (rtl/core/picorv32.v) with configuration parameters
+- Bus: Interconnect & Decoder (rtl/core/soc_interconnect.v) with explicit decoding logic
+- Slave 0: 1KB Data SRAM (rtl/core/data_sram.v) with parameters
+- Slave 1: SPIMEMIO Flash Controller (rtl/core/spimemio.v) with XIP & bit-bang settings
+- Slave 2 & 3: Dual UART MMIO (rtl/uart/uart_mmio.v - u_rfid_uart & u_host_uart)
+- Slave 4: GPIO MMIO Module (rtl/core/soc_gpio_mmio.v)
 
-Pure Black & White, high contrast, clean orthogonal routing, sharp arrowheads.
-Outputs:
-  1. rdm6300_picorv32_soc_complete_diagram.drawio (Draw.io XML)
-  2. rdm6300_picorv32_soc_complete_diagram.svg (Clean Vector SVG)
-  3. document/temp/fig1_block_diagram.png (High-Res 2x Retina PNG via Headless Chrome)
+Pure Black & White textbook style, high contrast, clean orthogonal routing.
 """
 
 import os
@@ -24,257 +18,176 @@ import shutil
 
 def create_drawio_xml():
     xml = """<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="app.diagrams.net" modified="2026-10-02T08:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+<mxfile host="app.diagrams.net" modified="2026-10-04T08:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
   <diagram id="soc_architecture" name="SoC Block Diagram">
     <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1580" pageHeight="920" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <!-- ============================================================= -->
-        <!-- 1. CHIP BOUNDARY (ASIC)                                       -->
-        <!-- ============================================================= -->
-        <mxCell id="chip" value="&lt;b style=&quot;font-size:21px;&quot;&gt;rdm6300_picorv32_soc (Top-Level ASIC Chip - rtl/rdm6300_picorv32_soc.v)&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;verticalAlign=top;align=left;spacingLeft=30;spacingTop=12;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="250" y="25" width="1290" height="865" as="geometry" />
+        <!-- 1. CHIP BOUNDARY -->
+        <mxCell id="chip" value="&lt;b style=&quot;font-size:20px;&quot;&gt;Top-Level ASIC Chip: rdm6300_picorv32_soc (rtl/rdm6300_picorv32_soc.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;font-weight:bold;&quot;&gt;SkyWater 130nm ASIC Sign-off (OpenLane 2) / Digilent Basys 3 FPGA Hardware Prototyping Platform&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;verticalAlign=top;align=left;spacingLeft=30;spacingTop=10;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="230" y="20" width="1320" height="875" as="geometry" />
         </mxCell>
 
-        <!-- Global Clock and Reset Inputs -->
+        <!-- Global Clock & Reset -->
         <mxCell id="w_clk_in" value="clk_i (50 MHz)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="140" y="85" as="sourcePoint" />
-            <mxPoint x="275" y="85" as="targetPoint" />
+            <mxPoint x="120" y="70" as="sourcePoint" />
+            <mxPoint x="255" y="70" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
         <mxCell id="w_rst_in" value="rst_n_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="140" y="125" as="sourcePoint" />
-            <mxPoint x="275" y="125" as="targetPoint" />
+            <mxPoint x="120" y="110" as="sourcePoint" />
+            <mxPoint x="255" y="110" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 2. EXTERNAL SPI FLASH (OFF-CHIP)                              -->
-        <!-- ============================================================= -->
-        <mxCell id="ext_flash" value="&lt;b style=&quot;font-size:17px;&quot;&gt;External&lt;br&gt;SPI Flash&lt;br&gt;(Off-Chip)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:14px;&quot;&gt;- Firmware&lt;br&gt;Storage&lt;br&gt;(W25Q128)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="25" y="260" width="155" height="320" as="geometry" />
+        <!-- 2. EXTERNAL SPI FLASH -->
+        <mxCell id="ext_flash" value="&lt;b style=&quot;font-size:17px;&quot;&gt;External&lt;br&gt;SPI Flash&lt;br&gt;(Off-Chip)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;W25Q128 / S25FL032P&lt;br&gt;(32 Mbit / 4MB)&lt;br&gt;&lt;br&gt;&lt;b&gt;• 0x0025_0000:&lt;/b&gt; Firmware&lt;br&gt;&lt;b&gt;• 0x0030_0000:&lt;/b&gt; Whitelist&lt;br&gt;&lt;b&gt;• 0x0031_0000:&lt;/b&gt; Logs&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="25" y="270" width="165" height="310" as="geometry" />
         </mxCell>
 
-        <!-- Flash Pins Wires & Labels -->
-        <mxCell id="w_csb" value="flash_csb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=14;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ext_flash" target="spimemio">
+        <mxCell id="w_csb" value="flash_csb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ext_flash" target="spimemio">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="225" y="330" />
-              <mxPoint x="225" y="330" />
+              <mxPoint x="220" y="330" />
+              <mxPoint x="220" y="330" />
             </Array>
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="w_clk" value="flash_clk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=14;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ext_flash" target="spimemio">
+        <mxCell id="w_clk" value="flash_clk" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ext_flash" target="spimemio">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="225" y="420" />
-              <mxPoint x="225" y="420" />
+              <mxPoint x="220" y="420" />
+              <mxPoint x="220" y="420" />
             </Array>
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="w_io" value="flash_io[3:0]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=14;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ext_flash" target="spimemio">
+        <mxCell id="w_io" value="flash_io[3:0]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="ext_flash" target="spimemio">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="225" y="510" />
-              <mxPoint x="225" y="510" />
+              <mxPoint x="220" y="510" />
+              <mxPoint x="220" y="510" />
             </Array>
           </mxGeometry>
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 3. SLAVE 1: SPIMEMIO FLASH CONTROLLER                         -->
-        <!-- ============================================================= -->
-        <mxCell id="spimemio" value="&lt;b style=&quot;font-size:18px;&quot;&gt;SLAVE 1:&lt;br&gt;SPIMEMIO&lt;br&gt;Flash Controller&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:15px;&quot;&gt;(rtl/core/spimemio.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:14px;&quot;&gt;0x0010_0000 -&lt;br&gt;0x00FF_FFFF&lt;br&gt;&lt;br&gt;(XIP Read &amp;amp;&lt;br&gt;SPI Bit-Bang&lt;br&gt;0x0200_0000)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="275" y="75" width="175" height="735" as="geometry" />
+        <!-- 3. SLAVE 1: SPIMEMIO FLASH CONTROLLER -->
+        <mxCell id="spimemio" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 1: SPIMEMIO Flash Controller&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:13.5px;&quot;&gt;(rtl/core/spimemio.v)&lt;/b&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:6px 0;&quot;/&gt;&lt;div style=&quot;text-align:left;padding-left:8px;font-size:12px;line-height:1.4;&quot;&gt;&lt;b&gt;Cấu hình Vùng Nhớ Firmware:&lt;/b&gt;&lt;br/&gt;• &lt;b&gt;XIP Read:&lt;/b&gt; 0x0010_0000 - 0x00FF_FFFF&lt;br/&gt;&amp;nbsp;&amp;nbsp;(&lt;i&gt;sel_spimem = 1&lt;/i&gt;, lấy Opcode trực tiếp)&lt;br/&gt;• &lt;b&gt;SPI Bit-Bang Cfg:&lt;/b&gt; 0x0200_0000&lt;br/&gt;&amp;nbsp;&amp;nbsp;(&lt;i&gt;sel_spicfg = 1&lt;/i&gt;, Ghi/Xóa từ SRAM)&lt;br/&gt;• &lt;b&gt;Giao tiếp SPI:&lt;/b&gt; CSB, CLK, IO[3:0]&lt;br/&gt;• &lt;b&gt;Phản hồi:&lt;/b&gt; spimem_ready (sau 4B SPI)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="255" y="95" width="225" height="705" as="geometry" />
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 4. BUS: CENTRAL MEMORY BUS INTERCONNECT (soc_interconnect.v)  -->
-        <!-- ============================================================= -->
-        <mxCell id="bus" value="&lt;b style=&quot;font-size:17px;&quot;&gt;Internal Memory Bus Interconnect (rtl/core/soc_interconnect.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;font-weight:bold;&quot;&gt;MMIO Address Decoder &amp;amp; Bus Multiplexer (1 Master ➔ 5 Dedicated Slaves)&lt;/span&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:4px 0;&quot;/&gt;&lt;span style=&quot;font-size:11px;font-weight:600;&quot;&gt;S0: rtl/core/data_sram.v (0x0000_0000) | S1: rtl/core/spimemio.v (0x0010_0000)&lt;br/&gt;S2: rtl/rdm6300/rdm6300_mmio.v (0x1000_0000) | S3: rtl/host/host_uart_mmio.v (0x3000_0000) | S4: rtl/core/soc_gpio_mmio.v (0x4000_0000)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="475" y="75" width="610" height="120" as="geometry" />
+        <!-- 4. BUS: CENTRAL INTERCONNECT & DECODER LOGIC -->
+        <mxCell id="bus" value="&lt;b style=&quot;font-size:16.5px;&quot;&gt;BUS INTERCONNECT &amp;amp; DECODER LOGIC (rtl/core/soc_interconnect.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12.5px;font-weight:bold;&quot;&gt;Logic Giải Mã Địa Chỉ C &amp;amp; Ghép Kênh Bus Tập Trung (1 Master ➔ 5 Dedicated Slaves)&lt;/span&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:4px 0;&quot;/&gt;&lt;div style=&quot;text-align:left;padding-left:14px;font-size:11.5px;font-family:Consolas,monospace;line-height:1.35;&quot;&gt;&lt;b&gt;assign sel_sram&amp;nbsp;&amp;nbsp;&amp;nbsp;= cpu_mem_valid &amp;amp;&amp;amp; (cpu_mem_addr &amp;lt; 32'h0000_0400);&lt;/b&gt;&lt;br/&gt;&lt;b&gt;assign sel_spimem = cpu_mem_valid &amp;amp;&amp;amp; (cpu_mem_addr &amp;gt;= 32'h0010_0000 &amp;amp;&amp;amp; cpu_mem_addr &amp;lt; 32'h0100_0000);&lt;/b&gt;&lt;br/&gt;&lt;b&gt;assign sel_spicfg = cpu_mem_valid &amp;amp;&amp;amp; (cpu_mem_addr == 32'h0200_0000);&lt;/b&gt;&lt;br/&gt;&lt;b&gt;assign sel_rfid&amp;nbsp;&amp;nbsp;&amp;nbsp;= cpu_mem_valid &amp;amp;&amp;amp; (cpu_mem_addr[31:28] == 4'h1);&lt;/b&gt;&amp;nbsp;&amp;nbsp;// 0x1000_0000&lt;br/&gt;&lt;b&gt;assign sel_uart&amp;nbsp;&amp;nbsp;&amp;nbsp;= cpu_mem_valid &amp;amp;&amp;amp; (cpu_mem_addr[31:28] == 4'h3);&lt;/b&gt;&amp;nbsp;&amp;nbsp;// 0x3000_0000&lt;br/&gt;&lt;b&gt;assign sel_gpio&amp;nbsp;&amp;nbsp;&amp;nbsp;= cpu_mem_valid &amp;amp;&amp;amp; (cpu_mem_addr[31:28] == 4'h4);&lt;/b&gt;&amp;nbsp;&amp;nbsp;// 0x4000_0000&lt;br/&gt;assign cpu_mem_rdata = sel_sram ? sram_rdata : sel_spimem ? spimem_rdata : sel_rfid ? rfid_rdata : sel_uart ? uart_rdata : gpio_rdata;&lt;br/&gt;assign cpu_mem_ready = sel_sram ? sram_ready : sel_spimem ? spimem_ready : sel_rfid ? rfid_ready : sel_uart ? uart_ready : gpio_ready;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.5;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="510" y="95" width="670" height="195" as="geometry" />
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 5. SLAVE 0: 1KB DATA SRAM                                     -->
-        <!-- ============================================================= -->
-        <mxCell id="sram" value="&lt;b style=&quot;font-size:17px;&quot;&gt;SLAVE 0:&lt;br&gt;1KB Data SRAM&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:14.5px;&quot;&gt;(rtl/core/data_sram.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:14px;&quot;&gt;0x0000_0000&lt;br&gt;(Stack &amp;amp; Variables)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1115" y="75" width="225" height="135" as="geometry" />
+        <!-- 5. SLAVE 0: 1KB DATA SRAM -->
+        <mxCell id="sram" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 0: 1KB Data SRAM&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:13.5px;&quot;&gt;(rtl/core/data_sram.v)&lt;/b&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:4px 0;&quot;/&gt;&lt;div style=&quot;text-align:left;padding-left:8px;font-size:11.5px;line-height:1.35;&quot;&gt;• &lt;b&gt;Tham số:&lt;/b&gt; WORDS = 256 (32-bit)&lt;br/&gt;• &lt;b&gt;Vùng địa chỉ:&lt;/b&gt; &amp;lt; 0x0000_0400&lt;br/&gt;• &lt;b&gt;Địa chỉ từ CPU:&lt;/b&gt; addr[9:2]&lt;br/&gt;• &lt;b&gt;Phản hồi:&lt;/b&gt; sram_ready = 1 (1 clock)&lt;br/&gt;• &lt;b&gt;Vai trò C:&lt;/b&gt; Stack &lt;i&gt;sp = 0x400&lt;/i&gt;,&lt;br/&gt;&amp;nbsp;&amp;nbsp;vùng biến .data / .bss &amp;amp; đệm flashio&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="1215" y="95" width="300" height="195" as="geometry" />
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 6. MASTER: PICORV32 RISC-V CPU CORE                           -->
-        <!-- ============================================================= -->
-        <mxCell id="cpu" value="&lt;b style=&quot;font-size:19px;&quot;&gt;MASTER:&lt;br&gt;PicoRV32 RISC-V CPU&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:15px;&quot;&gt;(rtl/core/picorv32.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b style=&quot;font-size:14px;&quot;&gt;(C Firmware Execution -&lt;br&gt;firmware/main.c)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:13px;&quot;&gt;RV32I Core (32 Registers)&lt;br&gt;PC Reset: 0x0025_0000 (Flash)&lt;br&gt;Stack Pointer: 0x0000_0400 (SRAM)&lt;br&gt;Native 32-bit Memory Bus&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=16;" vertex="1" parent="1">
-          <mxGeometry x="475" y="230" width="235" height="440" as="geometry" />
+        <!-- 6. MASTER: PICORV32 RISC-V CPU CORE -->
+        <mxCell id="cpu" value="&lt;b style=&quot;font-size:17.5px;&quot;&gt;MASTER: PicoRV32 RISC-V CPU Core&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:14px;&quot;&gt;(rtl/core/picorv32.v)&lt;/b&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:6px 0;&quot;/&gt;&lt;div style=&quot;text-align:left;padding-left:12px;font-size:12px;line-height:1.45;&quot;&gt;&lt;b&gt;Cấu hình Chạy Firmware C (Setting RTL):&lt;/b&gt;&lt;br/&gt;• &lt;b&gt;parameter PROGADDR_RESET = 32'h0025_0000;&lt;/b&gt;&lt;br/&gt;&amp;nbsp;&amp;nbsp;&lt;i&gt;(Vector reset Flash SPI XIP để nạp opcode firmware)&lt;/i&gt;&lt;br/&gt;• &lt;b&gt;parameter STACKADDR&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;= 32'h0000_0400;&lt;/b&gt;&lt;br/&gt;&amp;nbsp;&amp;nbsp;&lt;i&gt;(Đỉnh ngăn xếp 1KB SRAM, cấp phát biến &amp;amp; stack frame)&lt;/i&gt;&lt;br/&gt;• &lt;b&gt;Kiến trúc RV32I:&lt;/b&gt; 32 thanh ghi (x0..x31), Freestanding C&lt;br/&gt;&lt;br/&gt;&lt;b&gt;Giao diện Bus Master Chuẩn:&lt;/b&gt;&lt;br/&gt;• output &lt;b&gt;cpu_mem_valid&lt;/b&gt; : Bắt đầu chu kỳ bus&lt;br/&gt;• output [31:0] &lt;b&gt;cpu_mem_addr&lt;/b&gt; : Địa chỉ truy xuất 32-bit&lt;br/&gt;• output [31:0] &lt;b&gt;cpu_mem_wdata&lt;/b&gt;: Dữ liệu ghi ra ngoại vi&lt;br/&gt;• output [3:0]&amp;nbsp;&amp;nbsp;&lt;b&gt;cpu_mem_wstrb&lt;/b&gt;: Mask byte (4'b1111 ghi / 4'b0000 đọc)&lt;br/&gt;• input&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;b&gt;cpu_mem_ready&lt;/b&gt;: Báo hoàn thành chu kỳ bus&lt;br/&gt;• input&amp;nbsp;&amp;nbsp;[31:0] &lt;b&gt;cpu_mem_rdata&lt;/b&gt;: Dữ liệu đọc về CPU&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="510" y="315" width="375" height="375" as="geometry" />
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 7. SLAVE 2: RDM6300 RFID MMIO MODULE (rtl/rdm6300_mmio.v)      -->
-        <!-- ============================================================= -->
-        <mxCell id="rfid_box" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="770" y="230" width="625" height="245" as="geometry" />
-        </mxCell>        <mxCell id="rfid_banner" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 2: rtl/rdm6300/rdm6300_mmio.v (RFID MMIO Peripheral Module)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;font-weight:bold;&quot;&gt;MMIO Address: 0x1000_0000 - 0x1000_0008 | Bus Select: sel_rfid&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="770" y="230" width="625" height="42" as="geometry" />
+        <!-- 7. SLAVE 2: RFID READER UART MMIO -->
+        <mxCell id="rfid_uart" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 2: RFID Reader UART MMIO&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:13.5px;&quot;&gt;u_rfid_uart (rtl/uart/uart_mmio.v)&lt;/b&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:6px 0;&quot;/&gt;&lt;div style=&quot;text-align:left;padding-left:10px;font-size:12px;line-height:1.4;&quot;&gt;• &lt;b&gt;Bus Select:&lt;/b&gt; sel_rfid (Địa chỉ tiền tố 4'h1)&lt;br/&gt;• &lt;b&gt;REG_RFID_UART_DIV:&lt;/b&gt; 0x1000_0000 (Baud = 5208)&lt;br/&gt;• &lt;b&gt;REG_RFID_UART_DAT:&lt;/b&gt; 0x1000_0004 (Đọc FIFO 32B)&lt;br/&gt;• &lt;b&gt;Tín hiệu chân ngoại vi:&lt;/b&gt; rdm6300_rx_i (UART 9600 8-N-1)&lt;br/&gt;• &lt;b&gt;Phản hồi Bus:&lt;/b&gt; rfid_ready = 1 (1 chu kỳ clock)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="915" y="315" width="385" height="170" as="geometry" />
         </mxCell>
 
-        <mxCell id="rfid_reg" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;MMIO Registers&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:bold;&quot;&gt;(in rdm6300_mmio.v)&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;&quot;&gt;STATUS (0x0)&lt;br&gt;TAG_HI (0x4)&lt;br&gt;TAG_LO (0x8)&lt;br&gt;&lt;br&gt;card_valid_o&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="785" y="285" width="130" height="175" as="geometry" />
-        </mxCell>
-
-        <mxCell id="rfid_dec" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;rdm6300_&lt;br&gt;frame_decoder&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(frame_decoder.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;14-Byte Frame&lt;br&gt;1-Cycle XOR Check&lt;br&gt;Watchdog 10ms&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="930" y="285" width="145" height="175" as="geometry" />
-        </mxCell>
-
-        <mxCell id="rfid_rx" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;uart_rx&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/rdm6300/uart_rx.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;9600 Baud&lt;br&gt;8-N-1 UART&lt;br&gt;Majority Sampler&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1090" y="285" width="115" height="175" as="geometry" />
-        </mxCell>
-
-        <mxCell id="rfid_sync" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_2ff&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/core/sync_2ff.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;2-FF CDC Sync&lt;br&gt;MTBF &gt; 1000 Yrs&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1220" y="285" width="130" height="175" as="geometry" />
-        </mxCell>
-
-        <!-- RFID Internal Signal Connections -->
-        <mxCell id="ar_rfid_in" value="rdm6300_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <!-- rdm6300_rx_i Pin Wire -->
+        <mxCell id="w_rfid_rx" value="rdm6300_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1530" y="372" as="sourcePoint" />
-            <mxPoint x="1350" y="372" as="targetPoint" />
+            <mxPoint x="1530" y="400" as="sourcePoint" />
+            <mxPoint x="1300" y="400" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="ar_s_rx" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_sync" target="rfid_rx" />
-        <mxCell id="ar_rx_dec" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_rx" target="rfid_dec" />
-        <mxCell id="ar_dec_reg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="rfid_dec" target="rfid_reg" />
-
-        <!-- ============================================================= -->
-        <!-- 8. SLAVE 3: HOST PC UART MMIO MODULE (rtl/host_uart_mmio.v)    -->
-        <!-- ============================================================= -->
-        <mxCell id="uart_box" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2.2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="770" y="500" width="625" height="245" as="geometry" />
+        <!-- 8. SLAVE 3: HOST PC UART MMIO -->
+        <mxCell id="host_uart" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 3: Host PC UART MMIO &amp;amp; FIFOs&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:13.5px;&quot;&gt;u_host_uart (rtl/uart/uart_mmio.v)&lt;/b&gt;&lt;br&gt;&lt;hr style=&quot;border:0.5px solid #000;margin:6px 0;&quot;/&gt;&lt;div style=&quot;text-align:left;padding-left:10px;font-size:12px;line-height:1.4;&quot;&gt;• &lt;b&gt;Bus Select:&lt;/b&gt; sel_uart (Địa chỉ tiền tố 4'h3)&lt;br/&gt;• &lt;b&gt;REG_PC_UART_DIV:&lt;/b&gt; 0x3000_0000 (Baud = 5208)&lt;br/&gt;• &lt;b&gt;REG_PC_UART_DAT:&lt;/b&gt; 0x3000_0004 (Đọc RX / Ghi TX FIFO 32B)&lt;br/&gt;• &lt;b&gt;Tín hiệu chân ngoại vi:&lt;/b&gt; uart_rx_i &amp;amp; uart_tx_o&lt;br/&gt;• &lt;b&gt;Phản hồi Bus:&lt;/b&gt; uart_ready = 1 (1 chu kỳ clock)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=top;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="915" y="510" width="385" height="180" as="geometry" />
         </mxCell>
 
-        <mxCell id="uart_banner" value="&lt;b style=&quot;font-size:16px;&quot;&gt;SLAVE 3: rtl/host/host_uart_mmio.v (Host PC UART MMIO Peripheral Module)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;font-weight:bold;&quot;&gt;MMIO Address: 0x3000_0000 - 0x3000_0004 | Bus Select: sel_uart&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="770" y="500" width="625" height="42" as="geometry" />
-        </mxCell>
-
-        <mxCell id="u_mmio" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;UART MMIO&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;font-weight:bold;&quot;&gt;(in host_uart_mmio.v)&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;DIV (0x3000_0000)&lt;br&gt;DAT (0x3000_0004)&lt;br&gt;&lt;br&gt;FIFO Control&lt;br&gt;1-Cycle Ready&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="785" y="555" width="130" height="175" as="geometry" />
-        </mxCell>
-
-        <mxCell id="u_fifo" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;sync_fifo (x2)&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/host/sync_fifo.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;32-Byte RX FIFO&lt;br&gt;32-Byte TX FIFO&lt;br&gt;Zero Packet Drop&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="930" y="555" width="135" height="175" as="geometry" />
-        </mxCell>
-
-        <mxCell id="u_core" value="&lt;b style=&quot;font-size:14.5px;&quot;&gt;simpleuart&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;&quot;&gt;(rtl/host/simpleuart.v)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;&quot;&gt;Full-Duplex UART&lt;br&gt;TX / RX Core&lt;br&gt;Baud Divisor 5208&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1080" y="555" width="140" height="175" as="geometry" />
-        </mxCell>
-
-        <mxCell id="u_sync" value="&lt;b style=&quot;font-size:14px;&quot;&gt;sync_2ff&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;&quot;&gt;(rtl/core/sync_2ff.v)&lt;br&gt;CDC Sync&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.6;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="1235" y="555" width="120" height="80" as="geometry" />
-        </mxCell>
-
-        <!-- UART External Signals -->
-        <mxCell id="ar_pc_rx" value="uart_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <!-- Host UART Wires -->
+        <mxCell id="w_uart_rx" value="uart_rx_i" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1530" y="595" as="sourcePoint" />
-            <mxPoint x="1355" y="595" as="targetPoint" />
+            <mxPoint x="1530" y="565" as="sourcePoint" />
+            <mxPoint x="1300" y="565" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="ar_pc_tx" value="uart_tx_o" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <mxCell id="w_uart_tx" value="uart_tx_o" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1220" y="680" as="sourcePoint" />
-            <mxPoint x="1530" y="680" as="targetPoint" />
+            <mxPoint x="1300" y="635" as="sourcePoint" />
+            <mxPoint x="1530" y="635" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="ar_u_sync_core" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1" source="u_sync" target="u_core">
+        <!-- 9. SLAVE 4: GPIO MMIO MODULE -->
+        <mxCell id="gpio" value="&lt;b style=&quot;font-size:15.5px;&quot;&gt;SLAVE 4: GPIO MMIO Module (rtl/core/soc_gpio_mmio.v)&lt;/b&gt;&lt;br&gt;&lt;div style=&quot;font-size:12px;margin-top:4px;&quot;&gt;&lt;b&gt;Địa chỉ REG_GPIO_LEDS:&lt;/b&gt; 0x4000_0000 (sel_gpio = 1) | &lt;b&gt;Ngõ ra phần cứng:&lt;/b&gt; leds_o[15:0]&lt;br/&gt;Bit 0: Nhịp tim Alive (1Hz) | Bit 1: Cảnh báo Denied | Bit 2: Mở chốt cửa Granted | Bit 3: Flash Busy&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="510" y="710" width="790" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="w_leds" value="leds_o[15:0]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1230" y="595" />
-              <mxPoint x="1230" y="595" />
-            </Array>
+            <mxPoint x="1300" y="755" as="sourcePoint" />
+            <mxPoint x="1530" y="755" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="ar_core_fifo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1" source="u_fifo" target="u_core" />
-        <mxCell id="ar_mmio_fifo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.6;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1" source="u_mmio" target="u_fifo" />
-
-        <!-- ============================================================= -->
-        <!-- 9. SLAVE 4: GPIO MMIO MODULE (rtl/soc_gpio_mmio.v)             -->
-        <!-- ============================================================= -->
-        <mxCell id="gpio" value="&lt;b style=&quot;font-size:14px;&quot;&gt;SLAVE 4: GPIO MMIO&lt;/b&gt;&lt;br&gt;&lt;b style=&quot;font-size:11.5px;color:#444;&quot;&gt;(rtl/core/soc_gpio_mmio.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;font-weight:bold;&quot;&gt;GPIO MMIO Peripheral (0x4000_0000)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;&quot;&gt;16-bit LED Driver: Heartbeat (1Hz), Flash Busy, Card Valid&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=2;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="475" y="695" width="235" height="115" as="geometry" />
-        </mxCell>
-
-        <mxCell id="ar_gpio_led" value="leds_o[15:0]" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=2;strokeColor=#000000;endArrow=classic;endFill=1;fontSize=13.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <!-- 10. SYSTEM MEMORY BUS INTERCONNECTIONS -->
+        <mxCell id="b_bus_spi" value="sel_spimem, sel_spicfg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="710" y="752" as="sourcePoint" />
-            <mxPoint x="1530" y="752" as="targetPoint" />
+            <mxPoint x="510" y="165" as="sourcePoint" />
+            <mxPoint x="480" y="165" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 10. SYSTEM MEMORY BUS INTERCONNECTIONS                        -->
-        <!-- ============================================================= -->
-        <!-- Bus <-> SPIMEMIO (Slave 1) -->
-        <mxCell id="b_bus_spi" value="sel_spimem" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="475" y="132" as="sourcePoint" />
-            <mxPoint x="450" y="132" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-
-        <!-- Bus <-> SRAM (Slave 0) -->
         <mxCell id="b_bus_sram" value="sel_sram" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1085" y="132" as="sourcePoint" />
-            <mxPoint x="1115" y="132" as="targetPoint" />
+            <mxPoint x="1180" y="165" as="sourcePoint" />
+            <mxPoint x="1215" y="165" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <!-- Bus <-> PicoRV32 CPU (Master) -->
-        <mxCell id="b_bus_cpu" value="&lt;b style=&quot;font-size:12px;&quot;&gt;CPU Memory Bus (mem_valid, mem_ready, mem_addr, mem_wdata, mem_rdata)&lt;/b&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+        <mxCell id="b_bus_cpu" value="cpu_mem_valid, addr, wdata, wstrb, rdata, ready" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=11.5;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="592" y="195" as="sourcePoint" />
-            <mxPoint x="592" y="230" as="targetPoint" />
+            <mxPoint x="690" y="290" as="sourcePoint" />
+            <mxPoint x="690" y="315" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <!-- Bus Trunk to Peripherals (Slave 2, Slave 3, Slave 4) -->
-        <mxCell id="b_bus_rfid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1">
+        <mxCell id="b_bus_rfid" value="sel_rfid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="740" y="372" as="sourcePoint" />
-            <mxPoint x="785" y="372" as="targetPoint" />
+            <mxPoint x="885" y="400" as="sourcePoint" />
+            <mxPoint x="915" y="400" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="b_bus_uart" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;" edge="1" parent="1">
+        <mxCell id="b_bus_uart" value="sel_uart" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="740" y="642" as="sourcePoint" />
-            <mxPoint x="785" y="642" as="targetPoint" />
+            <mxPoint x="885" y="600" as="sourcePoint" />
+            <mxPoint x="915" y="600" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <mxCell id="b_bus_gpio" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;endArrow=classic;endFill=1;" edge="1" parent="1">
+        <mxCell id="b_bus_gpio" value="sel_gpio" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=4.5;strokeColor=#000000;startArrow=classic;startFill=1;endArrow=classic;endFill=1;fontSize=12;fontStyle=1;labelBackgroundColor=#ffffff;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="740" y="735" as="sourcePoint" />
-            <mxPoint x="710" y="735" as="targetPoint" />
+            <mxPoint x="690" y="690" as="sourcePoint" />
+            <mxPoint x="690" y="710" as="targetPoint" />
           </mxGeometry>
         </mxCell>
 
-        <!-- ============================================================= -->
-        <!-- 11. BOTTOM ARCHITECTURAL SUMMARY BANNER                       -->
-        <!-- ============================================================= -->
-        <mxCell id="arch_summary" value="&lt;b style=&quot;font-size:13.5px;&quot;&gt;Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;font-weight:600;&quot;&gt;Khu vực 1: rtl/core/ (CPU, SRAM, Flash, Interconnect, GPIO) | Khu vực 2: rtl/rdm6300/ (RFID MMIO) | Khu vực 3: rtl/host/ (Host UART)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
-          <mxGeometry x="475" y="825" width="920" height="50" as="geometry" />
+        <!-- 11. BOTTOM ARCHITECTURAL SUMMARY BANNER -->
+        <mxCell id="arch_summary" value="&lt;b style=&quot;font-size:13.5px;&quot;&gt;Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11.5px;font-weight:600;&quot;&gt;Liên kết bus trung tâm soc_interconnect.v định tuyến trong suốt: Flash XIP (0x0010_0000), 1KB SRAM (0x0000_0000), RFID UART MMIO (0x1000_0000), Host UART MMIO (0x3000_0000), GPIO MMIO (0x4000_0000)&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontFamily=Arial,Helvetica,sans-serif;" vertex="1" parent="1">
+          <mxGeometry x="255" y="820" width="1260" height="50" as="geometry" />
         </mxCell>
 
       </root>
@@ -287,15 +200,13 @@ def create_drawio_xml():
 def generate_svg():
     svg = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1580 920" width="100%" height="100%" style="background-color: #ffffff; font-family: Arial, Helvetica, sans-serif;">
   <defs>
-    <!-- Sharp arrowheads -->
+    <!-- Arrowheads -->
     <marker id="arr_end" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto">
       <path d="M 1 2 L 10 6 L 1 10 z" fill="#000000" />
     </marker>
     <marker id="arr_start" viewBox="0 0 12 12" refX="2" refY="6" markerWidth="11" markerHeight="11" markerUnits="userSpaceOnUse" orient="auto">
       <path d="M 10 2 L 1 6 L 10 10 z" fill="#000000" />
     </marker>
-
-    <!-- Thick Bus Arrowheads -->
     <marker id="bus_head_end" viewBox="0 0 14 14" refX="12" refY="7" markerWidth="14" markerHeight="14" markerUnits="userSpaceOnUse" orient="auto">
       <path d="M 1 1.5 L 12 7 L 1 12.5 z" fill="#000000" />
     </marker>
@@ -304,296 +215,213 @@ def generate_svg():
     </marker>
   </defs>
 
-  <!-- ===================================================================== -->
-  <!-- 1. CHIP BOUNDARY (ASIC)                                               -->
-  <!-- ===================================================================== -->
-  <rect x="250" y="25" width="1290" height="865" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
-  <text x="280" y="58" font-size="21" font-weight="bold" fill="#000000">rdm6300_picorv32_soc (Top-Level ASIC Chip - rtl/rdm6300_picorv32_soc.v)</text>
+  <!-- 1. CHIP BOUNDARY -->
+  <rect x="230" y="20" width="1320" height="875" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
+  <text x="260" y="52" font-size="20" font-weight="bold" fill="#000000">Top-Level ASIC Chip: rdm6300_picorv32_soc (rtl/rdm6300_picorv32_soc.v)</text>
+  <text x="260" y="73" font-size="12" font-weight="bold" fill="#333333">SkyWater 130nm ASIC Sign-off (OpenLane 2) / Digilent Basys 3 FPGA Hardware Prototyping Platform</text>
 
-  <!-- Global Clock and Reset Inputs -->
+  <!-- Clock & Reset -->
   <g stroke="#000000" stroke-width="1.8" fill="none">
-    <path d="M 140 85 L 275 85" marker-end="url(#arr_end)" />
-    <path d="M 140 125 L 275 125" marker-end="url(#arr_end)" />
+    <path d="M 120 70 L 240 70" marker-end="url(#arr_end)" />
+    <path d="M 120 110 L 240 110" marker-end="url(#arr_end)" />
   </g>
-  <text x="207" y="78" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">clk_i (50 MHz)</text>
-  <text x="207" y="118" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">rst_n_i</text>
+  <text x="180" y="63" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">clk_i (50 MHz)</text>
+  <text x="180" y="103" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">rst_n_i</text>
 
-  <!-- ===================================================================== -->
-  <!-- 2. EXTERNAL SPI FLASH (OFF-CHIP)                                      -->
-  <!-- ===================================================================== -->
-  <rect x="25" y="260" width="155" height="320" fill="#ffffff" stroke="#000000" stroke-width="2" />
-  <text x="102" y="325" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">External</text>
-  <text x="102" y="350" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">SPI Flash</text>
-  <text x="102" y="375" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">(Off-Chip)</text>
-  <text x="102" y="415" font-size="14" fill="#000000" text-anchor="middle">- Firmware</text>
-  <text x="102" y="435" font-size="14" fill="#000000" text-anchor="middle">Storage</text>
-  <text x="102" y="455" font-size="13" fill="#444444" text-anchor="middle">(W25Q128)</text>
+  <!-- 2. EXTERNAL SPI FLASH -->
+  <rect x="20" y="270" width="160" height="310" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="100" y="325" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">External</text>
+  <text x="100" y="350" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">SPI Flash</text>
+  <text x="100" y="375" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">(Off-Chip)</text>
+  <text x="100" y="415" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">W25Q128 / S25FL032P</text>
+  <text x="100" y="435" font-size="12" fill="#444444" text-anchor="middle">(32 Mbit / 4MB)</text>
+  <line x1="35" y1="450" x2="165" y2="450" stroke="#000000" stroke-width="1" />
+  <text x="35" y="475" font-size="11.5" font-weight="bold" fill="#000000">• 0x0025_0000: Firmware</text>
+  <text x="35" y="500" font-size="11.5" font-weight="bold" fill="#000000">• 0x0030_0000: Whitelist</text>
+  <text x="35" y="525" font-size="11.5" font-weight="bold" fill="#000000">• 0x0031_0000: Logs</text>
 
   <!-- Flash Connection Wires -->
   <g stroke="#000000" stroke-width="1.8" fill="none">
-    <path d="M 180 330 L 275 330" marker-end="url(#arr_end)" />
-    <path d="M 180 420 L 275 420" marker-end="url(#arr_end)" />
-    <path d="M 180 510 L 275 510" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
+    <path d="M 180 330 L 240 330" marker-end="url(#arr_end)" />
+    <path d="M 180 420 L 240 420" marker-end="url(#arr_end)" />
+    <path d="M 180 510 L 240 510" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
   </g>
-  <text x="227" y="318" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">flash_csb</text>
-  <text x="227" y="408" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">flash_clk</text>
-  <text x="227" y="498" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">flash_io[3:0]</text>
+  <text x="210" y="320" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">flash_csb</text>
+  <text x="210" y="410" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">flash_clk</text>
+  <text x="210" y="500" font-size="12" font-weight="bold" fill="#000000" text-anchor="middle">flash_io[3:0]</text>
 
-  <!-- ===================================================================== -->
-  <!-- 3. SLAVE 1: SPIMEMIO FLASH CONTROLLER                                 -->
-  <!-- ===================================================================== -->
-  <rect x="275" y="75" width="175" height="735" fill="#ffffff" stroke="#000000" stroke-width="2" />
-  <text x="362" y="340" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 1:</text>
-  <text x="362" y="365" font-size="18" font-weight="bold" fill="#000000" text-anchor="middle">SPIMEMIO</text>
-  <text x="362" y="390" font-size="18" font-weight="bold" fill="#000000" text-anchor="middle">Flash</text>
-  <text x="362" y="415" font-size="18" font-weight="bold" fill="#000000" text-anchor="middle">Controller</text>
-  <text x="362" y="450" font-size="15" font-weight="bold" fill="#000000" text-anchor="middle">(rtl/core/spimemio.v)</text>
-  <text x="362" y="490" font-size="14" fill="#222222" text-anchor="middle">0x0010_0000 -</text>
-  <text x="362" y="512" font-size="14" fill="#222222" text-anchor="middle">0x00FF_FFFF</text>
-  <text x="362" y="555" font-size="13" fill="#444444" text-anchor="middle">(XIP Read &amp;</text>
-  <text x="362" y="573" font-size="13" fill="#444444" text-anchor="middle">SPI Bit-Bang</text>
-  <text x="362" y="591" font-size="13" fill="#444444" text-anchor="middle">0x0200_0000)</text>
+  <!-- 3. SLAVE 1: SPIMEMIO FLASH CONTROLLER -->
+  <rect x="240" y="95" width="220" height="705" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="350" y="128" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 1: SPIMEMIO</text>
+  <text x="350" y="148" font-size="12.5" font-weight="bold" fill="#000000" text-anchor="middle">Flash Controller (spimemio.v)</text>
+  <line x1="255" y1="160" x2="445" y2="160" stroke="#000000" stroke-width="1.2" />
+  <text x="255" y="195" font-size="13" font-weight="bold" fill="#000000">Cấu hình Vùng Nhớ Firmware:</text>
+  <text x="255" y="230" font-size="12.5" font-weight="bold" fill="#000000">• XIP Instruction Fetch:</text>
+  <text x="268" y="253" font-size="12" fill="#222222">0x0010_0000 - 0x00FF_FFFF</text>
+  <text x="268" y="273" font-size="11.5" font-style="italic" fill="#444444">(sel_spimem = 1, Opcode Flash)</text>
+  <text x="255" y="320" font-size="12.5" font-weight="bold" fill="#000000">• SPI Bit-Bang Cfg Reg:</text>
+  <text x="268" y="343" font-size="12" fill="#222222">0x0200_0000</text>
+  <text x="268" y="363" font-size="11.5" font-style="italic" fill="#444444">(sel_spicfg = 1, Ghi/Xóa từ SRAM)</text>
+  <text x="255" y="410" font-size="12.5" font-weight="bold" fill="#000000">• Giao tiếp SPI Physical:</text>
+  <text x="268" y="433" font-size="12" fill="#222222">flash_csb, flash_clk, flash_io[3:0]</text>
+  <text x="255" y="480" font-size="12.5" font-weight="bold" fill="#000000">• Phản hồi Bus:</text>
+  <text x="268" y="503" font-size="12" fill="#222222">spimem_ready (sau 4 byte SPI)</text>
 
-  <!-- ===================================================================== -->
-  <!-- 4. BUS: CENTRAL MEMORY BUS INTERCONNECT (soc_interconnect.v)          -->
-  <!-- ===================================================================== -->
-  <rect x="475" y="75" width="610" height="120" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
-  <text x="780" y="105" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">Internal Memory Bus Interconnect (rtl/core/soc_interconnect.v)</text>
-  <text x="780" y="128" font-size="13.5" font-weight="bold" fill="#222222" text-anchor="middle">MMIO Address Decoder &amp; Bus Multiplexer (1 Master ➔ 5 Dedicated Slaves)</text>
-  <line x1="495" y1="140" x2="1065" y2="140" stroke="#888888" stroke-width="1" />
-  <!-- Left column -->
-  <text x="500" y="160" font-size="10.5" font-weight="bold" fill="#000000">• S0: rtl/core/data_sram.v (0x0000_0000)</text>
-  <text x="500" y="180" font-size="10.5" font-weight="bold" fill="#000000">• S1: rtl/core/spimemio.v (0x0010_0000)</text>
-  <!-- Right column -->
-  <text x="785" y="155" font-size="10.5" font-weight="bold" fill="#000000">• S2: rtl/rdm6300/rdm6300_mmio.v (0x1000_0000)</text>
-  <text x="785" y="172" font-size="10.5" font-weight="bold" fill="#000000">• S3: rtl/host/host_uart_mmio.v (0x3000_0000)</text>
-  <text x="785" y="189" font-size="10.5" font-weight="bold" fill="#000000">• S4: rtl/core/soc_gpio_mmio.v (0x4000_0000)</text>
+  <!-- 4. BUS: CENTRAL INTERCONNECT & DECODER LOGIC -->
+  <rect x="525" y="95" width="650" height="195" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
+  <text x="850" y="122" font-size="16.5" font-weight="bold" fill="#000000" text-anchor="middle">BUS INTERCONNECT &amp; DECODER LOGIC (rtl/core/soc_interconnect.v)</text>
+  <text x="850" y="142" font-size="12" font-weight="bold" fill="#222222" text-anchor="middle">Logic Giải Mã Địa Chỉ C &amp; Ghép Kênh Bus Tập Trung (1 Master ➔ 5 Dedicated Slaves)</text>
+  <line x1="540" y1="152" x2="1160" y2="152" stroke="#000000" stroke-width="1.2" />
+  <text x="540" y="172" font-size="11.5" font-family="Consolas,monospace" font-weight="bold" fill="#000000">assign sel_sram   = cpu_mem_valid &amp;&amp; (cpu_mem_addr &lt; 32'h0000_0400);</text>
+  <text x="540" y="190" font-size="11.5" font-family="Consolas,monospace" font-weight="bold" fill="#000000">assign sel_spimem = cpu_mem_valid &amp;&amp; (cpu_mem_addr &gt;= 32'h0010_0000 &amp;&amp; cpu_mem_addr &lt; 32'h0100_0000);</text>
+  <text x="540" y="208" font-size="11.5" font-family="Consolas,monospace" font-weight="bold" fill="#000000">assign sel_spicfg = cpu_mem_valid &amp;&amp; (cpu_mem_addr == 32'h0200_0000);</text>
+  <text x="540" y="226" font-size="11.5" font-family="Consolas,monospace" font-weight="bold" fill="#000000">assign sel_rfid   = cpu_mem_valid &amp;&amp; (cpu_mem_addr[31:28] == 4'h1);  // 0x1000_0000</text>
+  <text x="540" y="244" font-size="11.5" font-family="Consolas,monospace" font-weight="bold" fill="#000000">assign sel_uart   = cpu_mem_valid &amp;&amp; (cpu_mem_addr[31:28] == 4'h3);  // 0x3000_0000</text>
+  <text x="540" y="262" font-size="11.5" font-family="Consolas,monospace" font-weight="bold" fill="#000000">assign sel_gpio   = cpu_mem_valid &amp;&amp; (cpu_mem_addr[31:28] == 4'h4);  // 0x4000_0000</text>
+  <text x="540" y="280" font-size="10.5" font-family="Consolas,monospace" fill="#333333">MUX: cpu_mem_rdata &lt;= sel_sram ? sram_rdata : sel_spimem ? spimem_rdata : ...</text>
 
-  <!-- ===================================================================== -->
-  <!-- 5. SLAVE 0: 1KB DATA SRAM                                             -->
-  <!-- ===================================================================== -->
-  <rect x="1115" y="75" width="225" height="135" fill="#ffffff" stroke="#000000" stroke-width="2" />
-  <text x="1227" y="112" font-size="17" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 0: 1KB Data SRAM</text>
-  <text x="1227" y="138" font-size="15" font-weight="bold" fill="#000000" text-anchor="middle">(rtl/core/data_sram.v)</text>
-  <text x="1227" y="165" font-size="14" fill="#000000" text-anchor="middle">0x0000_0000</text>
-  <text x="1227" y="192" font-size="13" fill="#333333" text-anchor="middle">(Stack &amp; Variables)</text>
+  <!-- 5. SLAVE 0: 1KB DATA SRAM -->
+  <rect x="1240" y="95" width="280" height="195" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="1380" y="125" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 0: 1KB Data SRAM</text>
+  <text x="1380" y="145" font-size="13.5" font-weight="bold" fill="#000000" text-anchor="middle">(rtl/core/data_sram.v)</text>
+  <line x1="1255" y1="155" x2="1505" y2="155" stroke="#000000" stroke-width="1.2" />
+  <text x="1255" y="178" font-size="12" font-weight="bold" fill="#000000">• Tham số:</text>
+  <text x="1335" y="178" font-size="12" fill="#222222">WORDS = 256 (32-bit)</text>
+  <text x="1255" y="200" font-size="12" font-weight="bold" fill="#000000">• Vùng địa chỉ:</text>
+  <text x="1345" y="200" font-size="12" fill="#222222">&lt; 0x0000_0400 (1KB)</text>
+  <text x="1255" y="222" font-size="12" font-weight="bold" fill="#000000">• Phản hồi:</text>
+  <text x="1325" y="222" font-size="12" fill="#222222">sram_ready = 1 (1 clock)</text>
+  <text x="1255" y="245" font-size="12" font-weight="bold" fill="#000000">• Vai trò C:</text>
+  <text x="1325" y="245" font-size="11.5" fill="#222222">Stack (sp = 0x400),</text>
+  <text x="1255" y="265" font-size="11.5" fill="#444444">biến .data / .bss &amp; đệm flashio</text>
 
-  <!-- ===================================================================== -->
-  <!-- 6. MASTER: PICORV32 RISC-V CPU CORE                                   -->
-  <!-- ===================================================================== -->
-  <rect x="475" y="230" width="235" height="440" fill="#ffffff" stroke="#000000" stroke-width="2" />
-  <text x="592" y="265" font-size="18" font-weight="bold" fill="#000000" text-anchor="middle">MASTER:</text>
-  <text x="592" y="292" font-size="19" font-weight="bold" fill="#000000" text-anchor="middle">PicoRV32 RISC-V CPU</text>
-  <text x="592" y="318" font-size="15" font-weight="bold" fill="#000000" text-anchor="middle">(rtl/core/picorv32.v)</text>
+  <!-- 6. MASTER: PICORV32 RISC-V CPU CORE -->
+  <rect x="525" y="315" width="365" height="375" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
+  <text x="707" y="347" font-size="17.5" font-weight="bold" fill="#000000" text-anchor="middle">MASTER: PicoRV32 RISC-V CPU Core</text>
+  <text x="707" y="367" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">(rtl/core/picorv32.v)</text>
+  <line x1="540" y1="380" x2="875" y2="380" stroke="#000000" stroke-width="1.2" />
+  <text x="540" y="407" font-size="13" font-weight="bold" fill="#000000">Cấu hình Chạy Firmware C (Setting RTL):</text>
+  <text x="540" y="435" font-size="12" font-weight="bold" fill="#000000">• parameter PROGADDR_RESET = 32'h0025_0000;</text>
+  <text x="555" y="455" font-size="11.5" font-style="italic" fill="#444444">(Vector reset Flash SPI XIP để nạp opcode firmware)</text>
+  <text x="540" y="483" font-size="12" font-weight="bold" fill="#000000">• parameter STACKADDR      = 32'h0000_0400;</text>
+  <text x="555" y="503" font-size="11.5" font-style="italic" fill="#444444">(Đỉnh ngăn xếp 1KB SRAM, cấp phát biến &amp; stack frame)</text>
+  <text x="540" y="530" font-size="12" font-weight="bold" fill="#000000">• Tập lệnh RV32I: 32 thanh ghi (x0..x31), Freestanding C</text>
 
-  <line x1="500" y1="345" x2="685" y2="345" stroke="#000000" stroke-width="1.2" />
+  <line x1="540" y1="550" x2="875" y2="550" stroke="#aaaaaa" stroke-width="1" />
+  <text x="540" y="575" font-size="13" font-weight="bold" fill="#000000">Giao diện Bus Master Chuẩn:</text>
+  <text x="540" y="600" font-size="11.5" fill="#222222">• output <tspan font-weight="bold">cpu_mem_valid</tspan> : Bắt đầu chu kỳ bus</text>
+  <text x="540" y="620" font-size="11.5" fill="#222222">• output [31:0] <tspan font-weight="bold">cpu_mem_addr</tspan> : Địa chỉ truy xuất 32-bit</text>
+  <text x="540" y="640" font-size="11.5" fill="#222222">• output [31:0] <tspan font-weight="bold">cpu_mem_wdata</tspan>: Dữ liệu ghi ra ngoại vi</text>
+  <text x="540" y="660" font-size="11.5" fill="#222222">• output [3:0] <tspan font-weight="bold">cpu_mem_wstrb</tspan>: Byte write strobe</text>
+  <text x="540" y="680" font-size="11.5" fill="#222222">• input <tspan font-weight="bold">cpu_mem_ready</tspan> &amp; [31:0] <tspan font-weight="bold">cpu_mem_rdata</tspan></text>
 
-  <text x="592" y="380" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">(C Firmware Execution -</text>
-  <text x="592" y="402" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">firmware/main.c)</text>
+  <!-- 7. SLAVE 2: RFID READER UART MMIO -->
+  <rect x="930" y="315" width="370" height="170" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="1115" y="343" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 2: RFID Reader UART MMIO</text>
+  <text x="1115" y="363" font-size="13.5" font-weight="bold" fill="#000000" text-anchor="middle">u_rfid_uart (rtl/uart/uart_mmio.v)</text>
+  <line x1="945" y1="375" x2="1285" y2="375" stroke="#000000" stroke-width="1.2" />
+  <text x="945" y="398" font-size="12" font-weight="bold" fill="#000000">• Bus Select:</text>
+  <text x="1030" y="398" font-size="12" fill="#222222">sel_rfid (cpu_mem_addr[31:28] == 4'h1)</text>
+  <text x="945" y="420" font-size="12" font-weight="bold" fill="#000000">• REG_RFID_UART_DIV:</text>
+  <text x="1095" y="420" font-size="12" fill="#222222">0x1000_0000 (Baud=5208)</text>
+  <text x="945" y="442" font-size="12" font-weight="bold" fill="#000000">• REG_RFID_UART_DAT:</text>
+  <text x="1095" y="442" font-size="12" fill="#222222">0x1000_0004 (Đọc FIFO 32B)</text>
+  <text x="945" y="464" font-size="12" font-weight="bold" fill="#000000">• Chân ngoại vi:</text>
+  <text x="1055" y="464" font-size="12" fill="#222222">rdm6300_rx_i (UART 9600 8-N-1)</text>
+  <text x="945" y="484" font-size="12" font-weight="bold" fill="#000000">• Phản hồi Bus:</text>
+  <text x="1055" y="484" font-size="12" fill="#222222">rfid_ready = 1 (1 chu kỳ clock)</text>
 
-  <text x="592" y="455" font-size="13" fill="#222222" text-anchor="middle">RV32I Core (32 Registers)</text>
-  <text x="592" y="485" font-size="13" fill="#222222" text-anchor="middle">PC Reset: 0x0025_0000 (Flash)</text>
-  <text x="592" y="515" font-size="13" fill="#222222" text-anchor="middle">Stack Pointer: 0x0000_0400 (SRAM)</text>
-  <text x="592" y="545" font-size="13" fill="#222222" text-anchor="middle">Native 32-bit Memory Bus</text>
+  <!-- rdm6300_rx_i Pin Wire -->
+  <path d="M 1530 400 L 1300 400" stroke="#000000" stroke-width="2" fill="none" marker-end="url(#arr_end)" />
+  <text x="1415" y="392" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">rdm6300_rx_i</text>
 
-  <!-- ===================================================================== -->
-  <!-- 7. SLAVE 2: RDM6300 RFID MMIO MODULE (rtl/rdm6300_mmio.v)             -->
-  <!-- ===================================================================== -->
-  <rect x="770" y="230" width="625" height="245" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
-  <rect x="770" y="230" width="625" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
-  <text x="1082" y="250" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 2: rtl/rdm6300/rdm6300_mmio.v (RFID MMIO Peripheral Module)</text>
-  <text x="1082" y="266" font-size="12" font-weight="bold" fill="#333333" text-anchor="middle">MMIO Address: 0x1000_0000 - 0x1000_0008 | Bus Select: sel_rfid</text>
+  <!-- 8. SLAVE 3: HOST PC UART MMIO -->
+  <rect x="930" y="510" width="370" height="180" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="1115" y="538" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 3: Host PC UART MMIO &amp; FIFOs</text>
+  <text x="1115" y="558" font-size="13.5" font-weight="bold" fill="#000000" text-anchor="middle">u_host_uart (rtl/uart/uart_mmio.v)</text>
+  <line x1="945" y1="568" x2="1285" y2="568" stroke="#000000" stroke-width="1.2" />
+  <text x="945" y="590" font-size="12" font-weight="bold" fill="#000000">• Bus Select:</text>
+  <text x="1030" y="590" font-size="12" fill="#222222">sel_uart (cpu_mem_addr[31:28] == 4'h3)</text>
+  <text x="945" y="612" font-size="12" font-weight="bold" fill="#000000">• REG_PC_UART_DIV:</text>
+  <text x="1095" y="612" font-size="12" fill="#222222">0x3000_0000 (Baud=5208)</text>
+  <text x="945" y="634" font-size="12" font-weight="bold" fill="#000000">• REG_PC_UART_DAT:</text>
+  <text x="1095" y="634" font-size="12" fill="#222222">0x3000_0004 (Đọc RX / Ghi TX)</text>
+  <text x="945" y="656" font-size="12" font-weight="bold" fill="#000000">• Chân ngoại vi:</text>
+  <text x="1055" y="656" font-size="12" fill="#222222">uart_rx_i &amp; uart_tx_o</text>
+  <text x="945" y="678" font-size="12" font-weight="bold" fill="#000000">• Phản hồi Bus:</text>
+  <text x="1055" y="678" font-size="12" fill="#222222">uart_ready = 1 (1 chu kỳ clock)</text>
 
-  <!-- RFID Submodules -->
-  <rect x="785" y="285" width="130" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="850" y="320" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">MMIO Registers</text>
-  <text x="850" y="338" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(in rdm6300_mmio.v)</text>
-  <line x1="795" y1="350" x2="905" y2="350" stroke="#aaaaaa" />
-  <text x="850" y="375" font-size="11.5" fill="#222222" text-anchor="middle">STATUS (0x0)</text>
-  <text x="850" y="395" font-size="11.5" fill="#222222" text-anchor="middle">TAG_HI (0x4)</text>
-  <text x="850" y="415" font-size="11.5" fill="#222222" text-anchor="middle">TAG_LO (0x8)</text>
-  <text x="850" y="445" font-size="11.5" font-weight="bold" fill="#000000" text-anchor="middle">card_valid_o</text>
-
-  <rect x="930" y="285" width="145" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1002" y="325" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">rdm6300_</text>
-  <text x="1002" y="345" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">frame_decoder</text>
-  <text x="1002" y="365" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(frame_decoder.v)</text>
-  <line x1="945" y1="375" x2="1060" y2="375" stroke="#aaaaaa" />
-  <text x="1002" y="400" font-size="11" fill="#333333" text-anchor="middle">14-Byte ASCII Frame</text>
-  <text x="1002" y="420" font-size="11" fill="#333333" text-anchor="middle">1-Cycle XOR Check</text>
-  <text x="1002" y="440" font-size="11" fill="#333333" text-anchor="middle">Watchdog 10ms</text>
-
-  <rect x="1090" y="285" width="115" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1147" y="325" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">uart_rx</text>
-  <text x="1147" y="345" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/rdm6300/uart_rx.v)</text>
-  <line x1="1105" y1="365" x2="1190" y2="365" stroke="#aaaaaa" />
-  <text x="1147" y="395" font-size="11.5" fill="#333333" text-anchor="middle">9600 Baud</text>
-  <text x="1147" y="415" font-size="11.5" fill="#333333" text-anchor="middle">8-N-1 UART</text>
-  <text x="1147" y="435" font-size="11.5" fill="#333333" text-anchor="middle">Majority Sampler</text>
-
-  <rect x="1220" y="285" width="130" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1285" y="325" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_2ff</text>
-  <text x="1285" y="345" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/core/sync_2ff.v)</text>
-  <line x1="1235" y1="365" x2="1335" y2="365" stroke="#aaaaaa" />
-  <text x="1285" y="395" font-size="11.5" fill="#333333" text-anchor="middle">2-FF CDC</text>
-  <text x="1285" y="415" font-size="11.5" fill="#333333" text-anchor="middle">Synchronizer</text>
-  <text x="1285" y="435" font-size="11.5" fill="#333333" text-anchor="middle">MTBF &gt; 1000 Yrs</text>
-
-  <!-- RFID Signal Connections -->
-  <g stroke="#000000" stroke-width="1.8" fill="none">
-    <path d="M 1530 372 L 1350 372" marker-end="url(#arr_end)" />
-    <path d="M 1220 372 L 1205 372" marker-end="url(#arr_end)" />
-    <path d="M 1090 372 L 1075 372" marker-end="url(#arr_end)" />
-    <path d="M 930 372 L 915 372" marker-end="url(#arr_end)" />
+  <!-- Host UART Wires -->
+  <g stroke="#000000" stroke-width="2" fill="none">
+    <path d="M 1530 565 L 1300 565" marker-end="url(#arr_end)" />
+    <path d="M 1300 635 L 1530 635" marker-end="url(#arr_end)" />
   </g>
-  <rect x="1385" y="347" width="125" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
-  <text x="1447" y="364" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">rdm6300_rx_i</text>
+  <text x="1415" y="557" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_rx_i</text>
+  <text x="1415" y="627" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_tx_o</text>
 
-  <!-- ============================================================= -->
-  <!-- 8. SLAVE 3: HOST PC UART MMIO MODULE (rtl/host_uart_mmio.v)    -->
-  <!-- ============================================================= -->
-  <rect x="770" y="500" width="625" height="245" fill="#ffffff" stroke="#000000" stroke-width="2.2" />
-  <rect x="770" y="500" width="625" height="42" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
-  <text x="1082" y="520" font-size="16" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 3: rtl/host/host_uart_mmio.v (Host PC UART MMIO Peripheral Module)</text>
-  <text x="1082" y="536" font-size="12" font-weight="bold" fill="#333333" text-anchor="middle">MMIO Address: 0x3000_0000 - 0x3000_0004 | Bus Select: sel_uart</text>
+  <!-- 9. SLAVE 4: GPIO MMIO MODULE -->
+  <rect x="525" y="710" width="775" height="90" fill="#ffffff" stroke="#000000" stroke-width="2" />
+  <text x="912" y="738" font-size="15.5" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 4: GPIO MMIO Module (rtl/core/soc_gpio_mmio.v)</text>
+  <text x="912" y="758" font-size="12.5" font-weight="bold" fill="#222222" text-anchor="middle">Địa chỉ REG_GPIO_LEDS: 0x4000_0000 (sel_gpio = 1) | Ngõ ra phần cứng: leds_o[15:0]</text>
+  <text x="912" y="782" font-size="11.5" fill="#444444" text-anchor="middle">Bit 0: Nhịp tim Alive (1Hz) | Bit 1: Cảnh báo Denied | Bit 2: Mở chốt cửa Granted | Bit 3: Flash Busy</text>
 
-  <!-- UART Submodules -->
-  <rect x="785" y="555" width="130" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="850" y="590" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">UART MMIO</text>
-  <text x="850" y="608" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(in host_uart_mmio.v)</text>
-  <line x1="795" y1="620" x2="905" y2="620" stroke="#aaaaaa" />
-  <text x="850" y="645" font-size="11.5" fill="#222222" text-anchor="middle">DIV (0x3000_0000)</text>
-  <text x="850" y="665" font-size="11.5" fill="#222222" text-anchor="middle">DAT (0x3000_0004)</text>
-  <text x="850" y="695" font-size="11" fill="#333333" text-anchor="middle">FIFO Control</text>
-  <text x="850" y="715" font-size="11" fill="#333333" text-anchor="middle">1-Cycle Ready</text>
+  <!-- LEDs Wire -->
+  <path d="M 1300 755 L 1530 755" stroke="#000000" stroke-width="2" fill="none" marker-end="url(#arr_end)" />
+  <text x="1415" y="747" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">leds_o[15:0]</text>
 
-  <rect x="930" y="555" width="135" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="997" y="595" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">sync_fifo (x2)</text>
-  <text x="997" y="615" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/host/sync_fifo.v)</text>
-  <line x1="945" y1="628" x2="1050" y2="628" stroke="#aaaaaa" />
-  <text x="997" y="655" font-size="11.5" fill="#333333" text-anchor="middle">32-Byte RX FIFO</text>
-  <text x="997" y="675" font-size="11.5" fill="#333333" text-anchor="middle">32-Byte TX FIFO</text>
-  <text x="997" y="705" font-size="11.5" font-weight="bold" fill="#000000" text-anchor="middle">Zero Packet Drop</text>
-
-  <rect x="1080" y="555" width="140" height="175" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1150" y="595" font-size="14.5" font-weight="bold" fill="#000000" text-anchor="middle">simpleuart</text>
-  <text x="1150" y="615" font-size="9.5" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/host/simpleuart.v)</text>
-  <line x1="1095" y1="628" x2="1205" y2="628" stroke="#aaaaaa" />
-  <text x="1150" y="655" font-size="11.5" fill="#333333" text-anchor="middle">Full-Duplex UART</text>
-  <text x="1150" y="675" font-size="11.5" fill="#333333" text-anchor="middle">TX / RX Core</text>
-  <text x="1150" y="705" font-size="11.5" fill="#333333" text-anchor="middle">Baud Divisor 5208</text>
-
-  <rect x="1235" y="555" width="120" height="80" fill="#ffffff" stroke="#000000" stroke-width="1.6" />
-  <text x="1295" y="588" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">sync_2ff</text>
-  <text x="1295" y="608" font-size="9.5" fill="#444444" text-anchor="middle">(rtl/core/sync_2ff.v)</text>
-  <text x="1295" y="624" font-size="10.5" fill="#444444" text-anchor="middle">CDC Sync</text>
-
-  <!-- UART Internal & External Signal Lines -->
-  <g stroke="#000000" stroke-width="1.8" fill="none">
-    <path d="M 1530 595 L 1355 595" marker-end="url(#arr_end)" />
-    <path d="M 1235 595 L 1220 595" marker-end="url(#arr_end)" />
-    <path d="M 915 642 L 930 642" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
-    <path d="M 1065 642 L 1080 642" marker-start="url(#arr_start)" marker-end="url(#arr_end)" />
-    <path d="M 1220 680 L 1530 680" marker-end="url(#arr_end)" />
+  <!-- 10. SYSTEM MEMORY BUS INTERCONNECTIONS -->
+  <g stroke="#000000" stroke-width="4.5" fill="none">
+    <path d="M 525 165 L 460 165" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
+    <path d="M 1175 165 L 1240 165" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
+    <path d="M 700 290 L 700 315" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
+    <path d="M 890 400 L 930 400" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
+    <path d="M 890 600 L 930 600" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
+    <path d="M 700 690 L 700 710" marker-end="url(#bus_head_end)" />
   </g>
-  <rect x="1395" y="570" width="105" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
-  <text x="1447" y="587" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_rx_i</text>
-  <rect x="1395" y="655" width="105" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
-  <text x="1447" y="672" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">uart_tx_o</text>
+  <text x="492" y="152" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">sel_spimem</text>
+  <text x="1207" y="152" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">sel_sram</text>
+  <text x="715" y="306" font-size="11" font-weight="bold" fill="#000000" text-anchor="start">cpu_mem_bus</text>
+  <text x="910" y="390" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">sel_rfid</text>
+  <text x="910" y="590" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">sel_uart</text>
+  <text x="715" y="703" font-size="11" font-weight="bold" fill="#000000" text-anchor="start">sel_gpio</text>
 
-  <!-- ============================================================= -->
-  <!-- 9. SLAVE 4: GPIO MMIO MODULE (rtl/soc_gpio_mmio.v)             -->
-  <!-- ============================================================= -->
-  <rect x="475" y="695" width="235" height="115" fill="#ffffff" stroke="#000000" stroke-width="2" />
-  <text x="592" y="722" font-size="14" font-weight="bold" fill="#000000" text-anchor="middle">SLAVE 4: GPIO MMIO</text>
-  <text x="592" y="738" font-size="11" font-weight="bold" fill="#444444" text-anchor="middle">(rtl/core/soc_gpio_mmio.v)</text>
-  <text x="592" y="755" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">0x4000_0000 (16-bit LED Driver)</text>
-  <line x1="495" y1="763" x2="690" y2="763" stroke="#aaaaaa" />
-  <text x="592" y="780" font-size="10.5" fill="#222222" text-anchor="middle">16-bit Output Driver</text>
-  <text x="592" y="798" font-size="10" fill="#444444" text-anchor="middle">Heartbeat (1Hz), Flash Busy, Card Valid</text>
+  <!-- 11. BOTTOM ARCHITECTURAL SUMMARY BANNER -->
+  <rect x="255" y="820" width="1260" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.5" />
+  <text x="885" y="842" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)</text>
+  <text x="885" y="860" font-size="11.5" font-weight="600" fill="#333333" text-anchor="middle">Liên kết bus trung tâm soc_interconnect.v định tuyến trong suốt: Flash XIP (0x0010_0000), 1KB SRAM (0x0000_0000), RFID UART MMIO (0x1000_0000), Host UART MMIO (0x3000_0000), GPIO MMIO (0x4000_0000)</text>
 
-  <!-- leds_o[15:0] -->
-  <path d="M 710 752 L 1530 752" stroke="#000000" stroke-width="1.8" fill="none" marker-end="url(#arr_end)" />
-  <rect x="1390" y="729" width="115" height="25" fill="#ffffff" stroke="#000000" stroke-width="1.2" />
-  <text x="1447" y="746" font-size="13" font-weight="bold" fill="#000000" text-anchor="middle">leds_o[15:0]</text>
-
-  <!-- ============================================================= -->
-  <!-- 10. SYSTEM MEMORY BUS INTERCONNECTIONS (THICK SOLID BLACK ARROWS) -->
-  <!-- ============================================================= -->
-  <!-- Bus <-> SPIMEMIO (Slave 1) -->
-  <path d="M 475 132 L 450 132" stroke="#000000" stroke-width="4.5" fill="none" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
-
-  <!-- Bus <-> 1KB SRAM (Slave 0) -->
-  <path d="M 1085 132 L 1115 132" stroke="#000000" stroke-width="4.5" fill="none" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
-
-  <!-- Bus <-> PicoRV32 CPU (Master) -->
-  <path d="M 592 195 L 592 230" stroke="#000000" stroke-width="4.5" fill="none" marker-start="url(#bus_head_start)" marker-end="url(#bus_head_end)" />
-  <rect x="507" y="203" width="170" height="20" fill="#ffffff" stroke="#000000" stroke-width="1" />
-  <text x="592" y="217" font-size="11" font-weight="bold" fill="#000000" text-anchor="middle">CPU Memory Bus (MMIO)</text>
-
-  <!-- Bus Trunk from Interconnect to Peripherals (Vertical Bus Backbone) -->
-  <path d="M 740 195 L 740 735" stroke="#000000" stroke-width="4.5" fill="none" />
-  <!-- Branch to RFID Subsystem (Slave 2) -->
-  <path d="M 740 372 L 785 372" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
-
-  <!-- Branch to Host PC UART Subsystem (Slave 3) -->
-  <path d="M 740 642 L 785 642" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
-
-  <!-- Branch to GPIO Status LEDs (Slave 4) -->
-  <path d="M 740 735 L 710 735" stroke="#000000" stroke-width="4.5" fill="none" marker-end="url(#bus_head_end)" />
-
-  <!-- Corner junction dots on Bus Backbone -->
-  <circle cx="740" cy="195" r="4.5" fill="#000000" />
-  <circle cx="740" cy="372" r="4.5" fill="#000000" />
-  <circle cx="740" cy="642" r="4.5" fill="#000000" />
-  <circle cx="740" cy="735" r="4.5" fill="#000000" />
-
-  <!-- ============================================================= -->
-  <!-- 11. BOTTOM ARCHITECTURAL SUMMARY BANNER                               -->
-  <!-- ============================================================= -->
-  <rect x="475" y="825" width="920" height="50" fill="#ffffff" stroke="#000000" stroke-width="1.8" />
-  <text x="935" y="846" font-size="13.5" font-weight="bold" fill="#000000" text-anchor="middle">Top-Level Modular SoC Architecture (rtl/rdm6300_picorv32_soc.v)</text>
-  <text x="935" y="865" font-size="11.5" font-weight="bold" fill="#222222" text-anchor="middle">Khu vực 1: rtl/core/ (CPU, SRAM, Flash, Interconnect, GPIO) | Khu vực 2: rtl/rdm6300/ (RFID MMIO) | Khu vực 3: rtl/host/ (Host UART)</text>
-
-</svg>
-'''
+</svg>'''
     return svg
 
 def main():
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-
-    # 1. Generate Draw.io XML file (.drawio) in temp folders
-    drawio_content = create_drawio_xml()
+    
+    # 1. Generate Draw.io XML
+    xml_content = create_drawio_xml()
     drawio_path = os.path.join(root_dir, "document", "temp", "rdm6300_picorv32_soc_complete_diagram.drawio")
     with open(drawio_path, "w", encoding="utf-8") as f:
-        f.write(drawio_content)
-    # Also save as fig1_block_diagram.drawio in temp folders
-    shutil.copyfile(drawio_path, os.path.join(root_dir, "document", "temp", "fig1_block_diagram.drawio"))
-    shutil.copyfile(drawio_path, os.path.join(root_dir, "temp", "fig1_block_diagram.drawio"))
-    shutil.copyfile(drawio_path, os.path.join(root_dir, "temp", "rdm6300_picorv32_soc_complete_diagram.drawio"))
-    print(f"[SUCCESS] Wrote B&W Draw.io XML to: {drawio_path}")
+        f.write(xml_content)
+    print(f"[SUCCESS] Generated Draw.io XML: {drawio_path}")
 
-    # 2. Generate Vector SVG file (.svg) in temp folders
+    # 2. Generate Clean Vector SVG
     svg_content = generate_svg()
     svg_path = os.path.join(root_dir, "document", "temp", "rdm6300_picorv32_soc_complete_diagram.svg")
     with open(svg_path, "w", encoding="utf-8") as f:
         f.write(svg_content)
-    shutil.copyfile(svg_path, os.path.join(root_dir, "temp", "rdm6300_picorv32_soc_complete_diagram.svg"))
-    print(f"[SUCCESS] Wrote B&W SVG to: {svg_path}")
+    print(f"[SUCCESS] Generated Vector SVG: {svg_path}")
 
-    # 3. Create HTML wrapper for Headless Chrome rendering
+    # 3. Create standalone HTML wrapper for headless rendering
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"/>
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
   body {{
-    background: #ffffff;
+    background-color: #ffffff;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0;
     width: 1580px;
     height: 920px;
   }}

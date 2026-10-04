@@ -35,7 +35,7 @@ cd ..
 
 echo.
 echo ======================================================================
-echo   [2/4] Building Basys 3 FPGA Bitstream with Vivado (14 RTL Modules)...
+echo   [2/4] Building Basys 3 FPGA Bitstream with Vivado (Unified RTL Modules)...
 echo ======================================================================
 cd fpga
 call generate_bitstream.bat

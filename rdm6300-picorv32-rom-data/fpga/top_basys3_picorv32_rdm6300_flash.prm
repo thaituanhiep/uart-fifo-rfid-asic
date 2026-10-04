@@ -8,5 +8,5 @@ Start Address      0x00000000
 End Address        0x003FFFFF
 
 Addr1         Addr2         Date                    File(s)
-0x00000000    0x000D4097    Oct  2 13:03:40 2026    ./top_basys3_picorv32_rdm6300.bit
-0x00250000    0x002516D7    Oct  2 13:02:00 2026    D:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/firmware/firmware.bin
+0x00000000    0x00093E1B    Oct  3 08:04:24 2026    ./top_basys3_picorv32_rdm6300.bit
+0x00250000    0x00251BCB    Oct  3 08:02:27 2026    D:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/firmware/firmware.bin
