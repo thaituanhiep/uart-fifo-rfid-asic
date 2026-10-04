@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #ffffff;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    padding: 24px;
+    width: 1560px;
+    height: 1040px;
+    position: relative;
+    overflow: hidden;
+  }
+  .diagram-container {
+    width: 1512px;
+    height: 992px;
+    border: 2.5px solid #0f172a;
+    border-radius: 12px;
+    background: #ffffff;
+    position: relative;
+    padding: 16px 20px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  }
+  .title-banner {
+    text-align: center;
+    border-bottom: 2px solid #cbd5e1;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  .title-banner h1 {
+    font-size: 23px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .title-banner p {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #475569;
+    margin-top: 3px;
+  }
+  .card {
+    position: absolute;
+    border-radius: 10px;
+    border: 2px solid;
+    padding: 12px 14px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    background: #ffffff;
+  }
+  .card-title {
+    font-size: 16.5px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-subtitle {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  /* CPU Master */
+  .card-cpu {
+    left: 20px;
+    top: 75px;
+    width: 330px;
+    height: 480px;
+    border-color: #2563eb;
+    background: #f8faff;
+  }
+  .card-cpu .card-title { color: #1e3a8a; }
+  .card-cpu .card-subtitle { color: #2563eb; }
+
+  /* Interconnect */
+  .card-ic {
+    left: 380px;
+    top: 75px;
+    width: 440px;
+    height: 480px;
+    border-color: #ea580c;
+    background: #fffaf5;
+  }
+  .card-ic .card-title { color: #9a3412; }
+  .card-ic .card-subtitle { color: #ea580c; }
+
+  /* Slaves */
+  .card-sram {
+    left: 850px;
+    top: 75px;
+    width: 370px;
+    height: 90px;
+    border-color: #10b981;
+    background: #f0fdf4;
+  }
+  .card-spimem {
+    left: 850px;
+    top: 175px;
+    width: 370px;
+    height: 125px;
+    border-color: #4f46e5;
+    background: #f5f3ff;
+  }
+  .card-rfid {
+    left: 850px;
+    top: 310px;
+    width: 370px;
+    height: 75px;
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+  .card-host {
+    left: 850px;
+    top: 395px;
+    width: 370px;
+    height: 75px;
+    border-color: #06b6d4;
+    background: #ecfeff;
+  }
+  .card-gpio {
+    left: 850px;
+    top: 480px;
+    width: 370px;
+    height: 75px;
+    border-color: #64748b;
+    background: #f8fafc;
+  }
+
+  /* External peripherals */
+  .card-ext-flash {
+    left: 1245px;
+    top: 180px;
+    width: 245px;
+    height: 115px;
+    border-color: #c026d3;
+    background: #fdf4ff;
+  }
+  .card-ext-rdm {
+    left: 1245px;
+    top: 315px;
+    width: 245px;
+    height: 65px;
+    border-color: #d97706;
+    background: #fffbeb;
+  }
+  .card-ext-pc {
+    left: 1245px;
+    top: 400px;
+    width: 245px;
+    height: 65px;
+    border-color: #0891b2;
+    background: #f0fdfa;
+  }
+  .card-ext-led {
+    left: 1245px;
+    top: 485px;
+    width: 245px;
+    height: 65px;
+    border-color: #475569;
+    background: #f1f5f9;
+  }
+
+  /* Bottom Container */
+  .bottom-box {
+    position: absolute;
+    left: 20px;
+    top: 575px;
+    width: 1470px;
+    height: 395px;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 12px 18px;
+  }
+  .bottom-header {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .wf-step {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1.5px solid;
+    padding: 12px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .wf-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .wf-desc {
+    font-size: 12px;
+    color: #334155;
+    line-height: 1.5;
+  }
+  .code-inline {
+    font-family: Consolas, monospace;
+    font-size: 11px;
+    background: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #0f172a;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="diagram-container">
+  <!-- Title -->
+  <div class="title-banner">
+    <h1>Kiến Trúc Bus soc_interconnect.v &amp; Cơ Chế Thực Thi Bare-Metal C</h1>
+    <p>Giải mã không gian địa chỉ, điều phối bộ nhớ Flash XIP / 1KB SRAM và cầu nối ngoại vi MMIO cho CPU PicoRV32</p>
+  </div>
+
+  <!-- CPU Master -->
+  <div class="card card-cpu">
+    <div class="card-title">
+      <span>CPU Master: PicoRV32</span>
+      <span class="badge" style="background:#dbeafe;color:#1e40af;">RV32IMC</span>
+    </div>
+    <div class="card-subtitle">Nhân RISC-V 32-bit thực thi trực tiếp</div>
+    <div style="font-size:12px;color:#334155;line-height:1.6;margin-top:8px;">
+      <div><b>• PROGADDR_RESET:</b> <span class="code-inline">0x0025_0000</span> (Flash XIP)</div>
+      <div><b>• Stack Pointer (sp):</b> <span class="code-inline">0x0000_0400</span> (Đỉnh SRAM)</div>
+      <div style="margin-top:10px;padding:8px;background:#eff6ff;border-radius:6px;border:1px dashed #93c5fd;">
+        <b>Tín hiệu Bus Native PicoRV32:</b><br>
+        <span style="color:#2563eb;"><b>&gt; cpu_mem_valid:</b> Kích hoạt chu kỳ bus (1 bit)</span><br>
+        <span style="color:#2563eb;"><b>&gt; cpu_mem_addr[31:0]:</b> Địa chỉ bộ nhớ truy cập</span><br>
+        <span style="color:#2563eb;"><b>&gt; cpu_mem_wdata[31:0]:</b> Dữ liệu ghi ra từ CPU</span><br>
+        <span style="color:#2563eb;"><b>&gt; cpu_mem_wstrb[3:0]:</b> Mặt nạ ghi từng byte</span><br>
+        <span style="color:#059669;"><b>&lt; cpu_mem_rdata[31:0]:</b> Dữ liệu đọc trả về CPU</span><br>
+        <span style="color:#059669;"><b>&lt; cpu_mem_ready:</b> Tín hiệu báo hoàn tất chu kỳ</span>
+      </div>
+      <div style="margin-top:10px;font-size:11.5px;color:#475569;">
+        CPU tự động dừng (stall) cho đến khi ngoại vi hoặc bộ nhớ kéo <b>cpu_mem_ready = 1</b>.
+      </div>
+    </div>
+  </div>
+
+  <!-- Interconnect -->
+  <div class="card card-ic">
+    <div class="card-title">
+      <span>soc_interconnect.v</span>
+      <span class="badge" style="background:#ffedd5;color:#c2410c;">Central Bus</span>
+    </div>
+    <div class="card-subtitle">Bộ giải mã địa chỉ &amp; Ghép kênh tín hiệu trả về</div>
+    <div style="font-size:12px;color:#334155;line-height:1.55;margin-top:6px;">
+      <b>1. Logic giải mã địa chỉ (Range &amp; Prefix Decoding):</b>
+      <div style="background:#fff7ed;padding:6px 8px;border-radius:6px;border:1px solid #fed7aa;margin:4px 0;font-family:Consolas,monospace;font-size:11px;">
+        sel_sram   = cpu_mem_valid &amp;&amp; (addr &lt; 32'h0000_0400);<br>
+        sel_spimem = cpu_mem_valid &amp;&amp; (addr &gt;= 0x0010_0000 &amp;&amp; addr &lt; 0x0100_0000);<br>
+        sel_spicfg = cpu_mem_valid &amp;&amp; (addr == 32'h0200_0000);<br>
+        sel_rfid   = cpu_mem_valid &amp;&amp; (addr[31:28] == 4'h1);<br>
+        sel_uart   = cpu_mem_valid &amp;&amp; (addr[31:28] == 4'h3);<br>
+        sel_gpio   = cpu_mem_valid &amp;&amp; (addr[31:28] == 4'h4);
+      </div>
+      <b>2. Bộ ghép kênh dữ liệu đọc (cpu_mem_rdata Mux):</b>
+      <div style="background:#fff7ed;padding:6px 8px;border-radius:6px;border:1px solid #fed7aa;margin:4px 0;font-family:Consolas,monospace;font-size:11px;">
+        cpu_mem_rdata = sel_sram   ? sram_rdata    :<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sel_spimem ? spimem_rdata  :<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sel_spicfg ? spimem_cfg_do :<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sel_rfid   ? rfid_rdata    :<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sel_uart   ? uart_rdata    :<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sel_gpio   ? gpio_rdata    : 32'd0;
+      </div>
+      <b>3. Bộ tổng hợp tín hiệu sẵn sàng (cpu_mem_ready OR):</b>
+      <div style="background:#fff7ed;padding:4px 8px;border-radius:6px;border:1px solid #fed7aa;margin:4px 0;font-family:Consolas,monospace;font-size:11px;">
+        cpu_mem_ready = sram_ready | spimem_ready | sel_spicfg | rfid_ready | uart_ready | gpio_ready;
+      </div>
+    </div>
+  </div>
+
+  <!-- Slaves -->
+  <!-- Slave 0: SRAM -->
+  <div class="card card-sram">
+    <div class="card-title">
+      <span style="color:#065f46;font-size:14.5px;">Slave 0: 1KB Data SRAM (data_sram.v)</span>
+      <span class="badge" style="background:#d1fae5;color:#047857;">1 Cycle Latency</span>
+    </div>
+    <div style="font-size:11.5px;color:#064e3b;line-height:1.4;">
+      <b>Dải địa chỉ:</b> <span class="code-inline">0x0000_0000 - 0x0000_03FF</span><br>
+      • Chứa Stack frames C, biến cục bộ, mảng dữ liệu tạm thời, .bss, .data.<br>
+      • Tốc độ 1 chu kỳ xung nhịp (<span class="code-inline">sram_ready = 1</span>), chạy buffer <span class="code-inline">flashio_worker</span>.
+    </div>
+  </div>
+
+  <!-- Slave 1: SPI Flash -->
+  <div class="card card-spimem">
+    <div class="card-title">
+      <span style="color:#1e40af;font-size:14.5px;">Slave 1 &amp; 1b: SPI Flash XIP &amp; Config (spimemio.v)</span>
+      <span class="badge" style="background:#e0e7ff;color:#3730a3;">XIP SPI Bus</span>
+    </div>
+    <div style="font-size:11px;color:#1e3a8a;line-height:1.4;">
+      <b>Dải địa chỉ:</b> <span class="code-inline">0x0010_0000 - 0x00FF_FFFF</span> &amp; <span class="code-inline">0x0200_0000 (CFG)</span><br>
+      • <b>XIP Firmware (.text):</b> Bắt đầu tại <span class="code-inline">0x0025_0000</span> (Vector Reset Boot).<br>
+      • <b>Whitelist DB:</b> Sector 48 (<span class="code-inline">0x0030_0000</span>, 64KB, tối đa 4096 thẻ).<br>
+      • <b>Access Logs:</b> Sector 49 (<span class="code-inline">0x0031_0000</span>, 64KB, 512 bản ghi vào ra).<br>
+      • <b>SPICFG (0x0200_0000):</b> Thanh ghi cấu hình bitbang ghi/xóa Flash từ SRAM.
+    </div>
+  </div>
+
+  <!-- Slave 2: RFID UART -->
+  <div class="card card-rfid">
+    <div class="card-title">
+      <span style="color:#92400e;font-size:14px;">Slave 2: RDM6300 RFID UART Peripheral</span>
+      <span class="badge" style="background:#fef3c7;color:#b45309;">FIFO 32B</span>
+    </div>
+    <div style="font-size:11px;color:#78350f;line-height:1.4;">
+      <b>Địa chỉ:</b> <span class="code-inline">0x1000_0000 (DIV)</span> | <span class="code-inline">0x1000_0004 (DAT)</span><br>
+      Baud divider = 5208 (9600 baud @ 50MHz). Đọc DAT lấy byte từ RX FIFO. Trả về <span class="code-inline">0xFFFFFFFF</span> nếu rỗng.
+    </div>
+  </div>
+
+  <!-- Slave 3: Host UART -->
+  <div class="card card-host">
+    <div class="card-title">
+      <span style="color:#0e7490;font-size:14px;">Slave 3: Host PC UART Peripheral</span>
+      <span class="badge" style="background:#cffafe;color:#0891b2;">Dual FIFO 32B</span>
+    </div>
+    <div style="font-size:11px;color:#155e75;line-height:1.4;">
+      <b>Địa chỉ:</b> <span class="code-inline">0x3000_0000 (DIV)</span> | <span class="code-inline">0x3000_0004 (DAT)</span><br>
+      Giao tiếp 2 chiều với PC Terminal. Ghi DAT nạp vào TX FIFO, đọc DAT lấy byte từ RX FIFO.
+    </div>
+  </div>
+
+  <!-- Slave 4: GPIO LEDs -->
+  <div class="card card-gpio">
+    <div class="card-title">
+      <span style="color:#374151;font-size:14px;">Slave 4: GPIO Status LEDs</span>
+      <span class="badge" style="background:#f1f5f9;color:#334155;">MMIO Output</span>
+    </div>
+    <div style="font-size:11px;color:#1f2937;line-height:1.4;">
+      <b>Địa chỉ:</b> <span class="code-inline">0x4000_0000 (REG_GPIO_LEDS)</span><br>
+      Bit 0: Alive Heartbeat | Bit 1: Access Denied / Warn | Bit 2: Access Granted | Bit 3: Flash Active.
+    </div>
+  </div>
+
+  <!-- External Devices -->
+  <div class="card card-ext-flash">
+    <div class="card-title" style="color:#86198f;font-size:13.5px;">External SPI Flash</div>
+    <div style="font-size:11px;color:#701a75;line-height:1.4;">
+      <b>32Mbit SPI Flash Chip</b><br>
+      W25Q32JV / S25FL032P<br>
+      Tín hiệu 4 chân SPI:<br>
+      <span class="code-inline">CSB, CLK, IO0/MOSI, IO1/MISO</span>
+    </div>
+  </div>
+
+  <div class="card card-ext-rdm">
+    <div class="card-title" style="color:#b45309;font-size:13px;">RDM6300 RFID Module</div>
+    <div style="font-size:10.5px;color:#78350f;">
+      Đầu đọc thẻ 125 kHz EM4100<br>
+      Bắn luồng UART 9600-8-N-1 vào chân RX
+    </div>
+  </div>
+
+  <div class="card card-ext-pc">
+    <div class="card-title" style="color:#0891b2;font-size:13px;">Host PC Console</div>
+    <div style="font-size:10.5px;color:#155e75;">
+      Phần mềm điều khiển Python / C<br>
+      Giao tiếp qua USB-UART Bridge FTDI
+    </div>
+  </div>
+
+  <div class="card card-ext-led">
+    <div class="card-title" style="color:#334155;font-size:13px;">Bo mạch Basys 3 / Relays</div>
+    <div style="font-size:10.5px;color:#475569;">
+      16 LED hiển thị trạng thái phần cứng<br>
+      Chốt Relay kích hoạt cửa ra vào
+    </div>
+  </div>
+
+  <!-- Bottom Workflow -->
+  <div class="bottom-box">
+    <div class="bottom-header">
+      <span style="background:#0f172a;color:#ffffff;padding:2px 8px;border-radius:4px;font-size:12px;">4 BƯỚC</span>
+      <span>CƠ CHẾ KÍCH HOẠT VÀ ĐIỀU PHỐI THỰC THI FIRMWARE C TRÊN PHẦN CỨNG</span>
+    </div>
+    <div class="workflow-grid">
+      <!-- Step 1 -->
+      <div class="wf-step" style="border-color:#3b82f6;">
+        <div class="wf-title" style="color:#1d4ed8;">① Boot XIP Trực Tiếp từ Flash</div>
+        <div class="wf-desc">
+          Khi reset nhả về 0, CPU PicoRV32 nhảy tới vector <span class="code-inline">0x0025_0000</span>. Bộ giải mã <span class="code-inline">soc_interconnect</span> kích hoạt <span class="code-inline">sel_spimem</span>.<br>
+          Bộ điều khiển <span class="code-inline">spimemio</span> tự động phát lệnh đọc 0x03, kéo từng từ lệnh 32-bit từ Flash vào CPU mà không cần nạp vào RAM trước.
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="wf-step" style="border-color:#10b981;">
+        <div class="wf-title" style="color:#047857;">② Khởi Tạo Stack C trên 1KB SRAM</div>
+        <div class="wf-desc">
+          File khởi động <span class="code-inline">start.s</span> gán con trỏ <span class="code-inline">sp = 0x0000_0400</span> (đỉnh SRAM nội).<br>
+          Khi code C gọi hàm hoặc cấp phát biến cục bộ, CPU truy xuất vùng &lt; 0x0400. <span class="code-inline">soc_interconnect</span> kích hoạt <span class="code-inline">sel_sram</span> phản hồi tức thì trong <b>1 chu kỳ</b> (<span class="code-inline">sram_ready = 1</span>), tránh nghẽn bus SPI.
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div class="wf-step" style="border-color:#f59e0b;">
+        <div class="wf-title" style="color:#b45309;">③ Điều Khiển Ngoại Vi Bằng MMIO</div>
+        <div class="wf-desc">
+          Firmware C thao tác với ngoại vi qua con trỏ volatile trong file <span class="code-inline">soc_regs.h</span>.<br>
+          Khi C đọc <span class="code-inline">REG_RFID_UART_DAT</span>, CPU truy cập địa chỉ <span class="code-inline">0x1000_0004</span>. Interconnect giải mã tiền tố <span class="code-inline">0x1</span> bật <span class="code-inline">sel_rfid</span>, lấy byte từ FIFO 32B nhanh chóng mà không làm mất frame thẻ.
+        </div>
+      </div>
+      <!-- Step 4 -->
+      <div class="wf-step" style="border-color:#8b5cf6;">
+        <div class="wf-title" style="color:#7c3aed;">④ Chạy Mã RAM Ghi Flash An Toàn</div>
+        <div class="wf-desc">
+          Bộ nhớ SPI Flash không thể vừa đọc lệnh XIP vừa ghi xóa Sector. Khi cần ghi thẻ mới hoặc lưu log, hàm <span class="code-inline">flashio</span> copy đoạn mã nhỏ <span class="code-inline">flashio_worker</span> lên Stack SRAM.<br>
+          CPU nhảy lên SRAM thực thi, truy cập <span class="code-inline">0x0200_0000 (sel_spicfg)</span> điều khiển SPI bit-bang an toàn 100%.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
