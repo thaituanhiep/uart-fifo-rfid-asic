@@ -58,7 +58,7 @@ def create_stage1():
     ax.text(7.5, 8.0, "SLAVE 1: FLASH CONTROLLER", fontsize=8.5, fontweight='bold', ha='center')
     ax.text(7.5, 7.55, "spimemio.v", fontsize=10, fontweight='bold', family='monospace', ha='center')
     ax.plot([6.0, 9.0], [7.25, 7.25], color='#000000', lw=0.8)
-    ax.text(7.5, 6.9, "• Cơ chế XIP (eXecute-In-Place)\n• Đọc mã lệnh trực tiếp\n• KHÔNG THỂ LƯU STACK C!\n• Giao tiếp SPI Flash ngoài", 
+    ax.text(7.5, 6.9, "• Cơ chế XIP (eXecute-In-Place)\n• Flash ngoài Non-Volatile\n• Chỉ đọc nạp mã lệnh (.text)\n• Giao tiếp SPI Flash W25Q128", 
             fontsize=8.0, ha='center', va='top', linespacing=1.35)
 
     # Khối 3: data_sram (Bổ sung mới)
@@ -66,7 +66,7 @@ def create_stage1():
     ax.text(7.5, 4.0, "[BỔ SUNG MỚI]", fontsize=9, fontweight='bold', color='#000000', ha='center')
     ax.text(7.5, 3.55, "SLAVE 0: data_sram", fontsize=9.5, fontweight='bold', family='monospace', ha='center')
     ax.plot([6.0, 9.0], [3.25, 3.25], color='#000000', lw=0.8)
-    ax.text(7.5, 2.9, "• 1KB On-Chip SRAM (256x32)\n• Phản hồi 1 chu kỳ clock\n• Chứa Stack Pointer (sp)\n• Lưu trữ biến cục bộ & mảng C\n• Cho phép ghi/đọc tức thời", 
+    ax.text(7.5, 2.9, "• 1KB Volatile On-Chip SRAM\n• Bắt buộc dùng RAM cho Stack C\n• Đọc/Ghi 1 chu kỳ (20ns)\n• Độ bền ghi vô hạn (Infinite)\n• Lưu con trỏ sp, .data, .bss", 
             fontsize=8.0, ha='center', va='top', linespacing=1.35)
 
     # Đường nối Bus
@@ -84,7 +84,7 @@ def create_stage1():
 
     # Hộp Callout kết luận dưới cùng
     ax.add_patch(Rectangle((0.8, 0.4), 8.4, 0.65, facecolor='#EEEEEE', edgecolor='#000000', lw=1.0))
-    ax.text(5.0, 0.72, "KẾT LUẬN: Bắt buộc cần 1KB SRAM nội bộ để chương trình C có thể cấp phát Stack & biến!", 
+    ax.text(5.0, 0.72, "KẾT LUẬN: Stack C bắt buộc nằm trong RAM (Volatile) để đọc/ghi tức thời & độ bền vô hạn!", 
             fontsize=7.8, fontweight='bold', ha='center', va='center')
 
     plt.tight_layout()
