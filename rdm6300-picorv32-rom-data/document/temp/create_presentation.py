@@ -107,6 +107,14 @@ def create_deck():
         os.path.join(cur_dir, f"stage{i}_bw_diagram.png") for i in range(1, 6)
     ]
 
+    img_tb_uart_rtl = os.path.join(cur_dir, "waveform_tb_uart_rtl.png")
+    if not os.path.exists(img_tb_uart_rtl):
+        img_tb_uart_rtl = os.path.join(doc_dir, "waveform_tb_uart_rtl.png")
+
+    img_tb_uart_ping = os.path.join(cur_dir, "waveform_tb_uart_ping.png")
+    if not os.path.exists(img_tb_uart_ping):
+        img_tb_uart_ping = os.path.join(doc_dir, "waveform_tb_uart_ping.png")
+
     TOTAL_SLIDES = 26
 
     # Helper: Tiêu đề slide chuẩn hóa
@@ -150,7 +158,7 @@ def create_deck():
         tf_foot = tb_foot.text_frame
         tf_foot.margin_left = tf_foot.margin_top = tf_foot.margin_right = tf_foot.margin_bottom = 0
         p_foot = tf_foot.paragraphs[0]
-        p_foot.text = "Đồ Án Tốt Nghiệp: SoC PicoRV32 RFID RDM6300 & SPI Flash | SV: Thái Tuấn Hiệp | GVHD: ThS. Nguyễn Văn Đông"
+        p_foot.text = "Đồ Án: SoC PicoRV32 RFID RDM6300 & SPI Flash | FPT Jetking Chip Design - SEM3 | HV: Thái Tuấn Hiệp"
         p_foot.font.name = "Segoe UI"
         p_foot.font.size = Pt(9.5)
         p_foot.font.color.rgb = C_TEXT_MUTED
@@ -205,10 +213,10 @@ def create_deck():
             p.font.size = Pt(font_size)
             p.line_spacing = line_spacing
             p.space_after = 0
-            if "[PASS]" in line or "100%" in line or "CONFIRMED" in line or "MET TIMING" in line:
+            if "[PASS]" in line or "100%" in line or "CONFIRMED" in line or "MET TIMING" in line or "[SUCCESS]" in line or "PASSED" in line:
                 p.font.color.rgb = C_GREEN
                 p.font.bold = True
-            elif "[TEST" in line or "[BOOT]" in line or "[EXEC]" in line or "[UART]" in line or "[HOST]" in line:
+            elif "[TEST" in line or "[BOOT]" in line or "[EXEC]" in line or "[UART" in line or "[HOST" in line or "[TB]" in line or "[FLASH" in line:
                 p.font.color.rgb = C_CYAN_ACCENT
                 p.font.bold = True
             elif line.strip().startswith("//") or line.strip().startswith("/*") or line.strip().startswith("*") or line.strip().startswith("#"):
@@ -246,53 +254,54 @@ def create_deck():
     card1.line.color.rgb = C_BLUE_ACCENT
     card1.line.width = Pt(2.0)
 
-    tb1 = s1.shapes.add_textbox(Inches(1.2), Inches(1.05), Inches(10.9), Inches(5.4))
+    tb1 = s1.shapes.add_textbox(Inches(0.95), Inches(1.05), Inches(11.45), Inches(5.4))
     tf1 = tb1.text_frame
     tf1.word_wrap = True
+    tf1.margin_left = tf1.margin_right = Inches(0.05)
 
     p_org = tf1.paragraphs[0]
-    p_org.text = "TRƯỜNG ĐẠI HỌC BÁCH KHOA HÀ NỘI — KHOA ĐIỆN TỬ VIỄN THÔNG"
+    p_org.text = "FPT JETKING — CHIP DESIGN"
     p_org.font.name = "Segoe UI"
-    p_org.font.size = Pt(12)
+    p_org.font.size = Pt(13.5)
     p_org.font.bold = True
     p_org.font.color.rgb = C_CYAN_ACCENT
-    p_org.space_after = Pt(12)
+    p_org.space_after = Pt(16)
 
     p_main = tf1.add_paragraph()
-    p_main.text = "THIẾT KẾ VI HỆ THỐNG TRÊN CHIP (SoC) CHO THIẾT BỊ\nKIỂM SOÁT RA VÀO OFFLINE SỬ DỤNG RFID RDM6300 VÀ SPI FLASH"
+    p_main.text = "THIẾT KẾ HỆ THỐNG XỬ LÝ DỮ LIỆU CỦA THẺ RA VÀO RFID 125KHZ OFFLINE\nTÍCH HỢP CPU RISC-V PICORV32 & XỬ LÝ NGHIỆP VỤ DỮ LIỆU THẺ BẰNG FIRMWARE C"
     p_main.font.name = "Segoe UI"
-    p_main.font.size = Pt(20)
+    p_main.font.size = Pt(17.5)
     p_main.font.bold = True
     p_main.font.color.rgb = C_WHITE
-    p_main.space_after = Pt(14)
-    p_main.line_spacing = 1.15
+    p_main.space_after = Pt(16)
+    p_main.line_spacing = 1.25
 
     p_sub = tf1.add_paragraph()
-    p_sub.text = "Tích hợp CPU RISC-V PicoRV32 | Kiến trúc Boot Flash XIP | Tạo mẫu Basys 3 FPGA | Ký duyệt ASIC OpenLane 2 (SkyWater 130nm)"
+    p_sub.text = "Giao tiếp RFID RDM6300 | Lưu trữ Whitelist SPI Flash NVM | Tạo mẫu Basys 3 FPGA | Ký duyệt ASIC OpenLane 2 (Sky130)"
     p_sub.font.name = "Segoe UI"
-    p_sub.font.size = Pt(11.5)
+    p_sub.font.size = Pt(12)
     p_sub.font.color.rgb = RGBColor(203, 213, 225)
-    p_sub.space_after = Pt(22)
+    p_sub.space_after = Pt(24)
 
     p_info1 = tf1.add_paragraph()
-    p_info1.text = "Sinh viên thực hiện :  Thái Tuấn Hiệp  -  MSSV: 20210328  (Chuyên ngành Kỹ thuật Vi điện tử)"
+    p_info1.text = "Học viên thực hiện :  Thái Tuấn Hiệp"
     p_info1.font.name = "Segoe UI"
-    p_info1.font.size = Pt(12)
+    p_info1.font.size = Pt(13)
     p_info1.font.bold = True
     p_info1.font.color.rgb = C_WHITE
-    p_info1.space_after = Pt(5)
+    p_info1.space_after = Pt(6)
 
     p_info2 = tf1.add_paragraph()
-    p_info2.text = "Giảng viên hướng dẫn :  ThS. Nguyễn Văn Đông  -  Bộ môn Kỹ thuật Máy tính & Vi điện tử"
+    p_info2.text = "Giảng viên hướng dẫn :  ThS. Nguyễn Văn Đông"
     p_info2.font.name = "Segoe UI"
-    p_info2.font.size = Pt(11.5)
+    p_info2.font.size = Pt(12.5)
     p_info2.font.color.rgb = RGBColor(226, 232, 240)
-    p_info2.space_after = Pt(5)
+    p_info2.space_after = Pt(6)
 
     p_info3 = tf1.add_paragraph()
-    p_info3.text = "Thời gian thực hiện :  Học kỳ 2025.2 - 2026.1  |  Địa điểm: Phòng thí nghiệm Thiết kế Vi mạch VLSI"
+    p_info3.text = "Học kỳ :  SEM3  |  Chuyên ngành: Thiết kế Vi mạch Bán dẫn (Chip Design)"
     p_info3.font.name = "Segoe UI"
-    p_info3.font.size = Pt(10.5)
+    p_info3.font.size = Pt(11.5)
     p_info3.font.italic = True
     p_info3.font.color.rgb = RGBColor(148, 163, 184)
 
@@ -1471,62 +1480,106 @@ def create_deck():
     add_header(s20, "Phần 4: Hệ Thống Testbench & Mô Phỏng",
                "Testbench 1: Kiểm Thử Phần Cứng RTL Thuần Cho UART MMIO & FIFO (tb_uart_rtl.v)", 20, total_slides=TOTAL_SLIDES)
 
-    lx12 = Inches(0.8)
-    lw12 = Inches(5.7)
-    add_card(s20, lx12, Inches(1.35), lw12, Inches(5.4), bg_color=C_WHITE, border_color=C_BLUE_ACCENT, border_width=1.5)
-    tb_l12 = s20.shapes.add_textbox(lx12 + Inches(0.2), Inches(1.5), lw12 - Inches(0.4), Inches(5.1))
-    tf_l12 = tb_l12.text_frame
-    tf_l12.word_wrap = True
+    # Khung bên trái: Hình ảnh waveform Vivado xsim
+    card_l20 = add_card(s20, Inches(0.8), Inches(1.35), Inches(5.85), Inches(5.50), bg_color=C_WHITE, border_color=C_BLUE_ACCENT, border_width=1.5)
 
-    pt12 = tf_l12.paragraphs[0]
-    pt12.text = "5 KỊCH BẢN KIỂM THỬ UART RTL THUẦN"
-    pt12.font.name = "Segoe UI"
-    pt12.font.size = Pt(13)
-    pt12.font.bold = True
-    pt12.font.color.rgb = C_BLUE_ACCENT
-    pt12.space_after = Pt(10)
+    tb_lt20 = s20.shapes.add_textbox(Inches(0.95), Inches(1.48), Inches(5.55), Inches(0.28))
+    tf_lt20 = tb_lt20.text_frame
+    tf_lt20.margin_left = tf_lt20.margin_top = tf_lt20.margin_right = tf_lt20.margin_bottom = 0
+    p_lt20 = tf_lt20.paragraphs[0]
+    p_lt20.text = "DẠNG SÓNG MÔ PHỎNG VIVADO XSIM (15.275 µs)"
+    p_lt20.alignment = PP_ALIGN.CENTER
+    p_lt20.font.name = "Segoe UI"
+    p_lt20.font.size = Pt(10.5)
+    p_lt20.font.bold = True
+    p_lt20.font.color.rgb = C_BLUE_ACCENT
+
+    if os.path.exists(img_tb_uart_rtl):
+        # Image aspect ratio 1024x608 = 1.684. Width 5.45" -> Height 3.24"
+        s20.shapes.add_picture(img_tb_uart_rtl, Inches(1.00), Inches(1.78), Inches(5.45), Inches(3.24))
+
+    # Ghi chú phân tích tín hiệu bên dưới waveform
+    add_card(s20, Inches(1.00), Inches(5.12), Inches(5.45), Inches(1.58), bg_color=RGBColor(241, 245, 249), border_color=RGBColor(203, 213, 225), border_width=1.0)
+    tb_lc20 = s20.shapes.add_textbox(Inches(1.12), Inches(5.18), Inches(5.20), Inches(1.46))
+    tf_lc20 = tb_lc20.text_frame
+    tf_lc20.word_wrap = True
+    tf_lc20.margin_left = tf_lc20.margin_top = tf_lc20.margin_right = tf_lc20.margin_bottom = 0
+
+    p_lc1 = tf_lc20.paragraphs[0]
+    p_lc1.text = "ĐẶC TRƯNG TÍN HIỆU TRÊN DẠNG SÓNG (WAVEFORM ANALYSIS):"
+    p_lc1.font.name = "Segoe UI"
+    p_lc1.font.size = Pt(8.2)
+    p_lc1.font.bold = True
+    p_lc1.font.color.rgb = C_BLUE_ACCENT
+    p_lc1.space_after = Pt(2)
+
+    rtl_sig_notes = [
+        "• clk / rst_n: Chu kỳ xung nhịp 10ns (100MHz), reset giải phóng tại t = 100ns.",
+        "• tx_o (Serial TX): Khung truyền 8-N-1 (Start bit 0 -> 8 bit dữ liệu LSB -> Stop bit 1).",
+        "• rx_activity_o & FIFO: Bắt chuỗi xung rx_i, nạp sạch vào FIFO và trả về read_val = 75.",
+        "• err_count = 0: 5/5 kịch bản tự động Assert thành công, kết thúc an toàn tại 15.275 µs."
+    ]
+    for note in rtl_sig_notes:
+        p = tf_lc20.add_paragraph()
+        p.text = note
+        p.font.name = "Segoe UI"
+        p.font.size = Pt(7.6)
+        p.font.color.rgb = C_TEXT_DARK
+        p.line_spacing = 1.12
+
+    # Khung bên phải: 5 kịch bản kiểm thử xác minh chi tiết
+    card_r20 = add_card(s20, Inches(6.80), Inches(1.35), Inches(5.73), Inches(5.50), bg_color=C_WHITE, border_color=C_BLUE_ACCENT, border_width=1.5)
+    tb_r20 = s20.shapes.add_textbox(Inches(7.00), Inches(1.48), Inches(5.33), Inches(4.35))
+    tf_r20 = tb_r20.text_frame
+    tf_r20.word_wrap = True
+    tf_r20.margin_left = tf_r20.margin_top = tf_r20.margin_right = tf_r20.margin_bottom = 0
+
+    pt20 = tf_r20.paragraphs[0]
+    pt20.text = "5 KỊCH BẢN KIỂM THỬ UART RTL THUẦN (100% PASS)"
+    pt20.font.name = "Segoe UI"
+    pt20.font.size = Pt(12.0)
+    pt20.font.bold = True
+    pt20.font.color.rgb = C_BLUE_ACCENT
+    pt20.space_after = Pt(8)
 
     tb_uart_scenarios = [
         ("Mục tiêu:", "Xác minh tính đúng đắn phần cứng của uart_mmio.v, sync_fifo.v và simpleuart.v mà không cần CPU."),
-        ("1. Default Divider:", "Kiểm tra thanh ghi Prescaler tại offset 0x00 nạp đúng giá trị mặc định 5208 (9600 baud @ 50MHz)."),
-        ("2. Divider Reconfig:", "Ghi giá trị chia tần mới và đọc lại qua bus MMIO, xác nhận mạch thanh ghi hoạt động chuẩn xác."),
-        ("3. Serial TX Waveform:", "Ghi ký tự vào offset 0x04, kiểm tra dạng sóng nối tiếp tx_o (Start bit = 0, 8 data bits LSB-first, Stop bit = 1)."),
-        ("4. Serial RX & FIFO:", "Bắn chuỗi bit vào rx_i, cờ rx_activity_o tích cực, kiểm tra dữ liệu nạp vào FIFO và trả về 0xFFFFFFFF khi rỗng."),
-        ("5. Multi-Byte Burst:", "Bắn liên tiếp chuỗi byte kiểm tra cơ chế chống tràn của hàng đợi FIFO 32 byte.")
+        ("1. Default Divider:", "Kiểm tra thanh ghi Prescaler tại offset 0x00 nạp đúng giá trị mặc định TEST_DIV = 16 -> PASS."),
+        ("2. Divider Reconfig:", "Ghi giá trị chia tần mới và đọc lại qua bus MMIO, xác nhận mạch thanh ghi hoạt động chuẩn xác -> PASS."),
+        ("3. Serial TX Frame:", "Ghi ký tự 0x4B ('K' / 75) vào wdata, kiểm tra dạng sóng nối tiếp tx_o đúng chuẩn 8-N-1 -> PASS."),
+        ("4. Serial RX & FIFO:", "Bơm chuỗi bit vào rx_i, cờ rx_activity_o tích cực, dữ liệu nạp sạch vào FIFO và đọc ra read_val = 75 -> PASS."),
+        ("5. Multi-Byte Burst:", "Bắn chuỗi byte kiểm tra cơ chế chống tràn của hàng đợi FIFO, đọc cạn trả về 0xFFFFFFFF (4294967295) -> PASS.")
     ]
 
     for p_lbl, p_val in tb_uart_scenarios:
-        p = tf_l12.add_paragraph()
+        p = tf_r20.add_paragraph()
         p.text = f"• {p_lbl} {p_val}"
         p.font.name = "Segoe UI"
-        p.font.size = Pt(10.5)
+        p.font.size = Pt(9.3)
         p.font.color.rgb = C_TEXT_DARK
-        p.space_after = Pt(8)
+        p.space_after = Pt(5)
         p.line_spacing = 1.15
 
-    rx12 = Inches(6.8)
-    rw12 = Inches(5.73)
-    code_lines_12 = [
-        "Vivado Simulator v2025.1 - xelab & xsim",
-        "Analyzing Verilog file rtl/uart/sync_2ff.v",
-        "Analyzing Verilog file rtl/uart/sync_fifo.v",
-        "Analyzing Verilog file rtl/uart/simpleuart.v",
-        "Analyzing Verilog file rtl/uart/uart_mmio.v",
-        "Analyzing Verilog file tb/tb_uart_rtl.v",
-        "",
-        "[TEST 1] Checking Default Prescaler Divider...",
-        "  [PASS] Prescaler default matches DEFAULT_DIV = 5208",
-        "[TEST 2] Reconfiguring Divider to 10416 (4800 baud)...",
-        "  [PASS] Read-back matches written value 10416",
-        "[TEST 3] Transmitting Byte 0x55 ('U') over TX...",
-        "  [PASS] TX Waveform matches 9600-8-N-1 timing!",
-        "[TEST 4] Receiving Serial Byte 0xA5 into FIFO...",
-        "  [PASS] rx_activity_o asserted! Read 0xA5 cleanly!",
-        "  [PASS] FIFO Empty flag returns 0xFFFFFFFF",
-        "[TEST 5] Multi-Byte Burst Test (16 bytes)...",
-        "  [PASS] All 16 bytes drained without data corruption!"
-    ]
-    add_code_box(s20, rx12, Inches(1.35), rw12, Inches(5.4), "tb/run_sim_uart.bat output", code_lines_12, "=== UART RTL TESTBENCH: 100% PASS ===")
+    # Huy hiệu kết quả thành công bên dưới góc phải
+    add_card(s20, Inches(7.00), Inches(5.98), Inches(5.33), Inches(0.72), bg_color=RGBColor(236, 253, 245), border_color=C_GREEN, border_width=1.5)
+    tb_badge20 = s20.shapes.add_textbox(Inches(7.10), Inches(6.04), Inches(5.13), Inches(0.60))
+    tf_b20 = tb_badge20.text_frame
+    tf_b20.word_wrap = True
+    tf_b20.margin_left = tf_b20.margin_top = tf_b20.margin_right = tf_b20.margin_bottom = 0
+    pb20_1 = tf_b20.paragraphs[0]
+    pb20_1.text = "XÁC NHẬN KẾT QUẢ MÔ PHỎNG VIVADO XSIM:"
+    pb20_1.font.name = "Segoe UI"
+    pb20_1.font.size = Pt(8.2)
+    pb20_1.font.bold = True
+    pb20_1.font.color.rgb = C_GREEN
+    pb20_1.space_after = Pt(1)
+
+    pb20_2 = tf_b20.add_paragraph()
+    pb20_2.text = "100% PASS (5/5 TEST SCENARIOS) | RUNTIME: 15,275 ns | SỐ LỖI: 0"
+    pb20_2.font.name = "Segoe UI"
+    pb20_2.font.size = Pt(8.8)
+    pb20_2.font.bold = True
+    pb20_2.font.color.rgb = RGBColor(6, 95, 70)
 
     # =========================================================================
     # SLIDE 21: PHẦN 4 - HỆ THỐNG TESTBENCH: TOP SOC BOOT & PING (TB_UART_PING.V)
@@ -1535,61 +1588,89 @@ def create_deck():
     add_header(s21, "Phần 4: Hệ Thống Testbench & Mô Phỏng",
                "Testbench 2: Kiểm Thử Tích Hợp Toàn Diện Top SoC Boot Flash & Ping (tb_uart_ping.v)", 21, total_slides=TOTAL_SLIDES)
 
-    lx13 = Inches(0.8)
-    lw13 = Inches(5.7)
-    add_card(s21, lx13, Inches(1.35), lw13, Inches(5.4), bg_color=C_WHITE, border_color=C_GREEN, border_width=1.5)
-    tb_l13 = s21.shapes.add_textbox(lx13 + Inches(0.2), Inches(1.5), lw13 - Inches(0.4), Inches(5.1))
-    tf_l13 = tb_l13.text_frame
-    tf_l13.word_wrap = True
+    # Khung bên trái: Code Testbench chính & Log mô phỏng Vivado XSim
+    lx21 = Inches(0.8)
+    lw21 = Inches(5.85)
+    code_lines_ping = [
+        "// tb/tb_uart_ping.v - Kịch bản kiểm thử tích hợp Top SoC",
+        "initial begin",
+        "    clk = 0; rst_n = 0; rdm6300_rx_i = 1; uart_rx_i = 1;",
+        "    #200; rst_n = 1; // Release Reset -> Boot Flash 0x250000",
+        "    wait(ready_matched == 1'b1); // Đợi CPU phát xong Banner C",
+        "    #100000; send_pc_byte(\"P\");  // PC Host gửi lệnh Ping",
+        "    send_pc_byte(8'h0A);         // Gửi ký tự '\\n'",
+        "    wait(pong_matched == 1'b1);  // Đợi CPU phản hồi chuỗi PONG",
+        "    if (pong_matched && !cpu_trap)",
+        "        $display(\"  [SUCCESS] PING-PONG TEST PASSED!\");",
+        "end",
+        "",
+        "// === VIVADO SIMULATOR (XSIM) EXECUTION OUTPUT LOG ===",
+        "[FLASH MODEL] Loaded 2048 words (8192 bytes) from firmware.hex",
+        "[TB] System Reset released. PicoRV32 booting from 0x250000...",
+        "[UART TX] ================================================",
+        "[UART TX]   RDM6300 PICORV32 SOC ACCESS CONTROLLER READY  ",
+        "[UART TX] ================================================",
+        "[TB] Boot banner detected! Sending 'P' (Ping) command...",
+        "[HOST -> SOC] Sent Byte: 'P' (0x50), '\\n' (0x0A)",
+        "[UART TX] PONG: PicoRV32 Active",
+        "[SUCCESS] PING-PONG TEST PASSED! PicoRV32 responded with PONG.",
+        "cpu_trap = 0 (CPU healthy and executing normally)"
+    ]
+    add_code_box(s21, lx21, Inches(1.35), lw21, Inches(5.50), "tb/tb_uart_ping.v [Testbench Code & Sim Log]", code_lines_ping, status_text="=== BOOT FLASH XIP + UART PING-PONG: 100% PASS | RUNTIME: 2,086.555 µs ===", font_size=7.2, line_spacing=1.10, title_color=RGBColor(52, 211, 153))
 
-    pt13 = tf_l13.paragraphs[0]
-    pt13.text = "5 KỊCH BẢN KIỂM THỬ TÍCH HỢP TOP SOC"
-    pt13.font.name = "Segoe UI"
-    pt13.font.size = Pt(13)
-    pt13.font.bold = True
-    pt13.font.color.rgb = C_GREEN
-    pt13.space_after = Pt(10)
+    # Khung bên phải: 5 kịch bản tích hợp Top SoC chi tiết
+    card_r21 = add_card(s21, Inches(6.80), Inches(1.35), Inches(5.73), Inches(5.50), bg_color=C_WHITE, border_color=C_GREEN, border_width=1.5)
+    tb_r21 = s21.shapes.add_textbox(Inches(7.00), Inches(1.48), Inches(5.33), Inches(4.35))
+    tf_r21 = tb_r21.text_frame
+    tf_r21.word_wrap = True
+    tf_r21.margin_left = tf_r21.margin_top = tf_r21.margin_right = tf_r21.margin_bottom = 0
+
+    pt21 = tf_r21.paragraphs[0]
+    pt21.text = "5 KỊCH BẢN KIỂM THỬ TÍCH HỢP TOP SOC (100% PASS)"
+    pt21.font.name = "Segoe UI"
+    pt21.font.size = Pt(12.0)
+    pt21.font.bold = True
+    pt21.font.color.rgb = C_GREEN
+    pt21.space_after = Pt(8)
 
     tb_soc_scenarios = [
         ("Mục tiêu:", "Xác minh hệ thống Top-level hoàn chỉnh gồm CPU PicoRV32, spimemio, 1KB SRAM, Interconnect và UART."),
         ("1. Power-On Reset & Boot Flash:", "PicoRV32 thức dậy tại 0x0025_0000, spimemio kéo từng từ lệnh mã C từ firmware.hex qua XIP."),
-        ("2. C Startup Banner:", "CPU thực thi mã C trong main.c, khởi tạo ngoại vi và in toàn bộ chuỗi chào mừng ra UART."),
-        ("3. Host Ping Processing:", "Testbench đóng vai trò PC Host gửi byte lệnh 'P' (0x50) và '\n' (0x0A) qua cổng nối tiếp."),
-        ("4. Response Verification:", "CPU phản hồi chuỗi 'PONG: PicoRV32 Active', testbench so khớp từng ký tự."),
-        ("5. CPU Health & Zero-Trap:", "Khẳng định tín hiệu cpu_trap == 0 xuyên suốt quá trình chạy, không bị illegal instruction hay tràn RAM.")
+        ("2. C Startup Banner Output:", "CPU thực thi mã C main.c, khởi tạo ngoại vi và in chuỗi chào mừng ra UART (ready_matched = 1)."),
+        ("3. Host Ping Processing:", "Testbench đóng vai trò PC Host gửi byte lệnh 'P' (0x50) và '\\n' (0x0A) qua chân uart_rx."),
+        ("4. Response Verification:", "CPU nhận dạng lệnh, phản hồi tức thì chuỗi 'PONG: PicoRV32 Active' (pong_matched = 1)."),
+        ("5. CPU Health & Zero-Trap:", "Khẳng định tín hiệu trap == 0 xuyên suốt 2,086,555 ns, CPU không bị illegal instruction hay tràn RAM.")
     ]
 
     for p_lbl, p_val in tb_soc_scenarios:
-        p = tf_l13.add_paragraph()
+        p = tf_r21.add_paragraph()
         p.text = f"• {p_lbl} {p_val}"
         p.font.name = "Segoe UI"
-        p.font.size = Pt(10.5)
+        p.font.size = Pt(9.3)
         p.font.color.rgb = C_TEXT_DARK
-        p.space_after = Pt(8)
+        p.space_after = Pt(5)
         p.line_spacing = 1.15
 
-    rx13 = Inches(6.8)
-    rw13 = Inches(5.73)
-    code_lines_13 = [
-        "Vivado Simulator v2025.1 - xelab & xsim",
-        "Analyzing Verilog file rtl/rdm6300_picorv32_soc.v",
-        "Analyzing Verilog file tb/tb_uart_ping.v",
-        "",
-        "[BOOT] Releasing CPU Reset...",
-        "[BOOT] PicoRV32 woke up at 0x00250000 (Flash XIP)",
-        "[EXEC] Loading instructions from firmware.hex...",
-        "[UART] Detected Startup Banner:",
-        "  ================================================",
-        "    RDM6300 PICORV32 SOC ACCESS CONTROLLER READY  ",
-        "  ================================================",
-        "[HOST] Sending Host Command: 'P' (Ping)...",
-        "[RECV] CPU Response received via UART:",
-        "  PONG: PicoRV32 Active",
-        "[VERIFY] String matches expected response!",
-        "[ASSERT] Checking cpu_trap signal...",
-        "  cpu_trap == 0 (CONFIRMED: ZERO CPU TRAPS!)"
-    ]
-    add_code_box(s21, rx13, Inches(1.35), rw13, Inches(5.4), "tb/run_sim_ping.bat output", code_lines_13, "=== TOP SOC PING TESTBENCH: 100% PASS ===")
+    # Huy hiệu kết quả thành công bên dưới góc phải
+    add_card(s21, Inches(7.00), Inches(5.98), Inches(5.33), Inches(0.72), bg_color=RGBColor(236, 253, 245), border_color=C_GREEN, border_width=1.5)
+    tb_badge21 = s21.shapes.add_textbox(Inches(7.10), Inches(6.04), Inches(5.13), Inches(0.60))
+    tf_b21 = tb_badge21.text_frame
+    tf_b21.word_wrap = True
+    tf_b21.margin_left = tf_b21.margin_top = tf_b21.margin_right = tf_b21.margin_bottom = 0
+    pb21_1 = tf_b21.paragraphs[0]
+    pb21_1.text = "XÁC NHẬN KẾT QUẢ MÔ PHỎNG VIVADO XSIM:"
+    pb21_1.font.name = "Segoe UI"
+    pb21_1.font.size = Pt(8.2)
+    pb21_1.font.bold = True
+    pb21_1.font.color.rgb = C_GREEN
+    pb21_1.space_after = Pt(1)
+
+    pb21_2 = tf_b21.add_paragraph()
+    pb21_2.text = "100% PASS (BOOT XIP + PING-PONG) | RUNTIME: 2,086.555 µs | TRAP: 0"
+    pb21_2.font.name = "Segoe UI"
+    pb21_2.font.size = Pt(8.8)
+    pb21_2.font.bold = True
+    pb21_2.font.color.rgb = RGBColor(6, 95, 70)
 
     # =========================================================================
     # SLIDE 22: PHẦN 5 - DEMO THỰC NGHIỆM TRÊN FPGA BASYS 3: THIẾT LẬP KẾT NỐI

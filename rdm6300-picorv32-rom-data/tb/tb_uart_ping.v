@@ -100,13 +100,23 @@ module tb_uart_ping;
     initial begin
         for (i = 0; i < 16384; i = i + 1) flash_mem[i] = 8'hFF;
         $readmemh("firmware.hex", fw_words);
-        for (i = 0; i < 2048; i = i + 1) begin
-            flash_mem[i*4 + 0] = fw_words[i][ 7: 0];
-            flash_mem[i*4 + 1] = fw_words[i][15: 8];
-            flash_mem[i*4 + 2] = fw_words[i][23:16];
-            flash_mem[i*4 + 3] = fw_words[i][31:24];
+        if (fw_words[0] === 32'bx || fw_words[0] === 32'bz) begin
+            $display("\n================================================================");
+            $display("  [TB ERROR] File 'firmware.hex' could NOT be opened in xsim!");
+            $display("  CPU has no instructions to execute and will TRAP immediately.");
+            $display("----------------------------------------------------------------");
+            $display("  [FIX] Run this command in Vivado Tcl Console and re-simulate:");
+            $display("  add_files -fileset sim_1 -norecurse D:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/firmware/firmware.hex");
+            $display("================================================================\n");
+        end else begin
+            for (i = 0; i < 2048; i = i + 1) begin
+                flash_mem[i*4 + 0] = fw_words[i][ 7: 0];
+                flash_mem[i*4 + 1] = fw_words[i][15: 8];
+                flash_mem[i*4 + 2] = fw_words[i][23:16];
+                flash_mem[i*4 + 3] = fw_words[i][31:24];
+            end
+            $display("[FLASH MODEL] Loaded 2048 words (8192 bytes) from firmware.hex");
         end
-        $display("[FLASH MODEL] Loaded 2048 words (8192 bytes) from firmware.hex");
     end
 
     reg [7:0]  spi_cmd;
