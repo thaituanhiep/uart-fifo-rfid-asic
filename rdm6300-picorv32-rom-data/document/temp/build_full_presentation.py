@@ -212,11 +212,11 @@ slide5_code_custom = '''
         ("• [1] Ping Hardware ➔ case 'P':", "Phản hồi 'PONG: PicoRV32 Active', kiểm tra kết nối CPU & UART."),
         ("• [2] Save New Tag ➔ case 'N':", "Nạp 10 số in trên thẻ vào Flash Sector 48 (địa chỉ 0x0030_0000)."),
         ("• [3] Check Tag ➔ case 'C':", "Tra cứu xem mã thẻ đã tồn tại trong Whitelist SPI Flash hay chưa."),
-        ("• [4] Delete Tag ➔ case 'K':", "Xóa thẻ chỉ định ra khỏi danh sách Whitelist lưu trong Flash."),
+        ("• [4] Delete Tag ➔ case 'K':", "Xóa duy nhất 1 thẻ chỉ định trong Flash bằng cách ghi đè Magic word."),
         ("• [5] Virtual Scan ➔ case 'V':", "Mô phỏng quẹt thẻ ảo từ terminal máy tính để kiểm tra xác thực."),
         ("• [6] View Logs ➔ case 'L':", "Đọc toàn bộ lịch sử quét thẻ từ Flash Sector 49 (địa chỉ 0x0031_0000)."),
-        ("• [7] Erase Logs ➔ case 'X':", "Tự động sao lưu CSV trên PC rồi xóa trắng nhật ký trong Flash."),
-        ("• [8] & [9] Export/Import CSV:", "Dùng lệnh 'F' (đọc tất cả thẻ) & 'E' (xóa thẻ) để đồng bộ hóa CSV.")
+        ("• [7] Erase Logs ➔ case 'X':", "Firmware xóa trắng Sector 49 (Host tự gửi 'L' sao lưu CSV trên PC trước)."),
+        ("• [8] & [9] Quản lý CSV (Host PC):", "Host tự xử lý file CSV; gửi lệnh 'F' (đọc thẻ) hoặc 'E'+'N' (nạp thẻ) sang SoC.")
     ]
 
     for c_lbl, c_val in fw_cases:

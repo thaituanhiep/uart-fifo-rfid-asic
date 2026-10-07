@@ -241,56 +241,91 @@ def create_deck():
     card1.line.color.rgb = C_BLUE_ACCENT
     card1.line.width = Pt(2.0)
 
-    tb1 = s1.shapes.add_textbox(Inches(1.05), Inches(1.02), Inches(11.233), Inches(4.2))
-    tf1 = tb1.text_frame
-    tf1.word_wrap = True
-    tf1.margin_left = tf1.margin_right = tf1.margin_top = tf1.margin_bottom = 0
+    # 1. Header & Main Title Textbox (spanning full width)
+    tb_title = s1.shapes.add_textbox(Inches(1.05), Inches(0.98), Inches(11.233), Inches(1.55))
+    tf_title = tb_title.text_frame
+    tf_title.word_wrap = True
+    tf_title.margin_left = tf_title.margin_right = tf_title.margin_top = tf_title.margin_bottom = 0
 
-    p_org = tf1.paragraphs[0]
+    p_org = tf_title.paragraphs[0]
     p_org.text = "FPT JETKING — CHIP DESIGN"
     p_org.font.name = "Segoe UI"
     p_org.font.size = Pt(13.5)
     p_org.font.bold = True
     p_org.font.color.rgb = C_CYAN_ACCENT
-    p_org.space_after = Pt(12)
+    p_org.space_after = Pt(8)
 
-    p_main = tf1.add_paragraph()
+    p_main = tf_title.add_paragraph()
     p_main.text = "THIẾT KẾ HỆ THỐNG SOC XỬ LÝ DỮ LIỆU THẺ RA VÀO RFID\nTỐI ƯU RTL TO GDSII TRÊN CHIP ASIC"
     p_main.font.name = "Segoe UI"
-    p_main.font.size = Pt(26.0)
+    p_main.font.size = Pt(25.0)
     p_main.font.bold = True
     p_main.font.color.rgb = C_WHITE
-    p_main.space_after = Pt(14)
-    p_main.line_spacing = 1.25
+    p_main.line_spacing = 1.22
 
-    p_sub = tf1.add_paragraph()
-    p_sub.text = "Giao tiếp RFID RDM6300 | Lưu trữ Whitelist SPI Flash NVM | Tạo mẫu Basys 3 FPGA | Ký duyệt ASIC OpenLane 2 (Sky130)"
+    # 2. Left Column: Subtitle & Student / Advisor Info
+    tb_info = s1.shapes.add_textbox(Inches(1.05), Inches(2.72), Inches(7.4), Inches(2.45))
+    tf_info = tb_info.text_frame
+    tf_info.word_wrap = True
+    tf_info.margin_left = tf_info.margin_right = tf_info.margin_top = tf_info.margin_bottom = 0
+
+    p_sub = tf_info.paragraphs[0]
+    p_sub.text = "Giao tiếp RFID RDM6300 | Lưu trữ Whitelist SPI Flash NVM\nTạo mẫu Basys 3 FPGA | Ký duyệt ASIC OpenLane 2 (SkyWater 130nm)"
     p_sub.font.name = "Segoe UI"
     p_sub.font.size = Pt(12.0)
     p_sub.font.color.rgb = RGBColor(203, 213, 225)
-    p_sub.space_after = Pt(18)
+    p_sub.space_after = Pt(14)
+    p_sub.line_spacing = 1.25
 
-    p_info1 = tf1.add_paragraph()
+    p_info1 = tf_info.add_paragraph()
     p_info1.text = "Học viên thực hiện :  Thái Tuấn Hiệp"
     p_info1.font.name = "Segoe UI"
     p_info1.font.size = Pt(13.5)
     p_info1.font.bold = True
     p_info1.font.color.rgb = C_WHITE
-    p_info1.space_after = Pt(5)
+    p_info1.space_after = Pt(6)
 
-    p_info2 = tf1.add_paragraph()
+    p_info2 = tf_info.add_paragraph()
     p_info2.text = "Giảng viên hướng dẫn :  ThS. Nguyễn Văn Đông"
     p_info2.font.name = "Segoe UI"
     p_info2.font.size = Pt(12.5)
     p_info2.font.color.rgb = RGBColor(226, 232, 240)
-    p_info2.space_after = Pt(5)
+    p_info2.space_after = Pt(6)
 
-    p_info3 = tf1.add_paragraph()
+    p_info3 = tf_info.add_paragraph()
     p_info3.text = "Học kỳ :  SEM3  |  Chuyên ngành: Thiết kế Vi mạch Bán dẫn (Chip Design)"
     p_info3.font.name = "Segoe UI"
     p_info3.font.size = Pt(11.5)
     p_info3.font.italic = True
     p_info3.font.color.rgb = RGBColor(148, 163, 184)
+
+    # 3. Right Column: Card with RFID Reader & 125kHz Card image
+    card_r = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(8.70), Inches(2.65), Inches(3.58), Inches(2.55))
+    try:
+        card_r.adjustments[0] = 0.04
+    except Exception:
+        pass
+    card_r.fill.solid()
+    card_r.fill.fore_color.rgb = RGBColor(15, 23, 42)
+    card_r.line.color.rgb = C_CYAN_ACCENT
+    card_r.line.width = Pt(1.5)
+
+    img_rfid_card = os.path.join(cur_dir, "rfid_card_rounded.png")
+    if not os.path.exists(img_rfid_card):
+        img_rfid_card = os.path.join(doc_dir, "rfid_card_rounded.png")
+    if os.path.exists(img_rfid_card):
+        s1.shapes.add_picture(img_rfid_card, Inches(8.78), Inches(2.72), Inches(3.42), Inches(2.20))
+
+    tb_cap = s1.shapes.add_textbox(Inches(8.70), Inches(4.90), Inches(3.58), Inches(0.28))
+    tf_cap = tb_cap.text_frame
+    tf_cap.margin_left = tf_cap.margin_right = tf_cap.margin_top = tf_cap.margin_bottom = 0
+    p_cap = tf_cap.paragraphs[0]
+    p_cap.text = "Đầu đọc RDM6300 & Thẻ RFID 125kHz (EM4100)"
+    p_cap.alignment = PP_ALIGN.CENTER
+    p_cap.font.name = "Segoe UI"
+    p_cap.font.size = Pt(9.5)
+    p_cap.font.bold = True
+    p_cap.font.color.rgb = RGBColor(147, 197, 253)
 
     # Logo header label
     tb_lbl = s1.shapes.add_textbox(Inches(1.05), Inches(5.32), Inches(11.233), Inches(0.28))
@@ -670,11 +705,11 @@ def create_deck():
         ("• [1] Ping Hardware ➔ case 'P':", "Phản hồi 'PONG: PicoRV32 Active', kiểm tra kết nối CPU & UART."),
         ("• [2] Save New Tag ➔ case 'N':", "Nạp 10 số in trên thẻ vào Flash Sector 48 (địa chỉ 0x0030_0000)."),
         ("• [3] Check Tag ➔ case 'C':", "Tra cứu xem mã thẻ đã tồn tại trong Whitelist SPI Flash hay chưa."),
-        ("• [4] Delete Tag ➔ case 'K':", "Xóa thẻ chỉ định ra khỏi danh sách Whitelist lưu trong Flash."),
+        ("• [4] Delete Tag ➔ case 'K':", "Xóa duy nhất 1 thẻ chỉ định trong Flash bằng cách ghi đè Magic word."),
         ("• [5] Virtual Scan ➔ case 'V':", "Mô phỏng quẹt thẻ ảo từ terminal máy tính để kiểm tra xác thực."),
         ("• [6] View Logs ➔ case 'L':", "Đọc toàn bộ lịch sử quét thẻ từ Flash Sector 49 (địa chỉ 0x0031_0000)."),
-        ("• [7] Erase Logs ➔ case 'X':", "Tự động sao lưu CSV trên PC rồi xóa trắng nhật ký trong Flash."),
-        ("• [8] & [9] Export/Import CSV:", "Dùng lệnh 'F' (đọc tất cả thẻ) & 'E' (xóa thẻ) để đồng bộ hóa CSV.")
+        ("• [7] Erase Logs ➔ case 'X':", "Firmware xóa trắng Sector 49 (Host tự gửi 'L' sao lưu CSV trên PC trước)."),
+        ("• [8] & [9] Quản lý CSV (Host PC):", "Host tự xử lý file CSV; gửi lệnh 'F' (đọc thẻ) hoặc 'E'+'N' (nạp thẻ) sang SoC.")
     ]
 
     for c_lbl, c_val in fw_cases:
@@ -1294,13 +1329,20 @@ def create_deck():
         run_desc.font.size = Pt(16.5)
         run_desc.font.color.rgb = RGBColor(241, 245, 249) # Bright white/slate
 
+    p_git = tf_t24.add_paragraph()
+    p_git.text = "🔗 GitHub Repository: https://github.com/thaituanhiep/uart-fifo-rfid-asic/tree/rfid_flash_firmware_optimize"
+    p_git.font.name = "Segoe UI"
+    p_git.font.size = Pt(14)
+    p_git.font.color.rgb = RGBColor(147, 197, 253)
+    p_git.space_before = Pt(14)
+
     p_ty = tf_t24.add_paragraph()
-    p_ty.text = "XIN TRÂN TRỌNG CẢM ƠN THẦY CÔ VÀ HỘI ĐỒNG ĐÃ LẮNG NGHE!"
+    p_ty.text = "XIN TRÂN TRỌNG CẢM ƠN QUÝ THẦY CÔ ĐÃ LẮNG NGHE!"
     p_ty.font.name = "Segoe UI"
     p_ty.font.size = Pt(22)
     p_ty.font.bold = True
     p_ty.font.color.rgb = C_WHITE
-    p_ty.space_before = Pt(28)
+    p_ty.space_before = Pt(18)
 
     # -------------------------------------------------------------
     # LƯU FILE VÀ COPY (CHỈ 1 BẢN CHÍNH THỨC DUY NHẤT)

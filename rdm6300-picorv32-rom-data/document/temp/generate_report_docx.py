@@ -258,7 +258,7 @@ def generate_report():
     p_date = add_p("HÀ NỘI – 2026", align=WD_ALIGN_PARAGRAPH.CENTER, space_after=4)
     set_font(p_date.runs[0], size=11, bold=True, color=BLACK)
 
-    p_ref = add_p("Kho lưu trữ mã nguồn mở: github.com/thaituanhiep/uart-fifo-rfid-asic", 
+    p_ref = add_p("Kho lưu trữ mã nguồn mở: https://github.com/thaituanhiep/uart-fifo-rfid-asic/tree/rfid_flash_firmware_optimize", 
                   align=WD_ALIGN_PARAGRAPH.CENTER, space_after=0, line_spacing=1.15)
     set_font(p_ref.runs[0], size=9.5, italic=True, color=DARK_GRAY)
 
