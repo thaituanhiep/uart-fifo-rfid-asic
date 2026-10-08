@@ -499,28 +499,30 @@ def create_abstract_docx():
     # =========================================================================
     # PHẦN III: BẢNG ÁNH XẠ 12 SLIDE BÁO CÁO
     # =========================================================================
-    add_h1("PHẦN III: BẢNG ĐỐI CHIẾU NHANH THEO 12 SLIDE BÁO CÁO")
+    add_h1("PHẦN III: BẢNG ĐỐI CHIẾU NHANH THEO 14 SLIDE BÁO CÁO")
 
-    add_p("Nhằm hỗ trợ theo dõi xuyên suốt quá trình thuyết trình, bảng dưới đây tóm tắt trục nội dung và kết quả chính của từng slide trong bộ slide 12 trang:")
+    add_p("Nhằm hỗ trợ theo dõi xuyên suốt quá trình thuyết trình, bảng dưới đây tóm tắt trục nội dung và kết quả chính của từng slide trong bộ slide 14 trang:")
 
-    tbl_slides = doc.add_table(rows=13, cols=3)
+    tbl_slides = doc.add_table(rows=15, cols=3)
     sl_widths = [Inches(0.95), Inches(2.60), Inches(3.02)]
     sl_aligns = [WD_ALIGN_PARAGRAPH.CENTER, WD_ALIGN_PARAGRAPH.LEFT, WD_ALIGN_PARAGRAPH.LEFT]
 
     slides_map = [
         ("Slide", "Tiêu Đề Trọng Tâm", "Nội Dung & Minh Chứng Kỹ Thuật Đạt Được"),
-        ("Slide 1", "Bìa Báo Cáo Đồ Án", "Thông tin học viên, giảng viên hướng dẫn, chuyên ngành Chip Design SEM3."),
+        ("Slide 1", "Bìa Báo Cáo Đồ Án", "Thông tin tác giả, đồ án SoC PicoRV32 RFID RDM6300 & SPI Flash, hệ sinh thái EDA."),
         ("Slide 2", "Phần 1: Giới Thiệu Dự Án", "3 luận điểm cốt lõi: Tính cấp thiết Offline, vai trò Flash NVM và tự chủ ASIC."),
-        ("Slide 3", "Phần 3: Sơ Đồ Khối SoC", "Sơ đồ kiến trúc vi hệ thống SoC PicoRV32 (1 Master - 5 Slaves, 4MB Flash, 1KB SRAM)."),
-        ("Slide 4", "Phần 3: Kiến Trúc UART RTL", "Bản vẽ 5 tầng UART RTL: CDC 2-FF, 16x Sampler, FIFO 32B, MMIO Non-blocking."),
-        ("Slide 5", "Phần 4: Testbench 1 (tb_uart_rtl)", "Dạng sóng mô phỏng Vivado 15.275 µs xác nhận 100% Pass 5 kịch bản phần cứng thuần."),
-        ("Slide 6", "Phần 4: Testbench 2 (tb_uart_ping)", "Kiểm thử tích hợp Boot Flash XIP & Ping; CPU healthy, cpu_trap == 0 suốt 2.086 ms."),
-        ("Slide 7", "Phần 5: Demo FPGA Thiết Lập", "Sơ đồ kết nối phần cứng Basys 3: Nguồn 5V MB102 riêng cho RDM6300, trở đệm bảo vệ 1kΩ."),
-        ("Slide 8", "Phần 5: Demo FPGA Host CLI", "Giao diện Host Console CLI 10 chức năng; Tra cứu Whitelist, xuất nhập CSV, 512 Logs."),
-        ("Slide 9", "Phần 6: ASIC Sign-off & Config", "Bằng chứng 0 Antenna, 0 LVS, 0 DRC violations, bản vẽ OpenROAD và cấu hình config.json."),
-        ("Slide 10", "Phần 6: Bảng PPA Metrics", "Bảng tổng hợp diện tích Die 1.87 mm², 164K cells, công suất 76 mW, IR Drop 1.39 mV."),
-        ("Slide 11", "Phần 6: Phân Tích Định Thời STA", "Bảng Multi-Corner Timing từ summary.rpt; Fmax = 92.81 MHz (vượt 85.6%), 21.9K hold buffers."),
-        ("Slide 12", "Tổng Kết Đồ Án & Lời Cảm Ơn", "4 thành tựu nổi bật của đồ án và lời cảm ơn trân trọng gửi tới Quý Thầy Cô cùng độc giả.")
+        ("Slide 3", "Phần 3: Sơ Đồ Khối SoC", "Sơ đồ kiến trúc vi hệ thống SoC PicoRV32 (1 Master - 5 Slaves, 4MB Flash, 1KB SRAM, 32 FIFO)."),
+        ("Slide 4", "Phần 1: Tổng Quan Sản Phẩm", "4 trụ cột: RTL chạy firmware C & mở rộng; Firmware C trên chip; FPGA Basys 3; OpenLane ASIC."),
+        ("Slide 5", "Phần 3: Bảng Memory Map", "Bảng tra cứu MMIO 0x1000/0x3000/0x4000, Flash Sector 48/49, SRAM 0x0200_0000 trong C/RTL."),
+        ("Slide 6", "Phần 5: Demo Host Console CLI", "Giao diện Host CLI 10 chức năng: Ping, thêm/xóa thẻ, quét ảo, 512 Logs, đồng bộ CSV."),
+        ("Slide 7", "Phần 3: Kiến Trúc UART RTL", "Bản vẽ 5 tầng UART RTL: CDC 2-FF, 16x Sampler, FIFO 32B, MMIO Non-blocking."),
+        ("Slide 8", "Phần 4: Testbench 1 (tb_uart_rtl)", "Dạng sóng mô phỏng Vivado 15.275 µs xác nhận 100% Pass 5 kịch bản phần cứng thuần."),
+        ("Slide 9", "Phần 4: Testbench 2 (tb_uart_ping)", "Kiểm thử tích hợp Boot Flash XIP & Ping; CPU healthy, cpu_trap == 0 suốt 2.086 ms."),
+        ("Slide 10", "Phần 5: Demo FPGA Thiết Lập", "Sơ đồ kết nối phần cứng Basys 3: Nguồn 5V MB102 riêng cho RDM6300, trở đệm bảo vệ 1kΩ."),
+        ("Slide 11", "Phần 6: ASIC Sign-off & Config", "Bằng chứng 0 Antenna, 0 LVS, 0 DRC violations, bản vẽ OpenROAD và cấu hình config.json."),
+        ("Slide 12", "Phần 6: Bảng PPA Metrics", "Bảng tổng hợp diện tích Die 1.87 mm², 164K cells, công suất 76 mW, IR Drop 1.39 mV."),
+        ("Slide 13", "Phần 6: Phân Tích Định Thời STA", "Bảng Multi-Corner Timing từ summary.rpt; Fmax = 92.81 MHz (vượt 85.6%), 21.9K hold buffers."),
+        ("Slide 14", "Tổng Kết Đồ Án & Lời Cảm Ơn", "4 thành tựu nổi bật của đồ án, link GitHub repository và lời cảm ơn trân trọng.")
     ]
 
     for r_idx, row_vals in enumerate(slides_map):
