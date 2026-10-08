@@ -1,127 +1,181 @@
-# RDM6300 RFID - PicoRV32 RISC-V SoC with SPI Flash Data Storage
+# RDM6300 RFID - PicoRV32 RISC-V SoC
 
-## 1. Tổng quan Kiến trúc (System Architecture)
-Dự án được thiết kế theo cấu trúc mô-đun hóa cao cấp, phân chia thành 3 phân vùng độc lập và một lõi tích hợp trung tâm:
-- **Phân vùng Lõi trung tâm (`rtl/core/`)**:
-  - [picorv32.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/core/picorv32.v): Nhân CPU RISC-V RV32I 32-bit.
-  - [data_sram.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/core/data_sram.v): 1KB On-Chip Data SRAM (Scratchpad/Stack, độ trễ 1 chu kỳ).
-  - [spimemio.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/core/spimemio.v): Bộ điều khiển SPI Flash Quad-SPI hỗ trợ XIP (Execute-In-Place) trực tiếp từ Flash.
-  - [soc_interconnect.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/core/soc_interconnect.v): Bộ giải mã địa chỉ và liên kết bus trung tâm (Crossbar / Interconnect).
-  - [soc_gpio_mmio.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/core/soc_gpio_mmio.v): Bộ điều khiển GPIO MMIO (16 LED trạng thái).
-  - [sync_2ff.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/core/sync_2ff.v): Bộ đồng bộ tín hiệu 2 tầng Flip-Flop chống hiện tượng siêu ổn định (CDC Metastability).
-- **Phân vùng Ngoại vi RFID RDM6300 (`rtl/rdm6300/`)**:
-  - [uart_rx.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/rdm6300/uart_rx.v): Bộ thu UART 9600 baud tích hợp bộ lọc nhiễu đa số (Majority Voting).
-  - [rdm6300_frame_decoder.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/rdm6300/rdm6300_frame_decoder.v): Bộ giải mã khung 14-byte ASCII và cây tính chẵn lẻ XOR phần cứng (1 chu kỳ).
-  - [rdm6300_mmio.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/rdm6300/rdm6300_mmio.v): Bộ điều khiển giao tiếp MMIO cho ngoại vi RFID.
-- **Phân vùng Giao tiếp Máy tính Chủ (`rtl/host/`)**:
-  - [simpleuart.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/host/simpleuart.v): Bộ thu phát UART siêu tinh gọn cho Host PC (115200 baud).
-  - [sync_fifo.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/host/sync_fifo.v): Bộ đệm phần cứng FIFO đồng bộ (16 phần tử).
-  - [simpleuart_fifo.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/host/simpleuart_fifo.v): UART tích hợp 2 hàng đợi TX/RX FIFO chống tràn dữ liệu.
-  - [host_uart_mmio.v](file:///d:/VirtualSharedFolders/uart-fifo-rfid-asic/rdm6300-picorv32-rom-data/rtl/host/host_uart_mmio.v): Bộ điều khiển giao tiếp MMIO Host UART.
-- **Top-Level SoC (`rtl/rdm6300_picorv32_soc.v`)**:
-  - Tích hợp toàn diện 14 module phần cứng, liên kết bus, quản lý tín hiệu đồng bộ và phân phối địa chỉ.
+Du an nay da duoc tinh gon de phuc vu viec review code. Repo hien chi giu lai source code, cac script build/chay, mot so file nhi phan can thiet (`.exe`, `.bin`) va tai lieu chinh (`.docx`, `.pptx`).
 
----
+## Cau truc hien tai
 
-## 2. Bản đồ Bộ nhớ MMIO (Memory Map)
-| Dải địa chỉ | Ngoại vi / Chức năng | Mô tả chi tiết |
-| :--- | :--- | :--- |
-| `0x0000_0000 - 0x0000_03FF` | **1KB Data SRAM** | Scratchpad RAM on-chip, chứa biến cục bộ và ngăn xếp (Stack) của CPU PicoRV32. |
-| `0x0025_0000 - 0x003F_FFFF` | **SPI Flash XIP Area** | Thực thi trực tiếp mã lệnh firmware (XIP) từ bộ nhớ Flash Spansion S25FL032P. |
-| `0x0200_0000` | **SPI Flash Config Reg** | Thanh ghi cấu hình SPI Mode và tần số xung SCK của `spimemio`. |
-| `0x1000_0000 - 0x1000_0008` | **RDM6300 RFID MMIO** | `0x00`: Status (bit 0: `tag_ready`); `0x04`: Tag Hi (8-bit); `0x08`: Tag Lo (32-bit). |
-| `0x3000_0000 - 0x3000_0004` | **Host PC UART MMIO** | `0x00`: Clock Divider; `0x04`: TX/RX Data FIFO (giao tiếp PC 115200 baud). |
-| `0x4000_0000` | **SoC GPIO / LEDs** | Điều khiển 16 LED trạng thái trên bo mạch Basys 3 hoặc ASIC IO pads. |
-
----
-
-## 3. Cấu trúc Thư mục Dự Án
 ```text
 rdm6300-picorv32-rom-data/
-├── config.json                             # Cấu hình OpenLane 2 ASIC Flow (14 module RTL)
-├── pin_order.cfg                           # Quy hoạch chân Floorplan ASIC
-├── constraints.sdc                         # Ràng buộc thời gian tổng hợp ASIC SDC (50MHz)
-├── run_fast.sh                             # Kịch bản OpenLane Dockerized siêu tốc trên Linux
-├── build_all.bat                           # Kịch bản tự động hóa 4 bước biên dịch & nạp Flash
-├── rtl/                                    # Toàn bộ mã nguồn Verilog RTL (14 files)
-│   ├── core/                               # Phân vùng Lõi xử lý trung tâm
-│   │   ├── picorv32.v
-│   │   ├── data_sram.v
-│   │   ├── spimemio.v
-│   │   ├── soc_interconnect.v
-│   │   ├── soc_gpio_mmio.v
-│   │   └── sync_2ff.v
-│   ├── rdm6300/                            # Phân vùng Ngoại vi RFID
-│   │   ├── uart_rx.v
-│   │   ├── rdm6300_frame_decoder.v
-│   │   └── rdm6300_mmio.v
-│   ├── host/                               # Phân vùng Giao tiếp Máy tính
-│   │   ├── simpleuart.v
-│   │   ├── sync_fifo.v
-│   │   ├── simpleuart_fifo.v
-│   │   └── host_uart_mmio.v
-│   └── rdm6300_picorv32_soc.v              # Module đỉnh SoC tích hợp
-├── fpga/                                   # Thiết kế FPGA Basys 3 (Vivado Flow)
-│   ├── rtl/top_basys3_picorv32_rdm6300.v   # Wrapper FPGA Basys 3 (STARTUPE2 CCLK)
-│   ├── constraints/basys3_picorv32_rdm6300.xdc # Constraints chân Basys 3
-│   ├── build_vivado_basys3.tcl             # Kịch bản TCL tổng hợp & sinh Bitstream
-│   ├── generate_bitstream.bat              # Script build Bitstream Vivado
-│   ├── generate_flash_image.bat            # Script tạo file Flash (.bin & .mcs)
-│   └── program_flash.bat                   # Script nạp SPI Flash qua cáp USB JTAG
-├── firmware/                               # Phần mềm Firmware C cho PicoRV32
-│   ├── main.c                              # Chương trình điều khiển Access Control
-│   ├── start.s                             # File khởi động Assembly RV32I
-│   ├── sections.lds                        # Linker script phân bổ bộ nhớ Flash XIP & SRAM
-│   └── build_firmware.bat                  # Script biên dịch firmware ra .hex & .bin
-├── host/                                   # Phần mềm giao tiếp trên máy tính Host PC
-│   ├── main.c                              # Chương trình C Win32 Serial Console
-│   └── build.bat                           # Script biên dịch console app bằng GCC/MSVC
-└── tb/                                     # Hệ sinh thái Kiểm thử & Testbench (63 Test Cases)
-    ├── run_all_testbenches.bat             # Chạy toàn bộ 5 bước kiểm thử tự động
-    ├── run_all_testbenches.py              # Master Python Verification Suite (100% PASS)
-    ├── step2_firmware/                     # Bước 2: Testbench Firmware (21 TCs)
-    ├── step3_picorv32_sram/                # Bước 3: Testbench CPU & 1KB SRAM (12 TCs)
-    ├── step4_spimemio_flash/               # Bước 4: Testbench SPI Flash XIP (10 TCs)
-    ├── step5_rdm6300_pipeline/             # Bước 5: Testbench RDM6300 Pipeline (12 TCs)
-    └── step6_top_soc_integration/          # Bước 6: Testbench Top SoC Tích Hợp (8 TCs)
+|-- README.md
+|-- build_all.bat
+|-- config.json
+|-- constraints.sdc
+|-- pin_order.cfg
+|-- run_fast.sh
+|-- document/
+|   |-- Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.docx
+|   |-- Bao_Cao_Do_An_RDM6300_PicoRV32_SoC.pptx
+|   `-- Tom_Tat_Do_An_RDM6300_PicoRV32_SoC.docx
+|-- firmware/
+|   |-- Makefile
+|   |-- bin2hex.c
+|   |-- bin2hex.exe
+|   |-- bin2hex.py
+|   |-- build_firmware.bat
+|   |-- main.c
+|   |-- sections.lds
+|   |-- start.s
+|   |-- app/
+|   |   |-- access_control.c
+|   |   `-- access_control.h
+|   |-- common/
+|   |   |-- hex_utils.c
+|   |   |-- hex_utils.h
+|   |   `-- soc_regs.h
+|   |-- drivers/
+|   |   |-- flash.c
+|   |   |-- flash.h
+|   |   |-- uart.c
+|   |   `-- uart.h
+|   `-- protocol/
+|       |-- rdm6300_parser.c
+|       `-- rdm6300_parser.h
+|-- fpga/
+|   |-- build_vivado_basys3.tcl
+|   |-- generate_bitstream.bat
+|   |-- generate_flash_image.bat
+|   |-- generate_flash_image.tcl
+|   |-- program_basys3.bat
+|   |-- program_basys3.tcl
+|   |-- program_flash.bat
+|   |-- program_flash.tcl
+|   |-- top_basys3_picorv32_rdm6300_flash.bin
+|   |-- constraints/
+|   |   `-- basys3_picorv32_rdm6300.xdc
+|   |-- rtl/
+|   |   `-- top_basys3_picorv32_rdm6300.v
+|   `-- vivado/
+|       |-- clockInfo.txt
+|       |-- dfx_runtime.txt
+|       |-- vivado.jou
+|       |-- vivado.log
+|       `-- vivado_*.backup.{jou,log}
+|-- host/
+|   |-- build.bat
+|   |-- main.c
+|   `-- rdm6300_manager.exe
+|-- rtl/
+|   |-- rdm6300_picorv32_soc.v
+|   |-- core/
+|   |   |-- data_sram.v
+|   |   |-- picorv32.v
+|   |   |-- soc_gpio_mmio.v
+|   |   |-- soc_interconnect.v
+|   |   `-- spimemio.v
+|   `-- uart/
+|       |-- simpleuart.v
+|       |-- simpleuart_fifo.v
+|       |-- sync_2ff.v
+|       |-- sync_fifo.v
+|       |-- uart_mmio.v
+|       `-- uart_rx.v
+`-- tb/
+    |-- README.md
+    |-- dfx_runtime.txt
+    |-- run_all_tb.bat
+    |-- run_sim_ping.bat
+    |-- run_sim_uart.bat
+    |-- tb_uart_ping.v
+    `-- tb_uart_rtl.v
 ```
 
----
+## Mo ta cac khoi chinh
 
-## 4. Hướng dẫn Biên Dịch & Chạy Hệ Thống
+### RTL SoC
+- `rtl/rdm6300_picorv32_soc.v`: top-level SoC, ket noi CPU PicoRV32, bo nho, UART va logic ngoai vi.
+- `rtl/core/`: cac khoi trung tam nhu CPU, SRAM, SPI flash interface, interconnect, GPIO.
+- `rtl/uart/`: cac khoi UART, FIFO dong bo va MMIO phuc vu giao tiep voi host va RFID path hien tai.
 
-### A. Kiểm thử toàn diện Testbench (63/63 Test Cases PASS 100%)
-Chạy script kiểm thử tự động:
-```cmd
-cd tb
-run_all_testbenches.bat
-```
-Hoặc mô phỏng chi tiết trên Vivado Simulator (xsim):
-```cmd
-cd tb\step6_top_soc_integration
-run_vivado_sim.bat
-```
+### Firmware
+- `firmware/main.c`: firmware chinh chay tren PicoRV32.
+- `firmware/app/`: logic access control.
+- `firmware/drivers/`: driver UART va SPI flash.
+- `firmware/protocol/`: parser khung du lieu RDM6300.
+- `firmware/bin2hex.*`: cong cu chuyen doi firmware sang dang du lieu phu hop cho flow nap/nhung.
 
-### B. Biên dịch Firmware C cho CPU PicoRV32
+### FPGA
+- `fpga/rtl/top_basys3_picorv32_rdm6300.v`: wrapper top cho board Basys 3.
+- `fpga/*.tcl`, `fpga/*.bat`: script build bitstream, tao flash image va nap board.
+- `fpga/top_basys3_picorv32_rdm6300_flash.bin`: flash image da sinh san duoc giu lai.
+- `fpga/vivado/`: nhat ky va file thong tin moi truong Vivado duoc giu lai tren nhanh review nay.
+
+### Host
+- `host/main.c`: chuong trinh host giao tiep serial.
+- `host/build.bat`: script build tren Windows.
+- `host/rdm6300_manager.exe`: ban build san co de demo nhanh.
+
+### Testbench
+- `tb/tb_uart_rtl.v`: testbench cho khoi UART/MMIO/FIFO.
+- `tb/tb_uart_ping.v`: testbench tich hop cho top-level SoC.
+- `tb/run_*.bat`: script chay mo phong tren Windows.
+- `tb/README.md`: tai lieu rieng cho he thong testbench.
+
+## Cach dung nhanh
+
+### Build firmware
 ```cmd
 cd firmware
 build_firmware.bat
 ```
 
-### C. Biên dịch Bitstream & Nạp Flash Bo Mạch Basys 3 (Tự động 1-Click)
-Tại thư mục gốc dự án:
+### Build FPGA / tao flash image
 ```cmd
+cd ..
 build_all.bat
 ```
-Quy trình sẽ tự động:
-1. Biên dịch Firmware C ra `firmware.bin` và `firmware.hex`.
-2. Chạy Vivado ở chế độ batch tổng hợp toàn bộ 14 module Verilog và sinh Bitstream `top_basys3_picorv32_rdm6300.bit`.
-3. Kết hợp Bitstream (offset `0x0000_0000`) và Firmware (offset `0x0025_0000`) thành file ảnh Flash `top_basys3_picorv32_rdm6300_flash.bin` và `.mcs`.
-4. Nạp trực tiếp vào bộ nhớ Spansion SPI Flash trên bo Basys 3 để khởi động tự động không cần máy tính khi bật nguồn (Jumper JP1 đặt tại QSPI).
 
-### D. Biên dịch & Chạy Ứng Dụng Quản Lý Máy Tính (Host PC)
+### Build host app
 ```cmd
 cd host
 build.bat
 rdm6300_manager.exe
 ```
+
+### Chay testbench
+```cmd
+cd tb
+run_all_tb.bat
+```
+
+## Y nghia cac file build va run
+
+| File | Vai tro |
+| :--- | :--- |
+| `build_all.bat` | Script tong hop o muc du an: build firmware, sinh bitstream FPGA, tao flash image, va co the nap SPI flash cho Basys 3. |
+| `firmware\build_firmware.bat` | Bien dich firmware RISC-V bang GCC, tao `firmware.elf`, `firmware.bin`, `firmware.hex`, roi copy `firmware.hex` sang `rtl\`, `rtl\core\`, `fpga\rtl\`, `tb\` de dung cho FPGA va testbench. |
+| `host\build.bat` | Bien dich chuong trinh host tren Windows thanh `rdm6300_manager.exe` bang GCC hoac MSVC. |
+| `fpga\generate_bitstream.bat` | Goi Vivado batch mode de tong hop va route thiet ke Basys 3, sau do sinh file bitstream `.bit`. |
+| `fpga\generate_flash_image.bat` | Goi script TCL de dong goi bitstream va firmware thanh flash image `.bin`/`.mcs` dung cho bo nho QSPI. |
+| `fpga\program_basys3.bat` | Nap truc tiep file bitstream vao FPGA qua USB JTAG; dung cho chay tam thoi sau moi lan cap nguon. |
+| `fpga\program_flash.bat` | Nap flash image vao SPI flash tren board de he thong tu boot lai sau khi tat/mo nguon. |
+| `tb\run_sim_uart.bat` | Compile, elaborate va chay mo phong `tb_uart_rtl.v` trong Vivado Simulator de kiem tra khoi UART/MMIO/FIFO. |
+| `tb\run_sim_ping.bat` | Compile, elaborate va chay mo phong `tb_uart_ping.v` cho toan bo SoC, bao gom boot firmware tu SPI flash model. |
+| `tb\run_all_tb.bat` | Chay lan luot 2 bai mo phong `run_sim_uart.bat` va `run_sim_ping.bat`; dung nhu quick regression suite. |
+| `run_fast.sh` | Script Linux de chay nhanh luong OpenLane/OpenROAD cho huong ASIC. |
+
+## Dau ra build quan trong
+
+| File dau ra | Nguon sinh ra | Y nghia |
+| :--- | :--- | :--- |
+| `firmware\firmware.elf` | `firmware\build_firmware.bat` | File ELF de debug/phan tich firmware. |
+| `firmware\firmware.bin` | `firmware\build_firmware.bat` | Ban nhi phan thuan cua firmware. |
+| `firmware\firmware.hex` | `firmware\build_firmware.bat` | Ban HEX de nhung vao mo phong/RTL. |
+| `fpga\top_basys3_picorv32_rdm6300.bit` | `fpga\generate_bitstream.bat` | Bitstream nap tam thoi vao FPGA. |
+| `fpga\top_basys3_picorv32_rdm6300_flash.bin` | `fpga\generate_flash_image.bat` | Anh flash tong hop giua bitstream va firmware, phuc vu boot QSPI. |
+| `fpga\top_basys3_picorv32_rdm6300_flash.mcs` | `fpga\generate_flash_image.bat` | Dinh dang flash image thuong dung trong flow Vivado Hardware Manager. |
+| `host\rdm6300_manager.exe` | `host\build.bat` | Chuong trinh host de giao tiep serial voi he thong. |
+
+## Ghi chu
+
+- Nhanh nay da loai bo phan lon file tam, hinh anh, artifact sinh tu dong va tai lieu phu tro khong can thiet.
+- 2 file CSV moi nhat trong `host/` duoc giu lai rieng theo yeu cau.
